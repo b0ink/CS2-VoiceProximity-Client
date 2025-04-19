@@ -3,10 +3,11 @@ import { GLTFLoader } from 'three-stdlib';
 import { io, Socket } from 'socket.io-client';
 import Peer from 'simple-peer';
 // import TWEEN from '@tweenjs/tween.js';
+import './base.css';
 
 import { InputController } from './InputController.js';
 
-function clamp(x, a, b) {
+function clamp(x: number, a: number, b: number) {
   return Math.min(Math.max(x, a), b);
 }
 
@@ -49,7 +50,7 @@ class FirstPersonCamera {
     this.objects_ = objects;
   }
 
-  update(timeElapsedS) {
+  update(timeElapsedS: number) {
     if (this.input_.isReady()) {
       this.updateRotation_(timeElapsedS);
       this.updateTranslation_(timeElapsedS);
@@ -62,7 +63,7 @@ class FirstPersonCamera {
     this.input_.update(timeElapsedS);
   }
 
-  updateBob_(timeElapsedS) {
+  updateBob_(timeElapsedS: number) {
     if (this.bobActive_) {
       const waveLength = Math.PI;
       const nextStep = 1 + Math.floor(((this.bobTimer_ + 0.000001) * this.bobFrequency_) / waveLength);
@@ -91,7 +92,7 @@ class FirstPersonCamera {
     this.camera_.lookAt(lookAt);
   }
 
-  updateCamera_(timeElapsedS) {
+  updateCamera_(timeElapsedS: number) {
     // this.camera_.quaternion.copy(this.rotation_);
     // this.camera_.position.copy(this.translation_);
     // this.camera_.position.y += Math.sin(this.bobTimer_ * this.bobFrequency_) * this.bobMagnitude_;
@@ -113,7 +114,7 @@ class FirstPersonCamera {
     // this.camera_.lookAt(closest);
   }
 
-  updateTranslation_(timeElapsedS) {
+  updateTranslation_(timeElapsedS: number) {
     const forwardVelocity = (this.input_.key(KEYS.w) ? 1 : 0) + (this.input_.key(KEYS.s) ? -1 : 0);
     const strafeVelocity = (this.input_.key(KEYS.a) ? 1 : 0) + (this.input_.key(KEYS.d) ? -1 : 0);
 
@@ -136,7 +137,7 @@ class FirstPersonCamera {
     }
   }
 
-  updateRotation_(timeElapsedS) {
+  updateRotation_(timeElapsedS: number) {
     const xh = this.input_.current_.mouseXDelta / window.innerWidth;
     const yh = this.input_.current_.mouseYDelta / window.innerHeight;
 
@@ -179,75 +180,6 @@ class SocketData {
 
   sockerFire_SubmitSteamId(steamid: string) {
     this.socket_.emit('submit-steamid', steamid);
-  }
-
-  // me:string is this client's steamId. we shouldnt really need this but itll make things easier for now
-  socketCallback_GetPlayerPositions(
-    players,
-    socketClientMap: SocketClientMap,
-    steamIdSocketMap: SteamIdSocketMap,
-    me: string
-  ) {
-    this.players_ = players;
-
-    // console.table(players);
-
-    //TODO: sort out who's steam is who's!
-    const steamIdInput = `76561197972732773`; // Get the Steam ID from the input
-    // const steamIdInput = document.getElementById("steamid").value; // Get the Steam ID from the input
-    // const playerList = document.getElementById("player-list");
-    // playerList.innerHTML = ""; // Clear existing players
-
-    // Iterate over the player data and display it
-    players.forEach((player) => {
-      // const playerElement = document.createElement("li");
-      // playerElement.classList.add("player");
-      // const playerInfo = `
-      //           <h3>Player: ${player.Name} (${player.SteamId})</h3>
-      //           <p>Position: x: ${player.OriginX}, y: ${player.OriginY}, z: ${player.OriginZ}</p>
-      //           <p>Angles: x: ${player.AngleX}, y: ${player.AngleY}, z: ${player.AngleZ}</p>
-      //           <p>IsAlive: ${player.IsAlive} | Team: ${TeamDef[player.Team]}</p>
-      //       `;
-      // playerElement.innerHTML = playerInfo;
-      // playerList.appendChild(playerElement);
-      // if (player.SteamId.toString() === steamIdInput) {
-      //   this.camera.position.set(player.OriginX, player.OriginY, player.OriginZ);
-      //   const pitch = degToRad(player.AngleX);
-      //   const yaw = degToRad(player.AngleY);
-      //   const forward = new THREE.Vector3(
-      //     Math.cos(pitch) * Math.cos(yaw),
-      //     Math.sin(pitch),
-      //     Math.cos(pitch) * Math.sin(yaw)
-      //   );
-      //   forward.multiplyScalar(2049);
-      //   // Assuming player.OriginX/Y/Z are in world space
-      //   const origin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
-      //   const target = origin.clone().add(forward);
-      //   camera.position.copy(origin);
-      //   camera.lookAt(target);
-      //   listener.position.copy(origin);
-      //   listener.lookAt(target);
-      // }
-    });
-
-    // Object.keys(remoteStreams).forEach((id) => {
-    //   if (id !== socket.id) {
-    //     const remoteStream = remoteStreams[id];
-
-    //     // Create positional audio for this remote player
-
-    //     // Set the remote stream as the audio source
-    //     if (theOtherGuy.sourceType === "empty") {
-    //       theOtherGuy.setMediaStreamSource(remoteStream);
-    //     }
-
-    //     // otherPlayerObject.position.set(-71.0439, -518.452, -84.7348);
-    //     otherPlayerObject.position.set(-462.9723, -2174.9246, -179.96875 + 32);
-
-    //     let occlusion = CalculateOcclusion(camera.position, otherPlayerObject.position);
-    //     biquadFilter.frequency.value = 11000 - occlusion * 11000 + 250;
-    //   }
-    // });
   }
 }
 
@@ -343,11 +275,11 @@ class SoundSourceData {
     filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
   }
 
-  public setLowPassFilterFrequency(amount) {
+  public setLowPassFilterFrequency(amount: number) {
     this.setFilterFrequency(this.lowPassFilter_, amount);
   }
 
-  public setHighPassFilterFrequency(amount) {
+  public setHighPassFilterFrequency(amount: number) {
     this.setFilterFrequency(this.highPassFilter_, amount);
   }
 
@@ -820,7 +752,7 @@ class FirstPersonCameraDemo {
   }
 
   initializeMap_() {
-    const mapFilePath = `maps/mirage.glb`;
+    const mapFilePath = `/maps/de_mirage.glb`;
 
     const loader = new GLTFLoader();
     loader.load(
@@ -888,6 +820,11 @@ class FirstPersonCameraDemo {
       const occlusionThreshold = 0.4;
 
       const distance = this.calculateDistance(soundData.camera_?.position, soundData.soundObjSource_?.position);
+
+      if (!distance) {
+        continue;
+      }
+
       const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
       const easedDistance = Math.pow(normalized, 5);
 
@@ -913,11 +850,20 @@ class FirstPersonCameraDemo {
     }
   }
 
-  calculateDistance(a, b) {
-    return a.distanceTo(b);
+  calculateDistance(a?: THREE.Vector3, b?: THREE.Vector3) {
+    if (a && b) {
+      return a.distanceTo(b);
+    }
   }
 
-  calculateOcclusion(Listener_, Sound_) {
+  calculateOcclusion(Listener_?: THREE.Vector3, Sound_?: THREE.Vector3) {
+    if (!Listener_ || !Sound_) {
+      // TODO: interface
+      return {
+        occlusion: 0,
+        totalExtraHits: 0,
+      };
+    }
     //! if our widening is less than the edges of our player model (32 units on each side); then the ray casts wont go through the walls
     // alternatively we add another layer of meshes inbetween large walls gaps (dust 2 B car to tunnels)
     const SndOcclusonWidening = 31;
@@ -985,7 +931,7 @@ class FirstPersonCameraDemo {
     // return hits / 11;
   }
 
-  didIntersect(v1, v2) {
+  didIntersect(v1: THREE.Vector3, v2: THREE.Vector3) {
     const raycaster = new THREE.Raycaster();
     const dir = v2.clone().sub(v1).normalize();
     raycaster.set(v1, dir);
@@ -1020,7 +966,7 @@ class FirstPersonCameraDemo {
     return filteredHits.length;
   }
 
-  calculatePoint(a, b, m, posOrneg) {
+  calculatePoint(a: THREE.Vector3, b: THREE.Vector3, m: number, posOrneg: boolean) {
     const n = new THREE.Vector3(a.x, 0, a.z).distanceTo(new THREE.Vector3(b.x, 0, b.z));
     const mn = m / n;
     let x, z;
@@ -1191,7 +1137,7 @@ class FirstPersonCameraDemo {
   //   }
   // }
 
-  step_(timeElapsed) {
+  step_(timeElapsed: number) {
     if (this.map_ === null) {
       return;
     }

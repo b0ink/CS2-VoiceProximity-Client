@@ -32,14 +32,14 @@ export class InputController {
   }
 
   initialize_() {
-    this.target_.addEventListener('mousedown', (e) => this.onMouseDown_(e), false);
-    this.target_.addEventListener('mousemove', (e) => this.onMouseMove_(e), false);
-    this.target_.addEventListener('mouseup', (e) => this.onMouseUp_(e), false);
-    this.target_.addEventListener('keydown', (e) => this.onKeyDown_(e), false);
-    this.target_.addEventListener('keyup', (e) => this.onKeyUp_(e), false);
+    this.target_.addEventListener('mousedown', (e: any) => this.onMouseDown_(e), false);
+    this.target_.addEventListener('mousemove', (e: any) => this.onMouseMove_(e), false);
+    this.target_.addEventListener('mouseup', (e: any) => this.onMouseUp_(e), false);
+    this.target_.addEventListener('keydown', (e: any) => this.onKeyDown_(e), false);
+    this.target_.addEventListener('keyup', (e: any) => this.onKeyUp_(e), false);
   }
 
-  onMouseMove_(e) {
+  onMouseMove_(e: any) {
     this.current_.mouseX = e.pageX - window.innerWidth / 2;
     this.current_.mouseY = e.pageY - window.innerHeight / 2;
 
@@ -51,7 +51,7 @@ export class InputController {
     this.current_.mouseYDelta = this.current_.mouseY - this.previous_.mouseY;
   }
 
-  onMouseDown_(e) {
+  onMouseDown_(e: any) {
     this.onMouseMove_(e);
 
     switch (e.button) {
@@ -66,7 +66,7 @@ export class InputController {
     }
   }
 
-  onMouseUp_(e) {
+  onMouseUp_(e: any) {
     this.onMouseMove_(e);
 
     switch (e.button) {
@@ -81,15 +81,15 @@ export class InputController {
     }
   }
 
-  onKeyDown_(e) {
+  onKeyDown_(e: any) {
     this.keys_[e.keyCode] = true;
   }
 
-  onKeyUp_(e) {
+  onKeyUp_(e: any) {
     this.keys_[e.keyCode] = false;
   }
 
-  key(keyCode) {
+  key(keyCode: any) {
     return !!this.keys_[keyCode];
   }
 
@@ -97,7 +97,7 @@ export class InputController {
     return this.previous_ !== null;
   }
 
-  update(_) {
+  update(_: any) {
     if (this.previous_ !== null) {
       this.current_.mouseXDelta = this.current_.mouseX - this.previous_.mouseX;
       this.current_.mouseYDelta = this.current_.mouseY - this.previous_.mouseY;
