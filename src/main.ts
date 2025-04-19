@@ -106,7 +106,22 @@ class SoundSourceData {
   public Unmute() {
     if (this.isMuted || this.sound_?.getVolume() == 0) {
       this.isMuted = false;
-      this.sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
+      // this.sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
+
+      // fade the volume back up (attempt to prevent glitches)
+      const targetVolume = 0.85;
+      const fadeDuration = 1000;
+      const step = (targetVolume - (this.sound_?.getVolume() || 0)) / (fadeDuration / 16);
+
+      let currentVolume = this.sound_?.getVolume() || 0;
+      const fadeIn = setInterval(() => {
+        currentVolume += step;
+        if (currentVolume >= targetVolume) {
+          currentVolume = targetVolume;
+          clearInterval(fadeIn);
+        }
+        this.sound_?.setVolume(currentVolume);
+      }, 16);
     }
   }
 
