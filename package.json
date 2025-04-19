@@ -1,0 +1,16 @@
+{
+  "dependencies": {
+    "@tweenjs/tween.js": "^25.0.0",
+    "@types/three": "^0.175.0",
+    "crypto-browserify": "^3.12.1",
+    "randombytes": "^2.1.0",
+    "readable-stream": "^4.7.0",
+    "simple-peer": "^9.11.1",
+    "socket.io-client": "^4.8.1",
+    "three": "^0.175.0",
+    "three-stdlib": "^2.35.15"
+  },
+  "devDependencies": {
+    "vite": "^6.2.6"
+  }
+}
