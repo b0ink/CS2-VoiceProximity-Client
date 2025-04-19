@@ -271,6 +271,16 @@ const DEFAULT_ICE_CONFIG: RTCConfiguration = {
   ],
 };
 
+const DEFAULT_ICE_CONFIG_TURN = {
+  iceServers: [
+    {
+      urls: 'turn:openrelay.metered.ca:443',
+      username: 'openrelayproject',
+      credentials: 'openrelayproject',
+    },
+  ],
+};
+
 class FirstPersonCameraDemo {
   private fpsCamera_: FirstPersonCamera;
 
@@ -458,7 +468,8 @@ class FirstPersonCameraDemo {
             initiator, // @ts-ignore-line
             iceRestartEnabled: true,
             // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
-            config: DEFAULT_ICE_CONFIG,
+            // config: DEFAULT_ICE_CONFIG,
+            config: DEFAULT_ICE_CONFIG_TURN,
           });
 
           // setPeerConnections((connections) => {
