@@ -263,7 +263,8 @@ interface PlayerPositionApiData {
 }
 
 const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-  iceTransportPolicy: 'all',
+  // iceTransportPolicy: 'all',
+  iceTransportPolicy: 'relay', // protect IPs
   iceServers: [
     {
       urls: 'stun:stun.l.google.com:19302',
@@ -272,12 +273,13 @@ const DEFAULT_ICE_CONFIG: RTCConfiguration = {
 };
 
 // TODO: Uncaught ReferenceError: process is not defined
-const DEFAULT_ICE_CONFIG_TURN = {
+const DEFAULT_ICE_CONFIG_TURN: RTCConfiguration = {
+  iceTransportPolicy: 'relay', // protect IPs
   iceServers: [
     {
       urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
-      credentials: 'openrelayproject',
+      credential: 'openrelayproject',
     },
   ],
 };
@@ -468,9 +470,9 @@ class FirstPersonCameraDemo {
             stream,
             initiator, // @ts-ignore-line
             iceRestartEnabled: true,
+            config: DEFAULT_ICE_CONFIG_TURN,
             // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
-            config: DEFAULT_ICE_CONFIG,
-            // config: DEFAULT_ICE_CONFIG_TURN,
+            // config: DEFAULT_ICE_CONFIG,
           });
 
           // setPeerConnections((connections) => {
