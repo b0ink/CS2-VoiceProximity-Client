@@ -3,7 +3,6 @@ import { GLTFLoader } from 'three-stdlib';
 import { io, Socket } from 'socket.io-client';
 import Peer from 'simple-peer';
 // import TWEEN from '@tweenjs/tween.js';
-import './base.css';
 
 function clamp(x: number, a: number, b: number) {
   return Math.min(Math.max(x, a), b);
