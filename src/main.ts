@@ -5,8 +5,6 @@ import Peer from 'simple-peer';
 // import TWEEN from '@tweenjs/tween.js';
 import './base.css';
 
-import { InputController } from './InputController.js';
-
 function clamp(x: number, a: number, b: number) {
   return Math.min(Math.max(x, a), b);
 }
@@ -27,60 +25,25 @@ function transformVector(input: THREE.Vector3) {
 
 class FirstPersonCamera {
   private camera_: THREE.PerspectiveCamera;
-  private input_: InputController;
-  private phi_: number = 0;
-  private phiSpeed_: number = 8;
-  private theta_: number = 0;
-  private thetaSpeed_: number = 5;
-  private movementSpeed_: number = 150;
-  private rotation_: THREE.Quaternion = new THREE.Quaternion();
-  private translation_: THREE.Vector3 = new THREE.Vector3(30, 2, 0);
-  private bobTimer_: number = 0;
-  private bobMagnitude_: number = 0.175;
-  private bobFrequency_: number = 10;
-  private objects_: THREE.Object3D[];
-  private bobActive_: boolean = false;
 
   public position_: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   public lookAt_: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
 
-  constructor(camera: THREE.PerspectiveCamera, objects: THREE.Object3D[]) {
+  constructor(camera: THREE.PerspectiveCamera) {
     this.camera_ = camera;
-    this.input_ = new InputController();
-    this.objects_ = objects;
   }
 
   update(timeElapsedS: number) {
-    if (this.input_.isReady()) {
-      this.updateRotation_(timeElapsedS);
-      this.updateTranslation_(timeElapsedS);
-      this.updateBob_(timeElapsedS);
-      this.updateCamera_(timeElapsedS);
-      this.updatePosition_();
-      this.updateAngles_();
-    }
-
-    this.input_.update(timeElapsedS);
-  }
-
-  updateBob_(timeElapsedS: number) {
-    if (this.bobActive_) {
-      const waveLength = Math.PI;
-      const nextStep = 1 + Math.floor(((this.bobTimer_ + 0.000001) * this.bobFrequency_) / waveLength);
-      const nextStepTime = (nextStep * waveLength) / this.bobFrequency_;
-      this.bobTimer_ = Math.min(this.bobTimer_ + timeElapsedS, nextStepTime);
-
-      if (this.bobTimer_ == nextStepTime) {
-        this.bobActive_ = false;
-        this.bobTimer_ = 0;
-      }
-    }
+    this.updatePosition_();
+    this.updateAngles_();
   }
 
   updatePosition_() {
     //TODO: does the scaling of coordinates actually work?
     const position = transformVector(this.position_);
     this.camera_.position.copy(position);
+
+    // TODO: will tweening the camera to the next position smooth out the audio glitches?
     // new TWEEN.Tween(this.camera_.position)
     //   .to(position, 1)
     //   .easing(TWEEN.Easing.Cubic)
@@ -90,73 +53,6 @@ class FirstPersonCamera {
   updateAngles_() {
     const lookAt = transformVector(this.lookAt_);
     this.camera_.lookAt(lookAt);
-  }
-
-  updateCamera_(timeElapsedS: number) {
-    // this.camera_.quaternion.copy(this.rotation_);
-    // this.camera_.position.copy(this.translation_);
-    // this.camera_.position.y += Math.sin(this.bobTimer_ * this.bobFrequency_) * this.bobMagnitude_;
-    // const forward = new THREE.Vector3(0, 0, -1);
-    // forward.applyQuaternion(this.rotation_);
-    // const dir = forward.clone();
-    // forward.multiplyScalar(100);
-    // forward.add(this.translation_);
-    // let closest = forward;
-    // const result = new THREE.Vector3();
-    // const ray = new THREE.Ray(this.translation_, dir);
-    // for (let i = 0; i < this.objects_.length; ++i) {
-    //   if (ray.intersectBox(this.objects_[i], result)) {
-    //     if (result.distanceTo(ray.origin) < closest.distanceTo(ray.origin)) {
-    //       closest = result.clone();
-    //     }
-    //   }
-    // }
-    // this.camera_.lookAt(closest);
-  }
-
-  updateTranslation_(timeElapsedS: number) {
-    const forwardVelocity = (this.input_.key(KEYS.w) ? 1 : 0) + (this.input_.key(KEYS.s) ? -1 : 0);
-    const strafeVelocity = (this.input_.key(KEYS.a) ? 1 : 0) + (this.input_.key(KEYS.d) ? -1 : 0);
-
-    const qx = new THREE.Quaternion();
-    qx.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.phi_);
-
-    const forward = new THREE.Vector3(0, 0, -1);
-    forward.applyQuaternion(qx);
-    forward.multiplyScalar(forwardVelocity * this.movementSpeed_ * timeElapsedS);
-
-    const left = new THREE.Vector3(-1, 0, 0);
-    left.applyQuaternion(qx);
-    left.multiplyScalar(strafeVelocity * this.movementSpeed_ * timeElapsedS);
-
-    this.translation_.add(forward);
-    this.translation_.add(left);
-
-    if (forwardVelocity != 0 || strafeVelocity != 0) {
-      this.bobActive_ = true;
-    }
-  }
-
-  updateRotation_(timeElapsedS: number) {
-    const xh = this.input_.current_.mouseXDelta / window.innerWidth;
-    const yh = this.input_.current_.mouseYDelta / window.innerHeight;
-
-    this.phi_ += -xh * this.phiSpeed_;
-    this.theta_ = clamp(this.theta_ + -yh * this.thetaSpeed_, -Math.PI / 3, Math.PI / 3);
-
-    // console.log(this.input_.current_.mouseYDelta);
-
-    const qx = new THREE.Quaternion();
-    qx.setFromAxisAngle(new THREE.Vector3(0, 1, 0), this.phi_);
-    const qz = new THREE.Quaternion();
-    qz.setFromAxisAngle(new THREE.Vector3(1, 0, 0), this.theta_);
-
-    const q = new THREE.Quaternion();
-    q.multiply(qx);
-    q.multiply(qz);
-
-    const t = 1.0 - Math.pow(0.001, 5 * timeElapsedS);
-    this.rotation_.slerp(q, t);
   }
 }
 
@@ -209,8 +105,8 @@ class SoundSourceData {
 
   public Unmute() {
     if (this.isMuted || this.sound_?.getVolume() == 0) {
-      this.sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
       this.isMuted = false;
+      this.sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
     }
   }
 
@@ -229,7 +125,7 @@ class SoundSourceData {
 
     const filter = this.listener_.context.createBiquadFilter();
     filter.type = 'lowpass';
-    filter.Q.value = 5;
+    filter.Q.value = 0;
     // filter.frequency.setValueAtTime(25000, this.listener_.context.currentTime);
     // filter.gain.setValueAtTime(25, this.listener_.context.currentTime);
 
@@ -238,7 +134,7 @@ class SoundSourceData {
 
     const highpass = this.listener_.context.createBiquadFilter();
     highpass.type = 'highpass';
-    highpass.Q.value = 5;
+    highpass.Q.value = 0;
     // highpass.frequency.setValueAtTime(100, this.listener_.context.currentTime);
     // highpass.gain.setValueAtTime(25, this.listener_.context.currentTime);
 
@@ -381,8 +277,6 @@ class FirstPersonCameraDemo {
 
   private listener_: THREE.AudioListener;
 
-  private objects_: any[] = [];
-
   // TODO: this will be later used to create new player objects/meshes that we will attach
   private soundSourceObjects: any[] = [];
 
@@ -411,8 +305,6 @@ class FirstPersonCameraDemo {
       },
     };
 
-    this.objects_ = [];
-
     this.threejs_ = new THREE.WebGLRenderer({
       antialias: false,
     });
@@ -433,7 +325,7 @@ class FirstPersonCameraDemo {
     this.uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
     this.uiScene_ = new THREE.Scene();
 
-    this.fpsCamera_ = new FirstPersonCamera(this.camera_, this.objects_);
+    this.fpsCamera_ = new FirstPersonCamera(this.camera_);
     this.socket_ = new SocketData('https://cs2-proximitychat-server.onrender.com');
     // this.socket_ = new SocketData("http://127.0.0.1:3000");
 
