@@ -469,8 +469,8 @@ class FirstPersonCameraDemo {
             initiator, // @ts-ignore-line
             iceRestartEnabled: true,
             // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
-            // config: DEFAULT_ICE_CONFIG,
-            config: DEFAULT_ICE_CONFIG_TURN,
+            config: DEFAULT_ICE_CONFIG,
+            // config: DEFAULT_ICE_CONFIG_TURN,
           });
 
           // setPeerConnections((connections) => {
