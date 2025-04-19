@@ -271,10 +271,11 @@ const DEFAULT_ICE_CONFIG: RTCConfiguration = {
   ],
 };
 
+// TODO: Uncaught ReferenceError: process is not defined
 const DEFAULT_ICE_CONFIG_TURN = {
   iceServers: [
     {
-      urls: 'turn:openrelay.metered.ca:443',
+      urls: 'turn:openrelay.metered.ca:80',
       username: 'openrelayproject',
       credentials: 'openrelayproject',
     },
