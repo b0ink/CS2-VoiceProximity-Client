@@ -4,3 +4,6 @@ dist/
 archive
 
 .DS_Store
+
+.env
+.env.production

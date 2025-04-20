@@ -371,8 +371,7 @@ class FirstPersonCameraDemo {
     this.uiScene_ = new THREE.Scene();
 
     this.fpsCamera_ = new FirstPersonCamera(this.camera_);
-    // this.socket_ = new SocketData('https://cs2-proximitychat-server.onrender.com');
-    this.socket_ = new SocketData('http://127.0.0.1:3000');
+    this.socket_ = new SocketData(import.meta.env.VITE_SOCKET_URL);
 
     this.sounds_ = [];
     this.initialize_();
