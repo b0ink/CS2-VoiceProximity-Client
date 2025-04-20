@@ -277,9 +277,27 @@ const DEFAULT_ICE_CONFIG_TURN: RTCConfiguration = {
   iceTransportPolicy: 'relay', // protect IPs
   iceServers: [
     {
-      urls: 'turn:openrelay.metered.ca:80',
-      username: 'openrelayproject',
-      credential: 'openrelayproject',
+      urls: 'stun:stun.relay.metered.ca:80',
+    },
+    {
+      urls: 'turn:oceania.relay.metered.ca:80',
+      username: '96cfcb96272c895a9dbf7f90',
+      credential: 'YN9b9HCsFuc07FpF',
+    },
+    {
+      urls: 'turn:oceania.relay.metered.ca:80?transport=tcp',
+      username: '96cfcb96272c895a9dbf7f90',
+      credential: 'YN9b9HCsFuc07FpF',
+    },
+    {
+      urls: 'turn:oceania.relay.metered.ca:443',
+      username: '96cfcb96272c895a9dbf7f90',
+      credential: 'YN9b9HCsFuc07FpF',
+    },
+    {
+      urls: 'turns:oceania.relay.metered.ca:443?transport=tcp',
+      username: '96cfcb96272c895a9dbf7f90',
+      credential: 'YN9b9HCsFuc07FpF',
     },
   ],
 };
@@ -353,8 +371,8 @@ class FirstPersonCameraDemo {
     this.uiScene_ = new THREE.Scene();
 
     this.fpsCamera_ = new FirstPersonCamera(this.camera_);
-    this.socket_ = new SocketData('https://cs2-proximitychat-server.onrender.com');
-    // this.socket_ = new SocketData("http://127.0.0.1:3000");
+    // this.socket_ = new SocketData('https://cs2-proximitychat-server.onrender.com');
+    this.socket_ = new SocketData('http://127.0.0.1:3000');
 
     this.sounds_ = [];
     this.initialize_();
