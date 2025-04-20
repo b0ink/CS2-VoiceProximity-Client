@@ -488,7 +488,7 @@ class FirstPersonCameraDemo {
             stream,
             initiator, // @ts-ignore-line
             iceRestartEnabled: true,
-            config: import.meta.env.VITE_USE_TURN_CONFIG ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+            config: import.meta.env.VITE_USE_TURN_CONFIG === true ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
             // config: DEFAULT_ICE_CONFIG,
           });
