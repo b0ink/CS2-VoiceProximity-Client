@@ -23,7 +23,7 @@ function transformVector(input: THREE.Vector3) {
 }
 
 class FirstPersonCamera {
-  private camera_: THREE.PerspectiveCamera;
+  public camera_: THREE.PerspectiveCamera;
 
   public position_: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
   public lookAt_: THREE.Vector3 = new THREE.Vector3(0, 0, 0);
@@ -149,6 +149,7 @@ class SoundSourceData {
     const highpass = this.listener_.context.createBiquadFilter();
     highpass.type = 'highpass';
     highpass.Q.value = 0;
+    highpass.frequency.value = 100;
     // highpass.frequency.setValueAtTime(100, this.listener_.context.currentTime);
     // highpass.gain.setValueAtTime(25, this.listener_.context.currentTime);
 
@@ -263,8 +264,7 @@ interface PlayerPositionApiData {
 }
 
 const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-  // iceTransportPolicy: 'all',
-  iceTransportPolicy: 'relay', // protect IPs
+  iceTransportPolicy: 'all',
   iceServers: [
     {
       urls: 'stun:stun.l.google.com:19302',
@@ -488,7 +488,7 @@ class FirstPersonCameraDemo {
             stream,
             initiator, // @ts-ignore-line
             iceRestartEnabled: true,
-            config: DEFAULT_ICE_CONFIG_TURN,
+            config: import.meta.env.VITE_USE_TURN_CONFIG ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
             // config: DEFAULT_ICE_CONFIG,
           });
@@ -766,23 +766,28 @@ class FirstPersonCameraDemo {
       const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
       const easedDistance = Math.pow(normalized, 5);
 
-      let targetHighpass;
+      let targetHighpass = 100;
 
       //TODO: if i see someone from T spawn -> mid on dust 2 i cant hear them (due to occlusion)
-      if (distance > fullAudibleDistance) {
-        if (occlusion >= 0.9) {
-          targetHighpass = maxHighpass; // far & occluded → mute
-        } else if (occlusion < occlusionThreshold) {
-          targetHighpass = 4000; // far but visible → partially audible
-        } else {
-          const t = (occlusion - occlusionThreshold) / (0.9 - occlusionThreshold);
-          targetHighpass = THREE.MathUtils.lerp(4000, maxHighpass, t);
-        }
-      } else {
-        // Close → smoothly fade from clear to partially muffled
-        targetHighpass = THREE.MathUtils.lerp(minHighpass, 4000, easedDistance);
-      }
+      // if (distance > fullAudibleDistance) {
+      //   if (occlusion >= 0.9) {
+      //     targetHighpass = maxHighpass; // far & occluded → mute
+      //   } else if (occlusion < occlusionThreshold) {
+      //     targetHighpass = 4000; // far but visible → partially audible
+      //   } else {
+      //     const t = (occlusion - occlusionThreshold) / (0.9 - occlusionThreshold);
+      //     targetHighpass = THREE.MathUtils.lerp(4000, maxHighpass, t);
+      //   }
+      // } else {
+      //   // Close → smoothly fade from clear to partially muffled
+      //   // targetHighpass = THREE.MathUtils.lerp(minHighpass, 4000, easedDistance);
+      // }
 
+      // TODO: refactor the highpass occlusion
+      // - i believe this is what caused the audio glitches
+      // - it was being set 0 -> 24000 -> 0 -> 24000.. on a loop.
+
+      // console.log(`setting highpass to ${targetHighpass}`);
       soundData.setHighPassFilterFrequency(targetHighpass);
       // console.log(`setting highpass to ${targetHighpass} (${distance} units away)`)
     }
@@ -990,57 +995,34 @@ class FirstPersonCameraDemo {
     // TODO: if DEBUG is enabled
     const axesHelper = new THREE.AxesHelper(50);
     this.scene_.add(axesHelper);
-
-    // const upColour = 0xffff80;
-    // const downColour = 0x808080;
-    // let light3 = new THREE.HemisphereLight(upColour, downColour, 0.5);
-    // light3.color.setHSL(0.6, 1, 0.6);
-    // light3.groundColor.setHSL(0.095, 1, 0.75);
-    // light3.position.set(0, 4, 0);
-    // this.scene_.add(light3);
-
-    // const loader = new THREE.CubeTextureLoader();
-    // const texture = loader.load([
-    //   "./resources/skybox/posx.jpg",
-    //   "./resources/skybox/negx.jpg",
-    //   "./resources/skybox/posy.jpg",
-    //   "./resources/skybox/negy.jpg",
-    //   "./resources/skybox/posz.jpg",
-    //   "./resources/skybox/negz.jpg",
-    // ]);
-
-    // // texture.encoding = THREE.sRGBEncoding;
-    // this.scene_.background = texture;
   }
 
   initializeRenderer_() {
-    this.threejs_.shadowMap.enabled = true;
-    this.threejs_.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.threejs_.setPixelRatio(window.devicePixelRatio);
-    this.threejs_.setSize(window.innerWidth, window.innerHeight);
+    // this.threejs_.shadowMap.enabled = true;
+    // this.threejs_.shadowMap.type = THREE.PCFSoftShadowMap;
+    // this.threejs_.setPixelRatio(window.devicePixelRatio);
+    // this.threejs_.setSize(window.innerWidth, window.innerHeight);
     // this.threejs_.physicallyCorrectLights = true;
     this.threejs_.autoClear = false;
 
-    document.body.appendChild(this.threejs_.domElement);
+    // document.body.appendChild(this.threejs_.domElement);
 
-    window.addEventListener(
-      'resize',
-      () => {
-        this.onWindowResize_();
-      },
-      false
-    );
+    // window.addEventListener(
+    //   'resize',
+    //   () => {
+    //     this.onWindowResize_();
+    //   },
+    //   false
+    // );
   }
 
   onWindowResize_() {
-    this.camera_.aspect = window.innerWidth / window.innerHeight;
-    this.camera_.updateProjectionMatrix();
-
-    this.uiCamera_.left = -this.camera_.aspect;
-    this.uiCamera_.right = this.camera_.aspect;
-    this.uiCamera_.updateProjectionMatrix();
-
-    this.threejs_.setSize(window.innerWidth, window.innerHeight);
+    // this.camera_.aspect = window.innerWidth / window.innerHeight;
+    // this.camera_.updateProjectionMatrix();
+    // this.uiCamera_.left = -this.camera_.aspect;
+    // this.uiCamera_.right = this.camera_.aspect;
+    // this.uiCamera_.updateProjectionMatrix();
+    // this.threejs_.setSize(window.innerWidth, window.innerHeight);
   }
 
   raf_() {
@@ -1051,7 +1033,7 @@ class FirstPersonCameraDemo {
 
       this.step_(t - this.previousRAF_);
       // this.composer_.render();
-      this.threejs_.render(this.scene_, this.camera_);
+      this.threejs_.render(this.scene_, this.fpsCamera_.camera_);
 
       this.previousRAF_ = t;
       this.raf_();
@@ -1062,18 +1044,6 @@ class FirstPersonCameraDemo {
     this.fpsCamera_.position_.copy(origin);
     this.fpsCamera_.lookAt_.copy(lookAt);
   }
-
-  // updateCameraPositionData_() {
-  //   const steamId = "76561197972732773"; // TODO: put this in our constructor?
-  //   const players = this.socket_?.players_;
-  //   if (players == null) return;
-  //   for (const player of players) {
-  //     if (player.SteamId === steamId) {
-  //       this.fpsCamera_.position_.copy(new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ));
-  //       this.fpsCamera_.lookAt_.copy(new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ));
-  //     }
-  //   }
-  // }
 
   step_(timeElapsed: number) {
     if (this.map_ === null) {
