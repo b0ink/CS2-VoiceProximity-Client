@@ -108,7 +108,7 @@ class SoundSourceData {
       // this.sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
 
       // fade the volume back up (attempt to prevent glitches)
-      const targetVolume = 0.85;
+      const targetVolume = 1;
       const fadeDuration = 1000;
       const step = (targetVolume - (this.sound_?.getVolume() || 0)) / (fadeDuration / 16);
 
@@ -970,7 +970,7 @@ class FirstPersonCameraDemo {
 
     const sound1 = new THREE.PositionalAudio(this.listener_);
     sound1.setMediaStreamSource(remoteStream);
-    sound1.setVolume(0.85);
+    sound1.setVolume(1);
     sound1.setRefDistance(39);
     sound1.setRolloffFactor(1);
     sound1.setMaxDistance(1000);
