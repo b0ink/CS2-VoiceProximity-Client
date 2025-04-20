@@ -431,14 +431,15 @@ class FirstPersonCameraDemo {
   initUserMedia() {
     const noiseSuppression = true; // TODO: replace as a user setting
     const echoCancellation = true; // TODO: replace as a user setting
-    const sampleRate = 24000;
-    const sampleSize = 16;
+    const sampleRate = import.meta.env.VITE_MEDIA_SAMPLERATE || 48000;
+    const sampleSize = import.meta.env.VITE_MEDIA_SAMPLESIZE || 16;
+    console.log(`sampleRate: ${sampleRate} | sampleSize: ${sampleSize}`);
 
     const enableSampleDebug = true;
 
     const audio: MediaTrackConstraintSet = {
       // deviceId: (undefined as unknown) as string,
-      autoGainControl: false,
+      autoGainControl: true,
       channelCount: 2,
       echoCancellation: echoCancellation,
       // latency: 0,
