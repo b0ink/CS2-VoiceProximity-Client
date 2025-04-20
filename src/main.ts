@@ -690,7 +690,7 @@ class FirstPersonCameraDemo {
   }
 
   initializeMap_() {
-    const mapFilePath = `/maps/de_mirage.glb`;
+    const mapFilePath = `/maps/de_dust2.glb`;
 
     const loader = new GLTFLoader();
     loader.load(
