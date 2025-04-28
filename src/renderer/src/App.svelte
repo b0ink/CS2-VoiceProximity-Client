@@ -7,6 +7,24 @@
   import { io, Socket } from 'socket.io-client';
   import Peer from 'simple-peer';
   import type { CsTeam } from './type';
+
+  import { onDestroy, onMount } from 'svelte';
+
+  let clientSteamId: string | null;
+  async function getStoredSteamId() {
+    clientSteamId = await window.api.getStoreValue('steamId');
+  }
+
+  onMount(() => {
+    getStoredSteamId();
+
+    const interval = setInterval(getStoredSteamId, 5000);
+
+    // Cleanup the interval when the component is destroyed
+    onDestroy(() => {
+      clearInterval(interval);
+    });
+  });
   // import TWEEN from '@tweenjs/tween.js';
 
   // Transform Source2 coordinate to Three.js (Z is up/down)
@@ -416,7 +434,8 @@
     // }
 
     getSteamId() {
-      return window.localStorage.getItem(`steamid`) || null;
+      return clientSteamId;
+      // return window.localStorage.getItem(`steamid`) || null;
     }
 
     initUserMedia() {
@@ -593,13 +612,13 @@
         // TODO: but ideally, we use openId to authenticate the real steam id
         // TODO: maybe this could be a lobby option set by the host? "Validate steamIds", so that trusted friends don't need to all login
         // TODO: the message would say "This steamId needs to be present on the server prior to joining the room"
-
         // TODO: add UI for prompt
         // const steam = prompt('Enter Steam ID:');
-        const steam = '0';
-        if (steam) {
-          window.localStorage.setItem(`steamid`, steam);
-        }
+        // const steam = '0';
+        // const steam = clientSteamId;
+        // if (steam) {
+        //   window.localStorage.setItem(`steamid`, steam);
+        // }
       }
 
       setTimeout(() => {
@@ -1065,4 +1084,6 @@
 </script>
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
+<h3 style="color: white">Your steam id is {clientSteamId || 'N/A'}</h3>
+
 <div id="threejs"></div>

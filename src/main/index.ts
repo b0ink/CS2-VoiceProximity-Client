@@ -5,6 +5,8 @@ import icon from '../../resources/icon.png?asset';
 import { SteamAuth } from './SteamAuth';
 import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
+// import { initialiseIpcHandlers } from './ipc-handler';
+import './ipc-handlers';
 
 interface StoreData {
   steamId: string;

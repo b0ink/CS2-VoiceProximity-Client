@@ -1,8 +1,11 @@
-import { contextBridge } from 'electron';
+import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
-const api = {};
+const api = {
+  getStoreValue: (key: string) => ipcRenderer.invoke('get-store-value', key),
+  setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
+};
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise
