@@ -598,6 +598,8 @@
         this.socket_?.socket_.emit('leave');
         // this.socket_?.socket_.emit('id', playerId, clientId);
         console.log(lobbyCode, playerId, clientId, isHost);
+
+        // TODO: we should absolutely send our signed JWT in this join-room attempt to validate and pair the socket id with steam id
         this.socket_?.socket_.emit('join-room', lobbyCode, playerId, clientId, isHost);
         this.currentLobby = lobbyCode;
       }
@@ -1087,3 +1089,13 @@
 <h3 style="color: white">Your steam id is {clientSteamId || 'N/A'}</h3>
 
 <div id="threejs"></div>
+
+<label for="room-code">Room Code:</label>
+<input type="text" id="room-code" name="room-code" />
+<button
+  type="submit"
+  on:click={() => {
+    console.log('click');
+    document.querySelector('#threejs').innerHTML = '';
+  }}>Join</button
+>
