@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Versions from './components/Versions.svelte';
-  import electronLogo from './assets/electron.svg';
+  // import Versions from './components/Versions.svelte';
+  // import electronLogo from './assets/electron.svg';
 
   import * as THREE from 'three';
   import { GLTFLoader } from 'three-stdlib';
