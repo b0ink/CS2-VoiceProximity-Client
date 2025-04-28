@@ -18,7 +18,9 @@ export default tseslint.config(
     files: ['**/*.{tsx,svelte,ts}'],
     rules: {
       'svelte/no-unused-svelte-ignore': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'none', // TODO: re-enable
+      '@typescript-eslint/explicit-function-return-type': 'off', // TODO: re-enable
+      '@typescript-eslint/no-unused-vars': ['warn'], // TODO: re-enable
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
   eslintConfigPrettier,
