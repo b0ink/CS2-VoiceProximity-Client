@@ -6,18 +6,8 @@
   import { GLTFLoader } from 'three-stdlib';
   import { io, Socket } from 'socket.io-client';
   import Peer from 'simple-peer';
+  import type { CsTeam } from './type';
   // import TWEEN from '@tweenjs/tween.js';
-
-  function clamp(x: number, a: number, b: number) {
-    return Math.min(Math.max(x, a), b);
-  }
-
-  const KEYS = {
-    a: 65,
-    s: 83,
-    w: 87,
-    d: 68,
-  };
 
   // Transform Source2 coordinate to Three.js (Z is up/down)
   // Keeping in mind that we've also rotated our map on the X axis - but only Y & Z need transforming
@@ -36,7 +26,7 @@
       this.camera_ = camera;
     }
 
-    update(timeElapsedS: number) {
+    update() {
       this.updatePosition_();
       this.updateAngles_();
     }
@@ -213,22 +203,22 @@
     toggleDeafen: () => void;
   }
 
-  interface AudioNodes {
-    dummyAudioElement: HTMLAudioElement;
-    audioElement: HTMLAudioElement;
-    // gain: GainNode;
-    // pan: PannerNode;
-    // reverb: ConvolverNode;
-    // muffle: BiquadFilterNode;
-    destination: AudioNode;
-    // reverbConnected: boolean;
-    // muffleConnected: boolean;
-  }
+  // interface AudioNodes {
+  //   dummyAudioElement: HTMLAudioElement;
+  //   audioElement: HTMLAudioElement;
+  //   // gain: GainNode;
+  //   // pan: PannerNode;
+  //   // reverb: ConvolverNode;
+  //   // muffle: BiquadFilterNode;
+  //   destination: AudioNode;
+  //   // reverbConnected: boolean;
+  //   // muffleConnected: boolean;
+  // }
 
-  interface AudioElements {
-    // TODO: what is "peer" - socket id? steam id?
-    [peer: string]: AudioNodes; // TODO: replace AudioNodes with THREEjs alternative?
-  }
+  // interface AudioElements {
+  //   // TODO: what is "peer" - socket id? steam id?
+  //   [peer: string]: AudioNodes; // TODO: replace AudioNodes with THREEjs alternative?
+  // }
 
   interface Client {
     steamId: string;
@@ -245,13 +235,6 @@
 
   interface PeerConnections {
     [peer: string]: Peer.Instance;
-  }
-
-  enum CsTeam {
-    None = 0,
-    Spectator = 1,
-    Terrorist = 2,
-    CounterTerrorist = 3,
   }
 
   interface PlayerPositionApiData {
@@ -318,26 +301,26 @@
 
     private map_?: THREE.Group<THREE.Object3DEventMap>;
     private scene_: THREE.Scene;
-    private uiScene_: THREE.Scene;
+    // private uiScene_: THREE.Scene;
     private sounds_: SoundSourceData[];
 
     private camera_: THREE.PerspectiveCamera;
-    private uiCamera_: THREE.OrthographicCamera;
+    // private uiCamera_: THREE.OrthographicCamera;
 
     private threejs_: THREE.WebGLRenderer;
 
     private listener_: THREE.AudioListener;
 
     // TODO: this will be later used to create new player objects/meshes that we will attach
-    private soundSourceObjects: any[] = [];
+    // private soundSourceObjects: any[] = [];
 
-    private steamId?: string;
+    // private steamId?: string;
     private roomCode?: string;
 
     private audioConnectionStuff: AudioConnectionStuff;
 
     // is this "player incoming audio streams?"
-    private audioElements: AudioElements = {};
+    // private audioElements: AudioElements = {};
     private currentLobby = '';
     // i hate all of this
     private socketClientMap: SocketClientMap = {};
@@ -373,8 +356,8 @@
       this.camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
       this.camera_.position.set(-30, 2, 0);
 
-      this.uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
-      this.uiScene_ = new THREE.Scene();
+      // this.uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
+      // this.uiScene_ = new THREE.Scene();
 
       this.fpsCamera_ = new FirstPersonCamera(this.camera_);
       this.socket_ = new SocketData(import.meta.env.VITE_SOCKET_URL);
@@ -462,9 +445,9 @@
         async (inStream) => {
           console.log('getting user media');
           let stream = inStream;
-          const ac = new AudioContext();
+          // const ac = new AudioContext();
           //TODO: microphone gain
-          const source = ac.createMediaStreamSource(inStream);
+          // const source = ac.createMediaStreamSource(inStream);
 
           // TODO: what WILL be the difference between stream & inStream
           this.audioConnectionStuff.stream = stream;
@@ -483,7 +466,7 @@
             // setDeafened(this.audioConnectionStuff.current.deafened);
           };
 
-          this.audioElements = {};
+          // this.audioElements = {};
           // TODO: call this.connect() when our lobby room code has been provided
           // this.connect(this.currentLobby, )
           this.connect(this.roomCode!, this.getSteamId()!, this.getSteamId()!, false);
@@ -560,7 +543,7 @@
               //   console.warn('SIGNAL FROM UNKOWN SOCKET..');
               //   return;
               // }
-              if (data.hasOwnProperty('type')) {
+              if (Object.prototype.hasOwnProperty.call(data, 'type')) {
                 if (this.peerConnections[from] && data.type !== 'offer') {
                   connection = this.peerConnections[from];
                 } else {
@@ -734,10 +717,7 @@
       for (const soundData of this.sounds_) {
         // console.log('found sound data!');
         // TODO: move calculateOcclusion code inside of SoundSourceData
-        const { occlusion, totalExtraHits } = this.calculateOcclusion(
-          soundData.camera_?.position,
-          soundData.soundObjSource_?.position,
-        );
+        const { occlusion } = this.calculateOcclusion(soundData.camera_?.position, soundData.soundObjSource_?.position);
         const minimumAmt = 100;
         // const amount = 11000 - occlusion * 11000 + 250;
         const eased = Math.pow(occlusion, 0.25); // sqrt curve
@@ -758,11 +738,11 @@
         //   soundData.setHighPassFilterFrequency(0);
         // }
 
-        const maxDistance = 2500;
-        const fullAudibleDistance = 1500;
-        const maxHighpass = 24000;
-        const minHighpass = 0;
-        const occlusionThreshold = 0.4;
+        // const maxDistance = 2500;
+        // const fullAudibleDistance = 1500;
+        // const maxHighpass = 24000;
+        // const minHighpass = 0;
+        // const occlusionThreshold = 0.4;
 
         const distance = this.calculateDistance(soundData.camera_?.position, soundData.soundObjSource_?.position);
 
@@ -770,8 +750,8 @@
           continue;
         }
 
-        const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
-        const easedDistance = Math.pow(normalized, 5);
+        // const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
+        // const easedDistance = Math.pow(normalized, 5);
 
         let targetHighpass = 100;
 
@@ -804,6 +784,7 @@
       if (a && b) {
         return a.distanceTo(b);
       }
+      return null;
     }
 
     calculateOcclusion(Listener_?: THREE.Vector3, Sound_?: THREE.Vector3) {
@@ -896,7 +877,7 @@
       const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);
       // console.log(`Ray hit ${filteredHits.length} objects`);
 
-      filteredHits.forEach((hit, i) => {
+      filteredHits.forEach((hit) => {
         // console.log(`Hit ${i}: Distance = ${hit.distance.toFixed(2)}, Object = ${hit.object.name}`);
 
         // Calculate the size of the mesh
@@ -1038,7 +1019,7 @@
           this.previousRAF_ = t;
         }
 
-        this.step_(t - this.previousRAF_);
+        this.step_();
         // this.composer_.render();
         this.threejs_.render(this.scene_, this.fpsCamera_.camera_);
 
@@ -1052,15 +1033,15 @@
       this.fpsCamera_.lookAt_.copy(lookAt);
     }
 
-    step_(timeElapsed: number) {
+    step_() {
       if (this.map_ === null) {
         return;
       }
-      const timeElapsedS = timeElapsed * 0.001;
+      // const timeElapsedS = timeElapsed * 0.001;
 
       // camera position is now updated every time player positions are retrieved
       // this.updateCameraPositionData_();
-      this.fpsCamera_.update(timeElapsedS);
+      this.fpsCamera_.update();
       this.updateSoundFilters();
     }
   }
