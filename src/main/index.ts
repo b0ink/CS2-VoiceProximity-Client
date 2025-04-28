@@ -24,6 +24,7 @@ function createWindow(): void {
     show: false,
     resizable: false,
     autoHideMenuBar: true,
+    alwaysOnTop: true,
     // frame: false,
     fullscreenable: false,
     x: mainWindowState.x,
