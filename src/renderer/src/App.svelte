@@ -706,7 +706,7 @@
     }
 
     initializeMap_() {
-      const mapFilePath = `/maps/de_dust2.glb`;
+      const mapFilePath = `/maps/de_inferno.glb`;
       const loader = new GLTFLoader();
       loader.load(
         `${mapFilePath}`,
