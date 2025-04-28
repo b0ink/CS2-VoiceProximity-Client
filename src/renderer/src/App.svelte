@@ -374,7 +374,9 @@
 
     joinRoom_() {
       do {
-        const code = prompt('Enter room code:');
+        // TODO: implement UI
+        // const code = window.prompt('Enter room code:');
+        const code = '123';
         if (code) {
           this.roomCode = code;
 
@@ -591,7 +593,10 @@
         // TODO: but ideally, we use openId to authenticate the real steam id
         // TODO: maybe this could be a lobby option set by the host? "Validate steamIds", so that trusted friends don't need to all login
         // TODO: the message would say "This steamId needs to be present on the server prior to joining the room"
-        const steam = prompt('Enter Steam ID:');
+
+        // TODO: add UI for prompt
+        // const steam = prompt('Enter Steam ID:');
+        const steam = '0';
         if (steam) {
           window.localStorage.setItem(`steamid`, steam);
         }
@@ -681,7 +686,6 @@
 
     initializeMap_() {
       const mapFilePath = `/maps/de_dust2.glb`;
-
       const loader = new GLTFLoader();
       loader.load(
         `${mapFilePath}`,
@@ -993,7 +997,8 @@
       // this.threejs_.physicallyCorrectLights = true;
       this.threejs_.autoClear = false;
 
-      // document.body.appendChild(this.threejs_.domElement);
+      const threeJsDom = document.querySelector('#threejs');
+      threeJsDom.appendChild(this.threejs_.domElement);
 
       // window.addEventListener(
       //   'resize',
@@ -1056,25 +1061,8 @@
     document.body.addEventListener('click', _Setup);
   });
 
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
+  // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
 
-<img alt="logo" class="logo" src={electronLogo} />
-<div class="creator">Powered by electron-vite</div>
-<div class="text">
-  Build an Electron app with
-  <span class="svelte">Svelte</span>
-  and
-  <span class="ts">TypeScript</span>
-</div>
-<p class="tip">Please try pressing <code>F12</code> to open the devTool</p>
-<div class="actions">
-  <div class="action">
-    <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">Documentation</a>
-  </div>
-  <div class="action">
-    <!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions a11y-missing-attribute-->
-    <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a>
-  </div>
-</div>
-<Versions />
+<!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
+<div id="threejs"></div>
