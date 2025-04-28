@@ -128,7 +128,7 @@ class SoundSourceData {
     sound: THREE.PositionalAudio,
     soundObjSource: THREE.Object3D, // TODO: THREE.Mesh?
     listener: THREE.AudioListener,
-    camera: THREE.Camera
+    camera: THREE.Camera,
   ) {
     this.sound_ = sound;
     this.listener_ = listener;
@@ -561,13 +561,13 @@ class FirstPersonCameraDemo {
               }
               connection.signal(data);
             }
-          }
+          },
         );
       },
       (error) => {
         console.error(`Could not connect to user media (microphone)`);
         console.error(error);
-      }
+      },
     );
   }
 
@@ -663,7 +663,7 @@ class FirstPersonCameraDemo {
               positionalSound.soundObjSource_?.position.set(
                 transformedOrigin.x,
                 transformedOrigin.y,
-                transformedOrigin.z
+                transformedOrigin.z,
               );
               positionalSound.soundObjSource_?.lookAt(transformedLookAt);
               // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`);
@@ -718,7 +718,7 @@ class FirstPersonCameraDemo {
       undefined,
       (err) => {
         console.error('Failed to load GLB:', err);
-      }
+      },
     );
   }
 
@@ -729,7 +729,7 @@ class FirstPersonCameraDemo {
       // TODO: move calculateOcclusion code inside of SoundSourceData
       const { occlusion, totalExtraHits } = this.calculateOcclusion(
         soundData.camera_?.position,
-        soundData.soundObjSource_?.position
+        soundData.soundObjSource_?.position,
       );
       const minimumAmt = 100;
       // const amount = 11000 - occlusion * 11000 + 250;
