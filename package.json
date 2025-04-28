@@ -27,6 +27,7 @@
     "@types/three": "^0.175.0",
     "electron-store": "^8.2.0",
     "electron-updater": "^6.3.9",
+    "electron-window-state": "^5.0.3",
     "openid": "^2.0.13",
     "readable-stream": "^4.7.0",
     "simple-peer": "^9.11.1",

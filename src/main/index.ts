@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { SteamAuth } from './SteamAuth';
 import Store from 'electron-store';
+import windowStateKeeper from 'electron-window-state';
 
 interface StoreData {
   steamId: string;
@@ -12,18 +13,27 @@ interface StoreData {
 const store = new Store<StoreData>();
 
 function createWindow(): void {
+  const mainWindowState = windowStateKeeper({});
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 350,
+    height: 500,
     show: false,
+    resizable: false,
     autoHideMenuBar: true,
+    // frame: false,
+    fullscreenable: false,
+    x: mainWindowState.x,
+    y: mainWindowState.y,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
     },
   });
+
+  mainWindowState.manage(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show();
@@ -75,7 +85,10 @@ app.whenReady().then(() => {
     console.log('No steam id has been found, requesting sign in...');
     // TODO: in the future we will be storing a JWT token instead of the steamId
     // If the JWT token fails to validate (expiration + signature, etc.) we will request sign in again
-    getSteamId();
+    setTimeout(() => {
+      // TODO: user must click "login with steam" instead of this automatic pop up
+      getSteamId();
+    }, 1000);
   }
 });
 
