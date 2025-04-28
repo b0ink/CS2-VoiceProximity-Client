@@ -3,6 +3,13 @@ import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
 import { SteamAuth } from './SteamAuth';
+import Store from 'electron-store';
+
+interface StoreData {
+  steamId: string;
+}
+
+const store = new Store<StoreData>();
 
 function createWindow(): void {
   // Create the browser window.
@@ -61,7 +68,15 @@ app.whenReady().then(() => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  getSteamId();
+  const steamId = store.get('steamId');
+  console.log(`Initialising app with steamid ${steamId}`);
+
+  if (!steamId) {
+    console.log('No steam id has been found, requesting sign in...');
+    // TODO: in the future we will be storing a JWT token instead of the steamId
+    // If the JWT token fails to validate (expiration + signature, etc.) we will request sign in again
+    getSteamId();
+  }
 });
 
 async function getSteamId() {
@@ -80,6 +95,9 @@ async function getSteamId() {
     .then((token) => {
       // use your token.steam_id
       console.log(`WE GOT YOUR STEAM ID: ${token}`);
+      if (token) {
+        store.set('steamId', token);
+      }
     })
     .catch((error) => {
       //TODO: throw error saying could not authenticate through Steam.

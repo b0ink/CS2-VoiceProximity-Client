@@ -25,6 +25,7 @@
     "@electron-toolkit/utils": "^4.0.0",
     "@tweenjs/tween.js": "^25.0.0",
     "@types/three": "^0.175.0",
+    "electron-store": "^8.2.0",
     "electron-updater": "^6.3.9",
     "openid": "^2.0.13",
     "readable-stream": "^4.7.0",
