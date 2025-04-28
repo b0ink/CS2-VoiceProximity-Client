@@ -23,9 +23,10 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^4.0.0",
-    "electron-updater": "^6.3.9",
     "@tweenjs/tween.js": "^25.0.0",
     "@types/three": "^0.175.0",
+    "electron-updater": "^6.3.9",
+    "openid": "^2.0.13",
     "readable-stream": "^4.7.0",
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
@@ -38,6 +39,7 @@
     "@electron-toolkit/tsconfig": "^1.0.1",
     "@sveltejs/vite-plugin-svelte": "^5.0.3",
     "@types/node": "^22.14.1",
+    "@types/simple-peer": "^9.11.8",
     "electron": "^35.1.5",
     "electron-builder": "^25.1.8",
     "electron-vite": "^3.1.0",
@@ -48,7 +50,6 @@
     "svelte": "^5.26.1",
     "svelte-check": "^4.1.5",
     "typescript": "^5.8.3",
-    "vite": "^6.2.6",
-    "@types/simple-peer": "^9.11.8"
+    "vite": "^6.2.6"
   }
 }

@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron';
+import { app, shell, BrowserWindow, ipcMain, BrowserWindowConstructorOptions } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
+import { SteamAuth } from './SteamAuth';
 
 function createWindow(): void {
   // Create the browser window.
@@ -59,7 +60,32 @@ app.whenReady().then(() => {
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  getSteamId();
 });
+
+async function getSteamId() {
+  const windowParams: BrowserWindowConstructorOptions = {
+    alwaysOnTop: false,
+    autoHideMenuBar: false,
+    skipTaskbar: false,
+    webPreferences: {
+      nodeIntegration: false,
+    },
+  };
+
+  const auth = new SteamAuth(windowParams);
+  auth
+    .authenticate()
+    .then((token) => {
+      // use your token.steam_id
+      console.log(`WE GOT YOUR STEAM ID: ${token}`);
+    })
+    .catch((error) => {
+      //TODO: throw error saying could not authenticate through Steam.
+      console.error(`SteamAuth error :( -> ${error}`);
+    });
+}
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
