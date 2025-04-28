@@ -40,6 +40,7 @@ import nodeUrl from 'url';
 // If we're going to have the API to validate the steam ids, we might as well do it via a website
 // the user can manually paste in the JWT or something like that
 
+const return_url = 'http://localhost:5173';
 export class SteamAuth {
   private windowParams: BrowserWindowConstructorOptions;
   constructor(windowParams: BrowserWindowConstructorOptions) {
@@ -49,8 +50,8 @@ export class SteamAuth {
   authenticate() {
     // TODO: dynamically use window.location.origin for the return to url
     const rely = new openid.RelyingParty(
-      'http://localhost:5173',
-      'http://localhost:5173',
+      return_url,
+      return_url,
 
       // 'http://CS2-Voice-Proximity/verify-steam',
       // 'http://CS2-Voice-Proximity/',
@@ -78,10 +79,7 @@ export class SteamAuth {
           console.log('url:', url);
           authWindow.setTitle(url);
 
-          if (
-            url.indexOf('https://steamcommunity.com') == -1 &&
-            url.indexOf('http://cs2-voice-proximity/verify-steam?') == -1
-          ) {
+          if (url.indexOf('https://steamcommunity.com') == -1 && url.indexOf(return_url) == -1) {
             setImmediate(function () {
               // Redirect back to login if they try leaving steam entirely
               authWindow.loadURL(providerUrl);
@@ -112,10 +110,12 @@ export class SteamAuth {
           }
 
           if (query['openid.identity'] === undefined) {
-            reject(new Error('cannot authenticate through Steam'));
-            authWindow.removeAllListeners('closed');
+            // ! this will get called if its still initialising.. lets just ignore it
+
+            // reject(new Error('cannot authenticate through Steam'));
+            // authWindow.removeAllListeners('closed');
             setImmediate(function () {
-              authWindow.close();
+              //   authWindow.close();
             });
           } else {
             // resolve({
