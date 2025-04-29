@@ -17,6 +17,16 @@ jobs:
         with:
           node-version: 22
 
+      # TODO: socket url can and will be set via user preference, and will default to our official public api (no .env will be required)
+      - name: Create .env.production
+        run: |
+          cat <<EOF > .env.production
+          VITE_SOCKET_URL=${{ secrets.VITE_SOCKET_URL }}
+          VITE_MEDIA_SAMPLERATE=24000
+          VITE_MEDIA_SAMPLESIZE=4
+          VITE_USE_TURN_CONFIG=true
+          EOF
+
       - run: npm install
 
       - run: npm run build:win
