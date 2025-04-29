@@ -1161,7 +1161,6 @@
 </select>
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
-<h3 style="color: white">Your steam id is {clientSteamId || 'N/A'}</h3>
 
 <div id="threejs"></div>
 
