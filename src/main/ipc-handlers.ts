@@ -18,7 +18,7 @@ ipcMain.handle('load-map', async (_event, map: string) => {
 
   const basePath = isDev
     ? path.resolve(__dirname, '../../static/maps')
-    : path.join(app.getPath('userData'), 'static/maps');
+    : path.join(process.resourcesPath, 'app.asar.unpacked', 'static', 'maps'); // Is direct access to app.asar.unpacked really the best way ????
 
   const filePath = path.join(basePath, `${map}.glb`);
 
