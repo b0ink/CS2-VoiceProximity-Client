@@ -66,6 +66,9 @@ export class SteamAuth {
 
     return new Promise((resolve, reject) => {
       rely.authenticate('http://steamcommunity.com/openid', false, (error, providerUrl) => {
+        if (error) {
+          reject(new Error(error));
+        }
         const authWindow = new BrowserWindow(this.windowParams || { 'use-content-size': true });
         authWindow.loadURL(providerUrl);
         authWindow.show();
