@@ -494,7 +494,7 @@
           console.log(`Device Name: ${audioTrack.label}`);
           console.log(`Device ID: ${audioTrack.getSettings().deviceId}`);
 
-          setupMicVisualization(stream);
+          // setupMicVisualization(stream);
           // const ac = new AudioContext();
           //TODO: microphone gain
           // const source = ac.createMediaStreamSource(inStream);
@@ -520,9 +520,6 @@
           // TODO: call this.connect() when our lobby room code has been provided
           // this.connect(this.currentLobby, )
           this.connect(this.roomCode!, this.getSteamId()!, this.getSteamId()!, false);
-
-          // TODO: callback on this.connect
-          this.initializeRenderer_();
 
           const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
             console.log('CreatePeerConnection: ', peer, initiator, stream);
@@ -641,21 +638,21 @@
     initialize_() {
       // TODO: wait for socket connection before moving on..
 
-      while (!this.getSteamId()) {
-        console.log('waiting for steam id');
-        // TODO: let's assume the server is already pulling player positions from cs2 server;
-        // TODO: we can validate player with this steamid is on the server prior to joining the room
-        // TODO: but ideally, we use openId to authenticate the real steam id
-        // TODO: maybe this could be a lobby option set by the host? "Validate steamIds", so that trusted friends don't need to all login
-        // TODO: the message would say "This steamId needs to be present on the server prior to joining the room"
-        // TODO: add UI for prompt
-        // const steam = prompt('Enter Steam ID:');
-        // const steam = '0';
-        // const steam = clientSteamId;
-        // if (steam) {
-        //   window.localStorage.setItem(`steamid`, steam);
-        // }
-      }
+      // while (!this.getSteamId()) {
+      //   console.log('waiting for steam id');
+      //   // TODO: let's assume the server is already pulling player positions from cs2 server;
+      //   // TODO: we can validate player with this steamid is on the server prior to joining the room
+      //   // TODO: but ideally, we use openId to authenticate the real steam id
+      //   // TODO: maybe this could be a lobby option set by the host? "Validate steamIds", so that trusted friends don't need to all login
+      //   // TODO: the message would say "This steamId needs to be present on the server prior to joining the room"
+      //   // TODO: add UI for prompt
+      //   // const steam = prompt('Enter Steam ID:');
+      //   // const steam = '0';
+      //   // const steam = clientSteamId;
+      //   // if (steam) {
+      //   //   window.localStorage.setItem(`steamid`, steam);
+      //   // }
+      // }
 
       // setTimeout(() => {
       //   this.joinRoom_();
@@ -1037,7 +1034,7 @@
     }
 
     initialiseRemotePlayer_(remoteStream: MediaStream, client: Client) {
-      const speaker1Material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+      const speaker1Material = new THREE.MeshStandardMaterial({ color: 0xffffff });
       const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
       speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
       // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
@@ -1055,6 +1052,7 @@
       sound1Data.steamId = client.steamId;
       this.sounds_.push(sound1Data);
 
+      setupMicVisualization(remoteStream);
       console.log('created remote player');
     }
 
@@ -1148,6 +1146,7 @@
     const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
     console.log(`Attempting to join room code ${roomCode}`);
     document.querySelector('#threejs').innerHTML = '';
+    _APP.initializeRenderer_();
     _APP.joinRoom_(roomCode);
     if (_APP.isConnected()) {
       _APP.initializeMap_(mapName);

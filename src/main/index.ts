@@ -104,7 +104,8 @@ async function getSteamId() {
     autoHideMenuBar: false,
     skipTaskbar: false,
     webPreferences: {
-      nodeIntegration: false,
+      nodeIntegration: true,
+      contextIsolation: false,
     },
   };
 
