@@ -23,7 +23,7 @@ function createWindow(): void {
     height: 500,
     show: false,
     resizable: false,
-    autoHideMenuBar: true,
+    autoHideMenuBar: false,
     alwaysOnTop: true,
     // frame: false,
     fullscreenable: false,
@@ -35,6 +35,7 @@ function createWindow(): void {
       sandbox: false,
       nodeIntegration: true,
       contextIsolation: false,
+      devTools: true,
     },
   });
 
