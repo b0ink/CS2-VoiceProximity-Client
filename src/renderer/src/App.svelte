@@ -1063,6 +1063,7 @@
       // this.speakerMesh1_ = speaker1;
       const sound1 = new THREE.PositionalAudio(this.listener_);
 
+      // Needed to make threejs positional audio work with remoteStream
       let audioRef = new Audio();
       audioRef.srcObject = remoteStream;
       // audioRef.muted = true;
