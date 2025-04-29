@@ -8,6 +8,9 @@
   import Peer from 'simple-peer';
   import type { CsTeam } from './type';
 
+  import { getNotificationsContext } from 'svelte-notifications';
+
+  const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
 
   let _APP: FirstPersonCameraDemo | null = null;
@@ -411,6 +414,12 @@
         this.roomCode = null;
         // TODO: toast notification
         console.log('invalid room code');
+        addNotification({
+          text: 'Invalid room code',
+          position: 'top-center',
+          removeAfter: 2500,
+          type: 'error',
+        });
         // alert('Invalid room code');
       }
     }

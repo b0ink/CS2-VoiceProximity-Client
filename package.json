@@ -32,6 +32,7 @@
     "readable-stream": "^4.7.0",
     "simple-peer": "^9.11.1",
     "socket.io-client": "^4.8.1",
+    "svelte-notifications": "^0.9.98",
     "three": "^0.175.0",
     "three-stdlib": "^2.35.15"
   },
