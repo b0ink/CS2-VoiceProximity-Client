@@ -16,6 +16,31 @@
 
   let clientSteamId: string | null;
   let socketUrl: string;
+  let canvas;
+  let audioCtx, analyser, source;
+
+  export async function setupMicVisualization(stream) {
+    audioCtx = new AudioContext();
+    analyser = audioCtx.createAnalyser();
+    source = audioCtx.createMediaStreamSource(stream);
+
+    source.connect(analyser);
+
+    const ctx = canvas.getContext('2d');
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+    function draw() {
+      requestAnimationFrame(draw);
+      analyser.getByteFrequencyData(dataArray);
+      const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = 'lime';
+      ctx.fillRect(0, 0, volume, canvas.height);
+    }
+
+    draw();
+  }
 
   async function intialise() {
     clientSteamId = await window.api.getStoreValue('steamId');
@@ -473,6 +498,8 @@
         async (inStream) => {
           console.log('getting user media');
           let stream = inStream;
+
+          setupMicVisualization(stream);
           // const ac = new AudioContext();
           //TODO: microphone gain
           // const source = ac.createMediaStreamSource(inStream);
@@ -1167,6 +1194,10 @@
 <label for="room-code">Room Code:</label>
 <input type="text" id="room-code" name="room-code" disabled={!_APP || isConnected} />
 <button type="submit" on:click={joinRoom} disabled={!_APP || isConnected}>Join</button>
+
+<div style="border: 1px solid lime">
+  <canvas bind:this={canvas} width="300" height="25"></canvas>
+</div>
 
 <div style="position: absolute; bottom: 5px; font-size: 12px; text-align: center">
   <div style="opacity:50%">
