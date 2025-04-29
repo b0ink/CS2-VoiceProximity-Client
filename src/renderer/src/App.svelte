@@ -1065,9 +1065,9 @@
 
       let audioRef = new Audio();
       audioRef.srcObject = remoteStream;
-      audioRef.muted = true;
+      // audioRef.muted = true;
 
-      sound1.setMediaStreamSource(audioRef.srcObject);
+      sound1.setMediaStreamSource(remoteStream);
       audioRef = null;
 
       // sound1.setMediaStreamSource(remoteStream);
