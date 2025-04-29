@@ -10,9 +10,15 @@
 
   import { onDestroy, onMount } from 'svelte';
 
+  let _APP: FirstPersonCameraDemo | null = null;
+
   let clientSteamId: string | null;
   async function getStoredSteamId() {
     clientSteamId = await window.api.getStoreValue('steamId');
+
+    if (clientSteamId && !_APP) {
+      _APP = new FirstPersonCameraDemo();
+    }
   }
 
   onMount(() => {
@@ -335,6 +341,10 @@
     // private steamId?: string;
     private roomCode?: string;
 
+    public isConnected(): boolean {
+      return !!this.roomCode;
+    }
+
     private audioConnectionStuff: AudioConnectionStuff;
 
     // is this "player incoming audio streams?"
@@ -390,35 +400,19 @@
       this.onWindowResize_();
     }
 
-    joinRoom_() {
-      do {
-        // TODO: implement UI
-        // const code = window.prompt('Enter room code:');
-        const code = '123';
-        if (code) {
-          this.roomCode = code;
-
-          setTimeout(() => {
-            this.initUserMedia();
-          }, 1000);
-
-          // // console.log(this.socket_)
-          // // TODO: we can do a single emit with both code+steamid, but we probably want to store the steamid first in localstorage
-          // this.socket_?.socket_.emit("join-room", this.roomCode, this.getSteamId(), (response) => {
-          //   if (response.error) {
-          //     //TODO: the server will send a connect_failed event that we should catch separately on the client side
-          //     console.log(`error from socket ${response.error}`)
-          //     this.roomCode = undefined;
-          //     alert("This room doesn't exist!");
-          //     return;
-          //   }
-          //   console.log(`response: ${response}`)
-
-          // });
-        } else {
-          alert('Invalid room code');
-        }
-      } while (!this.roomCode);
+    joinRoom_(code: string) {
+      // TODO: implement UI
+      if (code) {
+        this.roomCode = code;
+        setTimeout(() => {
+          this.initUserMedia();
+        }, 1000);
+      } else {
+        this.roomCode = null;
+        // TODO: toast notification
+        console.log('invalid room code');
+        // alert('Invalid room code');
+      }
     }
 
     // submitSteamId() {
@@ -491,6 +485,9 @@
           // TODO: call this.connect() when our lobby room code has been provided
           // this.connect(this.currentLobby, )
           this.connect(this.roomCode!, this.getSteamId()!, this.getSteamId()!, false);
+
+          // TODO: callback on this.connect
+          this.initializeRenderer_();
 
           const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
             console.log('CreatePeerConnection: ', peer, initiator, stream);
@@ -609,6 +606,7 @@
       // TODO: wait for socket connection before moving on..
 
       while (!this.getSteamId()) {
+        console.log('waiting for steam id');
         // TODO: let's assume the server is already pulling player positions from cs2 server;
         // TODO: we can validate player with this steamid is on the server prior to joining the room
         // TODO: but ideally, we use openId to authenticate the real steam id
@@ -623,9 +621,9 @@
         // }
       }
 
-      setTimeout(() => {
-        this.joinRoom_();
-      }, 1000);
+      // setTimeout(() => {
+      //   this.joinRoom_();
+      // }, 1000);
 
       this.socket_?.socket_.on('player-positions', (players: PlayerPositionApiData[]) => {
         // TODO: if (not connected... || is not in a room...)
@@ -698,7 +696,7 @@
       // TODO: don't initialize map until we have joined a room
 
       // Now you can use roomCode and steamId
-      this.initializeRenderer_();
+      // this.initializeRenderer_();
       this.initializeScene_();
       // this.initializePostFX_();
       this.initializeMap_();
@@ -1072,15 +1070,30 @@
     }
   }
 
-  let _APP: FirstPersonCameraDemo | null = null;
+  // window.addEventListener('DOMContentLoaded', () => {
+  //   const _Setup = () => {
+  //     document.body.removeEventListener('click', _Setup);
+  //   };
+  //   document.body.addEventListener('click', _Setup);
+  // });
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const _Setup = () => {
-      _APP = new FirstPersonCameraDemo();
-      document.body.removeEventListener('click', _Setup);
-    };
-    document.body.addEventListener('click', _Setup);
-  });
+  const joinRoom = (): void => {
+    const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
+    console.log(`Attempting to join room code ${roomCode}`);
+    document.querySelector('#threejs').innerHTML = '';
+    _APP.joinRoom_(roomCode);
+  };
+
+  let isConnected = false;
+
+  // example: poll connection
+  const checkConnection = () => {
+    if (_APP) {
+      isConnected = _APP.isConnected();
+    }
+  };
+
+  setInterval(checkConnection, 1000); // every second, or use an event if available
 
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
@@ -1091,11 +1104,5 @@
 <div id="threejs"></div>
 
 <label for="room-code">Room Code:</label>
-<input type="text" id="room-code" name="room-code" />
-<button
-  type="submit"
-  on:click={() => {
-    console.log('click');
-    document.querySelector('#threejs').innerHTML = '';
-  }}>Join</button
->
+<input type="text" id="room-code" name="room-code" disabled={!_APP || isConnected} />
+<button type="submit" on:click={joinRoom} disabled={!_APP || isConnected}>Join</button>
