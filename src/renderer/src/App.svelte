@@ -9,9 +9,9 @@
   import type { CsTeam } from './type';
 
   import { getNotificationsContext } from 'svelte-notifications';
-  import infernoMap from '/maps/de_inferno.glb?asset&asarUnpack';
-  import dust2Map from '/maps/de_dust2.glb?asset&asarUnpack';
-  import mirageMap from '/maps/de_mirage.glb?asset&asarUnpack';
+  import infernoMap from '/maps/de_inferno.glb';
+  // import dust2Map from '/maps/de_dust2.glb';
+  // import mirageMap from '/maps/de_mirage.glb';
 
   const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
