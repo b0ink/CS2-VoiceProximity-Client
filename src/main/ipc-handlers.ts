@@ -5,8 +5,8 @@ import fs from 'fs/promises';
 
 const store = new Store();
 
-ipcMain.handle('get-store-value', async (_event, key: string) => {
-  return store.get(key);
+ipcMain.handle('get-store-value', async (_event, key: string, defaultValue?: string) => {
+  return store.get(key, defaultValue);
 });
 
 ipcMain.handle('set-store-value', async (_event, key: string, value: any) => {
@@ -23,4 +23,13 @@ ipcMain.handle('load-map', async (_event, map: string) => {
   const filePath = path.join(basePath, `${map}.glb`);
 
   return await fs.readFile(filePath);
+});
+
+// TODO: replace with get-store-value once there's a UI for settings
+ipcMain.handle('get-socket-url', async () => {
+  const isDev = !app.isPackaged;
+  if (isDev) {
+    return 'http://127.0.0.1:3000';
+  }
+  return 'https://cs2-proximitychat-server.onrender.com';
 });

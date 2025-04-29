@@ -1,6 +1,5 @@
 <script lang="ts">
-  // import Versions from './components/Versions.svelte';
-  // import electronLogo from './assets/electron.svg';
+  // import TWEEN from '@tweenjs/tween.js';
 
   import * as THREE from 'three';
   import { GLTFLoader } from 'three-stdlib';
@@ -16,30 +15,27 @@
   let _APP: FirstPersonCameraDemo | null = null;
 
   let clientSteamId: string | null;
-  async function getStoredSteamId() {
-    clientSteamId = await window.api.getStoreValue('steamId');
+  let socketUrl: string;
 
-    if (clientSteamId && !_APP) {
+  async function intialise() {
+    clientSteamId = await window.api.getStoreValue('steamId');
+    socketUrl = await window.api.getSocketUrl();
+
+    if (clientSteamId && socketUrl && !_APP) {
       _APP = new FirstPersonCameraDemo();
     }
   }
 
-  // let mapFilePath: string | undefined = '';
-  // async function getMapPath() {
-  // mapFilePath = await window.api.getMapFilePath('de_inferno');
-  // }
   onMount(() => {
-    // getMapPath();
-    getStoredSteamId();
+    intialise();
 
-    const interval = setInterval(getStoredSteamId, 5000);
+    const interval = setInterval(intialise, 5000);
 
     // Cleanup the interval when the component is destroyed
     onDestroy(() => {
       clearInterval(interval);
     });
   });
-  // import TWEEN from '@tweenjs/tween.js';
 
   // Transform Source2 coordinate to Three.js (Z is up/down)
   // Keeping in mind that we've also rotated our map on the X axis - but only Y & Z need transforming
@@ -396,7 +392,10 @@
       // this.uiScene_ = new THREE.Scene();
 
       this.fpsCamera_ = new FirstPersonCamera(this.camera_);
-      this.socket_ = new SocketData(import.meta.env.VITE_SOCKET_URL);
+
+      // TODO: move into its own settings store file
+
+      this.socket_ = new SocketData(socketUrl);
 
       this.sounds_ = [];
       this.initialize_();
@@ -1169,3 +1168,12 @@
 <label for="room-code">Room Code:</label>
 <input type="text" id="room-code" name="room-code" disabled={!_APP || isConnected} />
 <button type="submit" on:click={joinRoom} disabled={!_APP || isConnected}>Join</button>
+
+<div style="position: absolute; bottom: 5px; font-size: 12px; text-align: center">
+  <div style="opacity:50%">
+    Socket URL: <span style="opacity:50%;">{socketUrl || 'N/A'}</span>
+  </div>
+  <div style="opacity:50%">
+    Steam ID: <span style="opacity:50%;">{clientSteamId || 'N/A'}</span>
+  </div>
+</div>
