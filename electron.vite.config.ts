@@ -10,5 +10,6 @@ export default defineConfig({
   },
   renderer: {
     plugins: [svelte()],
+    assetsInclude: ['**/*.glb'], // Add .glb files to the assetsInclude
   },
 });

@@ -9,6 +9,9 @@
   import type { CsTeam } from './type';
 
   import { getNotificationsContext } from 'svelte-notifications';
+  import infernoMap from '/maps/de_inferno.glb?asset&asarUnpack';
+  import dust2Map from '/maps/de_dust2.glb?asset&asarUnpack';
+  import mirageMap from '/maps/de_mirage.glb?asset&asarUnpack';
 
   const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
@@ -713,10 +716,11 @@
     }
 
     initializeMap_() {
-      const mapFilePath = `/maps/de_inferno.glb`;
+      // const mapFilePath = `/maps/de_inferno.glb`;
       const loader = new GLTFLoader();
       loader.load(
-        `${mapFilePath}`,
+        infernoMap,
+        // mapFilePath,
         (gltf) => {
           this.map_ = gltf.scene;
           this.map_.scale.set(this.mapScale_, this.mapScale_, this.mapScale_);

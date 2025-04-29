@@ -8,6 +8,7 @@ export default {
       },
     },
     sourcemap: process.env.NODE_ENV !== 'production',
-    outDir: 'dist/',
+    outDir: 'disst/',
   },
+  assetsInclude: ['**/*.glb'],
 } satisfies UserConfig;
