@@ -296,7 +296,7 @@
 
   // eslint-disable-next-line no-undef
   const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-    iceTransportPolicy: 'relay',
+    iceTransportPolicy: 'all',
     iceServers: [
       {
         urls: 'stun:stun.l.google.com:19302',
@@ -494,6 +494,10 @@
           console.log(`Device Name: ${audioTrack.label}`);
           console.log(`Device ID: ${audioTrack.getSettings().deviceId}`);
 
+          // const devices = await navigator.mediaDevices.enumerateDevices();
+          // const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
+          // console.log(audioOutputs);
+
           // setupMicVisualization(stream);
           // const ac = new AudioContext();
           //TODO: microphone gain
@@ -529,9 +533,9 @@
               stream,
               initiator, // @ts-ignore-line
               iceRestartEnabled: true,
-              config: import.meta.env.VITE_USE_TURN_CONFIG === true ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+              // config: import.meta.env.VITE_USE_TURN_CONFIG === true ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
               // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
-              // config: DEFAULT_ICE_CONFIG,
+              config: DEFAULT_ICE_CONFIG,
             });
 
             // setPeerConnections((connections) => {
@@ -636,6 +640,23 @@
     };
 
     initialize_() {
+      // Log if we're receiving packets from remote stream
+      setInterval(() => {
+        Object.entries(this.peerConnections).forEach(([id, pc]) => {
+          const rtcPeer = (pc as any)._pc;
+          if (!rtcPeer) return;
+
+          rtcPeer.getStats().then((stats) => {
+            stats.forEach((report) => {
+              if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+                console.log(
+                  `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
+                );
+              }
+            });
+          });
+        });
+      }, 1000);
       // TODO: wait for socket connection before moving on..
 
       // while (!this.getSteamId()) {
@@ -1040,19 +1061,26 @@
       // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
       this.scene_.add(speaker1);
       // this.speakerMesh1_ = speaker1;
-
       const sound1 = new THREE.PositionalAudio(this.listener_);
-      sound1.setMediaStreamSource(remoteStream);
+
+      let audioRef = new Audio();
+      audioRef.srcObject = remoteStream;
+      audioRef.muted = true;
+
+      sound1.setMediaStreamSource(audioRef.srcObject);
+      audioRef = null;
+
+      // sound1.setMediaStreamSource(remoteStream);
       sound1.setVolume(1);
       sound1.setRefDistance(39);
       sound1.setRolloffFactor(1);
       sound1.setMaxDistance(1000);
+      sound1.play();
       speaker1.add(sound1);
       const sound1Data = new SoundSourceData(sound1, speaker1, this.listener_, this.camera_);
       sound1Data.steamId = client.steamId;
       this.sounds_.push(sound1Data);
 
-      setupMicVisualization(remoteStream);
       console.log('created remote player');
     }
 

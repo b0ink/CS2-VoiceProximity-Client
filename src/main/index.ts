@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, BrowserWindowConstructorOptions } from 'electron';
+import { app, shell, BrowserWindow, ipcMain, BrowserWindowConstructorOptions, session } from 'electron';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
@@ -8,17 +8,20 @@ import windowStateKeeper from 'electron-window-state';
 // import { initialiseIpcHandlers } from './ipc-handler';
 import './ipc-handlers';
 
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+
 interface StoreData {
   steamId: string;
 }
 
 const store = new Store<StoreData>();
+let mainWindow: BrowserWindow;
 
 function createWindow(): void {
   const mainWindowState = windowStateKeeper({});
 
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 350,
     height: 500,
     show: false,
@@ -82,6 +85,19 @@ app.whenReady().then(() => {
     // On macOS it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    session.fromPartition('default').setPermissionRequestHandler((_webContents, permission, callback) => {
+      const allowedPermissions = ['audioCapture']; // Full list here: https://developer.chrome.com/extensions/declare_permissions#manifest
+      console.log('permission requested ', permission);
+      if (allowedPermissions.includes(permission)) {
+        callback(true); // Approve permission request
+      } else {
+        console.error(
+          `The application tried to request permission for '${permission}'. This permission was not whitelisted and has been blocked.`,
+        );
+
+        callback(false); // Deny
+      }
+    });
   });
 
   const steamId = store.get('steamId');
