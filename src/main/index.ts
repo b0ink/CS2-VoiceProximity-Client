@@ -97,7 +97,7 @@ app.whenReady().then(() => {
 
 async function getSteamId() {
   const windowParams: BrowserWindowConstructorOptions = {
-    alwaysOnTop: false,
+    alwaysOnTop: true,
     autoHideMenuBar: false,
     skipTaskbar: false,
     webPreferences: {
