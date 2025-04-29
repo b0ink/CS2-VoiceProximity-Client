@@ -18,6 +18,8 @@
   let socketUrl: string;
   let canvas;
   let audioCtx, analyser, source;
+  let devices = [];
+  let selectedDeviceId = '';
 
   export async function setupMicVisualization(stream) {
     audioCtx = new AudioContext();
@@ -50,17 +52,6 @@
       _APP = new FirstPersonCameraDemo();
     }
   }
-
-  onMount(() => {
-    intialise();
-
-    const interval = setInterval(intialise, 5000);
-
-    // Cleanup the interval when the component is destroyed
-    onDestroy(() => {
-      clearInterval(interval);
-    });
-  });
 
   // Transform Source2 coordinate to Three.js (Z is up/down)
   // Keeping in mind that we've also rotated our map on the X axis - but only Y & Z need transforming
@@ -305,10 +296,13 @@
 
   // eslint-disable-next-line no-undef
   const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-    iceTransportPolicy: 'all',
+    iceTransportPolicy: 'relay',
     iceServers: [
       {
         urls: 'stun:stun.l.google.com:19302',
+      },
+      {
+        urls: 'stun:stun.relay.metered.ca:80',
       },
     ],
   };
@@ -318,9 +312,6 @@
   const DEFAULT_ICE_CONFIG_TURN: RTCConfiguration = {
     iceTransportPolicy: 'relay', // protect IPs
     iceServers: [
-      {
-        urls: 'stun:stun.relay.metered.ca:80',
-      },
       {
         urls: 'turn:oceania.relay.metered.ca:80',
         username: '96cfcb96272c895a9dbf7f90',
@@ -492,12 +483,16 @@
         // googTypingNoiseDetection: noiseSuppression,
         sampleRate: enableSampleDebug ? sampleRate : undefined,
         sampleSize: enableSampleDebug ? sampleSize : undefined,
+        deviceId: selectedDeviceId,
       };
 
       navigator.mediaDevices.getUserMedia({ video: false, audio }).then(
         async (inStream) => {
-          console.log('getting user media');
           let stream = inStream;
+          console.log(`Getting user media:`);
+          const audioTrack = stream.getAudioTracks()[0];
+          console.log(`Device Name: ${audioTrack.label}`);
+          console.log(`Device ID: ${audioTrack.getSettings().deviceId}`);
 
           setupMicVisualization(stream);
           // const ac = new AudioContext();
@@ -531,6 +526,7 @@
 
           const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
             console.log('CreatePeerConnection: ', peer, initiator, stream);
+            console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
             // disconnectClient(client); // TODO:
             const connection = new Peer({
               stream,
@@ -1178,8 +1174,33 @@
 
   setInterval(checkConnection, 1000); // every second, or use an event if available
 
+  async function getDevices() {
+    const allDevices = await navigator.mediaDevices.enumerateDevices();
+    devices = allDevices.filter((device) => device.kind === 'audioinput');
+    if (devices.length > 0) {
+      selectedDeviceId = devices[0].deviceId; // Default to the first device
+    }
+  }
+
+  onMount(() => {
+    intialise();
+    getDevices();
+    const interval = setInterval(intialise, 5000);
+
+    // Cleanup the interval when the component is destroyed
+    onDestroy(() => {
+      clearInterval(interval);
+    });
+  });
+
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
+
+<select bind:value={selectedDeviceId} style="width: 200px">
+  {#each devices as device (device.deviceId)}
+    <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
+  {/each}
+</select>
 
 <select bind:value={mapName} on:change={onMapChange}>
   <option value="de_dust2">Dust 2</option>
