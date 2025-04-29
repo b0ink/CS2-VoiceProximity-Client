@@ -9,9 +9,6 @@
   import type { CsTeam } from './type';
 
   import { getNotificationsContext } from 'svelte-notifications';
-  import infernoMap from '/maps/de_inferno.glb';
-  // import dust2Map from '/maps/de_dust2.glb';
-  // import mirageMap from '/maps/de_mirage.glb';
 
   const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
@@ -27,7 +24,12 @@
     }
   }
 
+  // let mapFilePath: string | undefined = '';
+  // async function getMapPath() {
+  // mapFilePath = await window.api.getMapFilePath('de_inferno');
+  // }
   onMount(() => {
+    // getMapPath();
     getStoredSteamId();
 
     const interval = setInterval(getStoredSteamId, 5000);
@@ -711,17 +713,43 @@
       // this.initializeRenderer_();
       this.initializeScene_();
       // this.initializePostFX_();
-      this.initializeMap_();
+      // this.initializeMap_();
       this.initializeAudio_();
     }
 
-    initializeMap_() {
-      // const mapFilePath = `/maps/de_inferno.glb`;
+    async initializeMap_(mapName: string = 'de_dust2') {
+      // Destroy any previously loaded maps, including its textures
+      if (this.map_ && this.scene_) {
+        this.map_.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            if (child.isMesh) {
+              // console.log('disposing old mesh');
+              child.geometry.dispose();
+              if (Array.isArray(child.material)) {
+                child.material.forEach((mat) => mat.dispose());
+              } else {
+                child.material.dispose();
+              }
+            }
+          }
+        });
+        this.scene_.remove(this.map_);
+        this.map_ = null;
+      }
+
+      console.log(`[GLTF] Fetching map blob (${mapName})`);
+
+      const buffer = await window.api.loadMap(mapName);
+      const blob = new Blob([buffer], { type: 'model/gltf-binary' });
+      const url = URL.createObjectURL(blob);
+
+      console.log('[GLTF] Fetched map. Loading into ThreeJS...');
+
       const loader = new GLTFLoader();
       loader.load(
-        infernoMap,
-        // mapFilePath,
+        url,
         (gltf) => {
+          console.log('[GLTF] Loaded into ThreeJS!');
           this.map_ = gltf.scene;
           this.map_.scale.set(this.mapScale_, this.mapScale_, this.mapScale_);
           this.map_.rotation.x = -Math.PI / 2;
@@ -730,14 +758,16 @@
           }
 
           // We don't care about textures, but to help see the map, we assign each mesh a random color
+          // However we want to re-use textures as much as possible to improve performance
+          const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
+            const hue = Math.random() * 360;
+            const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
+            return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+          });
+
           this.map_.traverse((child) => {
             if (child instanceof THREE.Mesh) {
-              const hue = Math.random() * 360;
-              const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-              child.material = new THREE.MeshBasicMaterial({
-                color: pastel,
-                side: THREE.DoubleSide, // raycast won't register if we hit a mesh from the other side
-              });
+              child.material = materials[Math.floor(Math.random() * materials.length)];
             }
           });
         },
@@ -1090,11 +1120,25 @@
   //   document.body.addEventListener('click', _Setup);
   // });
 
+  let mapName: string = 'de_dust2';
+
   const joinRoom = (): void => {
     const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
     console.log(`Attempting to join room code ${roomCode}`);
     document.querySelector('#threejs').innerHTML = '';
     _APP.joinRoom_(roomCode);
+    if (_APP.isConnected()) {
+      _APP.initializeMap_(mapName);
+    }
+  };
+
+  const onMapChange = () => {
+    console.log(mapName);
+    if (!_APP.isConnected()) {
+      console.log('Waiting for room connection before loading map.');
+      return;
+    }
+    _APP.initializeMap_(mapName);
   };
 
   let isConnected = false;
@@ -1110,6 +1154,12 @@
 
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
+
+<select bind:value={mapName} on:change={onMapChange}>
+  <option value="de_dust2">Dust 2</option>
+  <option value="de_mirage">Mirage</option>
+  <option value="de_inferno">Inferno</option>
+</select>
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 <h3 style="color: white">Your steam id is {clientSteamId || 'N/A'}</h3>

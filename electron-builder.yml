@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: cs2-voice-proximity-client
+productName: cs2-voice-proximity
 directories:
   buildResources: build
 files:
@@ -12,8 +12,9 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
+  - static/**
 win:
-  executableName: cs2-voice-proximity-client
+  executableName: cs2-voice-proximity
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}

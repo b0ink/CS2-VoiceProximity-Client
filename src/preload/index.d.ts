@@ -8,5 +8,6 @@ declare global {
   interface Api {
     getStoreValue: (key: string) => string | undefined; // Define your custom method here
     setStoreValue: (key: string, value: string) => void; // Example for another custom method
+    loadMap: (map: string) => string | undefined; // Example for another custom method
   }
 }

@@ -5,6 +5,7 @@ import { electronAPI } from '@electron-toolkit/preload';
 const api = {
   getStoreValue: (key: string) => ipcRenderer.invoke('get-store-value', key),
   setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
+  loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
