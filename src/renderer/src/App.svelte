@@ -528,14 +528,14 @@
           const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
             console.log('CreatePeerConnection: ', peer, initiator, stream);
             console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
+            const useTurnConfig = true;
             // disconnectClient(client); // TODO:
             const connection = new Peer({
               stream,
               initiator, // @ts-ignore-line
               iceRestartEnabled: true,
-              // config: import.meta.env.VITE_USE_TURN_CONFIG === true ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
-              // config: settingsRef.current.natFix ? DEFAULT_ICE_CONFIG_TURN : iceConfig,
-              config: DEFAULT_ICE_CONFIG,
+              config: useTurnConfig ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+              // config: DEFAULT_ICE_CONFIG,
             });
 
             // setPeerConnections((connections) => {
