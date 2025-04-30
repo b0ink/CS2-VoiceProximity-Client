@@ -1255,5 +1255,13 @@
   </div>
   <div style="opacity:50%">
     Steam ID: <span style="opacity:50%;">{clientSteamId || 'N/A'}</span>
+    <button
+      style="text-decoration:underline;cursor:pointer"
+      on:click={async () => {
+        console.log('click!');
+        await window.api.setStoreValue('steamId', null);
+        window.api.reloadApp();
+      }}>{clientSteamId ? 'Sign Out' : 'Sign In'}</button
+    >
   </div>
 </div>

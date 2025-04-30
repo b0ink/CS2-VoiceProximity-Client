@@ -10,5 +10,6 @@ declare global {
     setStoreValue: (key: string, value: string) => void;
     loadMap: (map: string) => string | undefined;
     getSocketUrl: () => string;
+    reloadApp: () => void;
   }
 }

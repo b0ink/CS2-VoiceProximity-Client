@@ -100,8 +100,12 @@ app.whenReady().then(() => {
     });
   });
 
+  checkSteamAuthentication();
+});
+
+const checkSteamAuthentication = () => {
   const steamId = store.get('steamId');
-  console.log(`Initialising app with steamid ${steamId}`);
+  console.log(`Checking steam authentication: ${steamId}`);
 
   if (!steamId) {
     console.log('No steam id has been found, requesting sign in...');
@@ -112,6 +116,11 @@ app.whenReady().then(() => {
       getSteamId();
     }, 1000);
   }
+};
+
+ipcMain.handle('reload-app', async () => {
+  mainWindow.reload();
+  checkSteamAuthentication();
 });
 
 async function getSteamId() {

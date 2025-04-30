@@ -7,6 +7,7 @@ const api = {
   setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
   getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),
+  reloadApp: () => ipcRenderer.invoke('reload-app'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
