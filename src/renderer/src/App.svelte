@@ -1224,7 +1224,8 @@
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
 
-<select bind:value={selectedDeviceId} style="width: 200px">
+<!-- TODO: devices will go on a settings page, requiring an app refresh to get user media again -->
+<select bind:value={selectedDeviceId} style="width: 200px" disabled={_APP && isConnected}>
   {#each devices as device (device.deviceId)}
     <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
   {/each}
