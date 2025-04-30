@@ -8,6 +8,7 @@ const api = {
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
   getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),
   reloadApp: () => ipcRenderer.invoke('reload-app'),
+  promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

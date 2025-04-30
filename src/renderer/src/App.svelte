@@ -1253,7 +1253,7 @@
   <button
     on:click={async () => {
       await window.api.setStoreValue('steamId', null);
-      window.api.reloadApp();
+      window.api.promptSteamAuthentication();
     }}
     class="steambutton"
     ><span>Login With Steam</span>

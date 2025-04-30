@@ -11,5 +11,6 @@ declare global {
     loadMap: (map: string) => string | undefined;
     getSocketUrl: () => string;
     reloadApp: () => void;
+    promptSteamAuthentication: () => void;
   }
 }

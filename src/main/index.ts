@@ -173,8 +173,10 @@ const checkSteamAuthentication = () => {
 };
 
 ipcMain.handle('reload-app', async () => {
-  //TODO: signing out should not prompt the browser until user clicks sign in again
   mainWindow.reload();
+});
+
+ipcMain.handle('prompt-steam-authentication', async () => {
   checkSteamAuthentication();
 });
 
