@@ -1,4 +1,5 @@
-import { app, shell, BrowserWindow, ipcMain, BrowserWindowConstructorOptions, session } from 'electron';
+import { app, shell, BrowserWindow, ipcMain, session } from 'electron';
+import path from 'node:path';
 import { join } from 'path';
 import { electronApp, optimizer, is } from '@electron-toolkit/utils';
 import icon from '../../resources/icon.png?asset';
@@ -8,11 +9,15 @@ import windowStateKeeper from 'electron-window-state';
 // import { initialiseIpcHandlers } from './ipc-handler';
 import './ipc-handlers';
 
+const appProtocolClient = `cs2-proximity-chat`;
+
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 interface StoreData {
   steamId: string;
 }
+
+const auth = new SteamAuth();
 
 const store = new Store<StoreData>();
 let mainWindow: BrowserWindow;
@@ -62,6 +67,58 @@ function createWindow(): void {
   }
 }
 
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(appProtocolClient, process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient(appProtocolClient);
+}
+
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine, _workingDirectory) => {
+    // Someone tried to run a second instance, we should focus our window.
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+
+    const launchUrl = `${commandLine?.pop()?.slice(0, -1)}`;
+    console.log(`Client has arrived from ${launchUrl}`);
+
+    if (!launchUrl.startsWith(appProtocolClient)) {
+      return;
+    }
+
+    console.log(`Verifying steam authentication...`);
+    const openIdResponse = auth.parseOpenIdResponse(launchUrl);
+    console.log(openIdResponse);
+    // TODO: forward openIdResponse to our api and validate the payload with the sig against steam's openid api, then return our own signed JWT
+    const steamIdUrl = openIdResponse.identity;
+    const sig = openIdResponse.sig;
+
+    // TODO: everything should be done in the SteamAuth class (when we have our shareable store modules)
+
+    if (!steamIdUrl || !sig) {
+      return console.log(`Invalid openid payload`);
+    }
+    const steamId64 = steamIdUrl.split('.com/openid/id/')[1]; // TODO: we could install the steamid npm package to validate its a valid steamid64
+    if (steamId64) {
+      store.set('steamId', steamId64);
+      console.log(`Setting steamid ${steamId64}`);
+    }
+  });
+
+  // Create mainWindow, load the rest of the app, etc...
+  app.whenReady().then(() => {
+    createWindow();
+  });
+}
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -100,7 +157,7 @@ app.whenReady().then(() => {
     });
   });
 
-  checkSteamAuthentication();
+  // checkSteamAuthentication();
 });
 
 const checkSteamAuthentication = () => {
@@ -110,44 +167,32 @@ const checkSteamAuthentication = () => {
   if (!steamId) {
     console.log('No steam id has been found, requesting sign in...');
     // TODO: in the future we will be storing a JWT token instead of the steamId
-    // If the JWT token fails to validate (expiration + signature, etc.) we will request sign in again
-    setTimeout(() => {
-      // TODO: user must click "login with steam" instead of this automatic pop up
-      getSteamId();
-    }, 1000);
+    // TODO: If the JWT token fails to validate (expiration + signature, etc.) we will request sign in again
+    getSteamId();
   }
 };
 
 ipcMain.handle('reload-app', async () => {
+  //TODO: signing out should not prompt the browser until user clicks sign in again
   mainWindow.reload();
   checkSteamAuthentication();
 });
 
 async function getSteamId() {
-  const windowParams: BrowserWindowConstructorOptions = {
-    alwaysOnTop: true,
-    autoHideMenuBar: false,
-    skipTaskbar: false,
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
-    },
-  };
-
-  const auth = new SteamAuth(windowParams);
-  auth
-    .authenticate()
-    .then((token) => {
-      // use your token.steam_id
-      console.log(`WE GOT YOUR STEAM ID: ${token}`);
-      if (token) {
-        store.set('steamId', token);
-      }
-    })
-    .catch((error) => {
-      //TODO: throw error saying could not authenticate through Steam.
-      console.error(`SteamAuth error :( -> ${error}`);
-    });
+  auth.openSteamAuthenticationWindow().then().catch(console.log);
+  // auth
+  //   .authenticate()
+  //   .then((token) => {
+  //     // use your token.steam_id
+  //     console.log(`WE GOT YOUR STEAM ID: ${token}`);
+  //     if (token) {
+  //       store.set('steamId', token);
+  //     }
+  //   })
+  //   .catch((error) => {
+  //     //TODO: throw error saying could not authenticate through Steam.
+  //     console.error(`SteamAuth error :( -> ${error}`);
+  //   });
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common

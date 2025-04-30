@@ -1,19 +1,19 @@
-import { BrowserWindow, BrowserWindowConstructorOptions, Event } from 'electron';
+import { app, BrowserWindow, BrowserWindowConstructorOptions, Event, shell } from 'electron';
 import openid from 'openid';
 import nodeUrl from 'url';
 
-// interface SteamOpenIDPayload {
-//   'openid.ns': string;
-//   'openid.mode': string;
-//   'openid.op_endpoint': string;
-//   'openid.claimed_id': string;
-//   'openid.identity': string;
-//   'openid.return_to': string;
-//   'openid.response_nonce': string;
-//   'openid.assoc_handle': string;
-//   'openid.signed': string;
-//   'openid.sig': string;
-// }
+interface SteamOpenIDParams {
+  ns?: string;
+  mode?: string;
+  op_endpoint?: string;
+  claimed_id?: string;
+  identity?: string;
+  return_to?: string;
+  response_nonce?: string;
+  assoc_handle?: string;
+  signed?: string;
+  sig?: string;
+}
 
 // TODO: We can use this later to validate steamIds
 // This should be done from the API;
@@ -36,26 +36,48 @@ import nodeUrl from 'url';
 //   return text.includes('is_valid:true');
 // }
 
-// Another complicated alternative would be to create an actual authentication site that uses openid with steam
-// If we're going to have the API to validate the steam ids, we might as well do it via a website
-// the user can manually paste in the JWT or something like that
+const realm = !app.isPackaged ? 'http://localhost:3000/' : `https://cs2-proximitychat-server.onrender.com/`;
+const return_url = `${realm}verify-steam`;
 
-const return_url = 'http://localhost:5173';
+const USE_EXTERNAL_BROWSER = true;
+
 export class SteamAuth {
   private windowParams: BrowserWindowConstructorOptions;
-  constructor(windowParams: BrowserWindowConstructorOptions) {
-    this.windowParams = windowParams;
+  constructor(windowParams: BrowserWindowConstructorOptions = {}) {
+    this.windowParams = {
+      alwaysOnTop: true,
+      autoHideMenuBar: false,
+      skipTaskbar: false,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false,
+      },
+      ...windowParams,
+    };
   }
 
-  authenticate() {
-    // TODO: dynamically use window.location.origin for the return to url
+  parseOpenIdResponse(openIdResponse: string) {
+    const url = new URL(openIdResponse);
+    const params: SteamOpenIDParams = {
+      ns: url.searchParams.get('openid.ns') || undefined,
+      mode: url.searchParams.get('openid.mode') || undefined,
+      op_endpoint: url.searchParams.get('openid.op_endpoint') || undefined,
+      claimed_id: url.searchParams.get('openid.claimed_id') || undefined,
+      identity: url.searchParams.get('openid.identity') || undefined,
+      return_to: url.searchParams.get('openid.return_to') || undefined,
+      response_nonce: url.searchParams.get('openid.response_nonce') || undefined,
+      assoc_handle: url.searchParams.get('openid.assoc_handle') || undefined,
+      signed: url.searchParams.get('openid.signed') || undefined,
+      sig: url.searchParams.get('openid.sig') || undefined,
+    };
+
+    return params;
+  }
+
+  openSteamAuthenticationWindow() {
     const rely = new openid.RelyingParty(
       return_url,
-      return_url,
-
-      // 'http://CS2-Voice-Proximity/verify-steam',
-      // 'http://CS2-Voice-Proximity/',
-
+      realm,
       //   'http://localhost:3000/verify-steam',
       //   'http://localhost:3000/', // Realm (specifies realm for OpenID authentication)
 
@@ -69,6 +91,13 @@ export class SteamAuth {
         if (error) {
           reject(new Error(error));
         }
+
+        if (USE_EXTERNAL_BROWSER) {
+          shell.openExternal(providerUrl);
+          reject('Waiting for browser...');
+          return;
+        }
+
         const authWindow = new BrowserWindow(this.windowParams || { 'use-content-size': true });
         authWindow.loadURL(providerUrl);
         authWindow.show();
