@@ -49,6 +49,12 @@
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !_APP) {
+      addNotification({
+        text: 'Successfully authenticated',
+        position: 'top-center',
+        removeAfter: 2500,
+        type: 'success',
+      });
       _APP = new FirstPersonCameraDemo();
     }
   }
@@ -1213,7 +1219,8 @@
   onMount(() => {
     intialise();
     getDevices();
-    const interval = setInterval(intialise, 5000);
+    //TODO: can fire an event from main -> renderer? instead of checking every few seconds
+    const interval = setInterval(intialise, 1000);
 
     // Cleanup the interval when the component is destroyed
     onDestroy(() => {
