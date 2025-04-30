@@ -11,8 +11,11 @@
 
   const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
+  import PlayerList from './components/PlayerList.svelte';
 
   let _APP: FirstPersonCameraDemo | null = null;
+
+  let playerPositions;
 
   let clientSteamId: string | null;
   let socketUrl: string;
@@ -711,6 +714,8 @@
         if (this.socketClientMap[mySocketId]) {
           return;
         }
+
+        playerPositions = players;
         // this.socket_?.socketCallback_GetPlayerPositions(players, this.socketClientMap, this.steamIdSocketMap, this.getSteamId());
         // players.forEach((player) => {
 
@@ -1271,6 +1276,9 @@
   <label for="room-code">Room Code:</label>
   <input type="text" id="room-code" name="room-code" disabled={!_APP || isConnected} />
   <button type="submit" on:click={joinRoom} disabled={!_APP || isConnected}>Join</button>
+  <div id="threejs"></div>
+
+  <PlayerList mySteamId={clientSteamId} players={playerPositions}></PlayerList>
 {/if}
 
 {#if !clientSteamId}
@@ -1304,8 +1312,6 @@
 <!-- <div style="border: 1px solid lime">
   <canvas bind:this={canvas} width="300" height="25"></canvas>
 </div> -->
-
-<div id="threejs"></div>
 
 <div style="position: absolute; bottom: 5px; font-size: 12px; text-align: center">
   <div style="opacity:50%">
