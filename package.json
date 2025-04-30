@@ -13,7 +13,7 @@
     "typecheck": "npm run typecheck:node && npm run svelte-check",
     "start": "electron-vite preview",
     "dev": "electron-vite dev",
-    "dev:dual": "concurrently \"cross-env PORT=3000 electron --inspect=9229 ./out/main/index.js --user-data-dir=/tmp/e1\" \"cross-env PORT=3001 electron --inspect=9230 ./out/main/index.js --user-data-dir=/tmp/e2\"",
+    "dev:dual": "npm run build && concurrently \"cross-env PORT=3000 electron --inspect=9229 ./out/main/index.js --user-data-dir=/tmp/e1\" \"cross-env PORT=3001 electron --inspect=9230 ./out/main/index.js --user-data-dir=/tmp/e2\"",
     "build": "npm run typecheck && electron-vite build",
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
