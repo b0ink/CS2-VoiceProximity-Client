@@ -595,6 +595,23 @@
             // setSocketClients((old) => ({ ...old, [peer]: client }));
           });
 
+          this.socket_?.socket_.on('user-left', async (peer: string, client: Client) => {
+            console.log(`user has left! ${peer} ${JSON.stringify(client)}`);
+            this.sounds_ = this.sounds_.filter((sound) => {
+              if (sound.steamId === client.steamId) {
+                sound.sound_?.disconnect();
+                sound.soundObjSource_?.parent?.remove(sound.soundObjSource_);
+                console.log('found sound source removing from scene');
+                return false; // remove from array
+              }
+              return true;
+            });
+
+            this.peerConnections[peer]?.destroy();
+            delete this.peerConnections[peer];
+            delete this.socketClientMap[peer];
+          });
+
           this.socket_?.socket_.on(
             'signal',
             ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {

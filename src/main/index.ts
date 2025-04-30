@@ -185,6 +185,8 @@ ipcMain.handle('prompt-steam-authentication', async () => {
 });
 
 async function getSteamId() {
+  store.set('steamId', '76561197972732773');
+  return;
   auth.openSteamAuthenticationWindow().then().catch(console.log);
   // auth
   //   .authenticate()
