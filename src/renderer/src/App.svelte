@@ -38,6 +38,7 @@
   let audioConnectionStuff: AudioConnectionStuff;
 
   let roomCode: string | undefined;
+  let joinedRoom: boolean = false;
 
   export async function setupMicVisualization(stream) {
     audioCtx = new AudioContext();
@@ -68,12 +69,12 @@
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !_APP) {
-      addNotification({
-        text: 'Successfully authenticated',
-        position: 'top-center',
-        removeAfter: 2500,
-        type: 'success',
-      });
+      // addNotification({
+      //   text: 'Successfully authenticated',
+      //   position: 'top-center',
+      //   removeAfter: 2500,
+      //   type: 'success',
+      // });
       _APP = new FirstPersonCameraDemo();
     }
   }
@@ -327,7 +328,7 @@
     // private steamId?: string;
 
     public isConnected(): boolean {
-      return roomCode !== undefined;
+      return joinedRoom;
     }
 
     // is this "player incoming audio streams?"
@@ -389,9 +390,7 @@
       // TODO: implement UI
       if (code) {
         roomCode = code;
-        setTimeout(() => {
-          this.initUserMedia();
-        }, 1000);
+        this.initUserMedia();
       } else {
         roomCode = null;
         // TODO: toast notification
@@ -616,9 +615,34 @@
         // this.socket_?.socket_.emit('id', playerId, clientId);
         console.log(lobbyCode, playerId, clientId, isHost);
 
-        // TODO: we should absolutely send our signed JWT in this join-room attempt to validate and pair the socket id with steam id
-        this.socket_?.socket_.emit('join-room', lobbyCode, playerId, clientId, isHost);
-        this.currentLobby = lobbyCode;
+        const joinRoomPayload = {
+          token: clientToken,
+          roomCode: lobbyCode,
+          playerId: playerId,
+          clientId: clientId,
+          isHost: isHost,
+        };
+
+        this.socket_?.socket_.emit('join-room', joinRoomPayload, (response) => {
+          console.log(response);
+          if (response.success) {
+            this.currentLobby = lobbyCode;
+            // TODO: can we initialize renderer here?
+            _APP.initializeMap_();
+          } else {
+            roomCode = null;
+            // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
+            addNotification({
+              text: 'Failed to join room',
+              position: 'top-center',
+              removeAfter: 2500,
+              type: 'error',
+            });
+            setTimeout(() => {
+              window.api.reloadApp();
+            }, 1500);
+          }
+        });
       }
     };
 
@@ -1180,9 +1204,9 @@
     document.querySelector('#threejs').innerHTML = '';
     _APP.initializeRenderer_();
     _APP.joinRoom_(roomCode);
-    if (_APP.isConnected()) {
-      _APP.initializeMap_(mapName);
-    }
+    // if (_APP.isConnected()) {
+    //   _APP.initializeMap_(mapName);
+    // }
   };
 
   const onMapChange = () => {
