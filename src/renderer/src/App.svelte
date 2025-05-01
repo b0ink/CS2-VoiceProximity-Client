@@ -23,15 +23,14 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
 
   const { addNotification } = getNotificationsContext();
-  // let _APP: FirstPersonCameraDemo | null = null;
 
   let playerPositions;
 
   let clientSteamId: string | null;
   let clientToken: string | null;
   let socketUrl: string;
-  let canvas;
-  let audioCtx, analyser, source;
+  // let canvas;
+  // let audioCtx, analyser, source;
   let devices = [];
   let selectedDeviceId = '';
 
@@ -43,46 +42,200 @@
   let roomCode: string | undefined;
   let joinedRoom: boolean = false;
 
-  export async function setupMicVisualization(stream) {
-    audioCtx = new AudioContext();
-    analyser = audioCtx.createAnalyser();
-    source = audioCtx.createMediaStreamSource(stream);
-
-    source.connect(analyser);
-
-    const ctx = canvas.getContext('2d');
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-
-    function draw() {
-      requestAnimationFrame(draw);
-      analyser.getByteFrequencyData(dataArray);
-      const volume = dataArray.reduce((a, b) => a + b) / dataArray.length;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = 'lime';
-      ctx.fillRect(0, 0, volume, canvas.height);
-    }
-
-    draw();
-  }
-
   async function intialise() {
     clientSteamId = await window.api.getStoreValue('steamId');
     clientToken = await window.api.getStoreValue('token');
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !scene_) {
+      // TODO: one time notification when logging in for the first time
       // addNotification({
       //   text: 'Successfully authenticated',
       //   position: 'top-center',
       //   removeAfter: 2500,
       //   type: 'success',
       // });
-      // _APP = new FirstPersonCameraDemo();
-      initialize_();
+
+      // Log if we're receiving packets from remote stream
+      setInterval(() => {
+        Object.entries(peerConnections).forEach(([id, pc]) => {
+          const rtcPeer = (pc as any)._pc;
+          if (!rtcPeer) return;
+
+          rtcPeer.getStats().then((stats) => {
+            stats.forEach((report) => {
+              if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+                console.log(
+                  `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
+                );
+              }
+            });
+          });
+        });
+      }, 1000);
+
+      socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
+        // TODO: if (not connected... || is not in a room...)
+
+        if (!joinedRoom) {
+          return;
+        }
+
+        const mySocketId = socket_?.id;
+        if (!mySocketId) {
+          return;
+        }
+        if (socketClientMap[mySocketId]) {
+          return;
+        }
+
+        playerPositions = players;
+        // socket_?.socketCallback_GetPlayerPositions(players, socketClientMap, steamIdSocketMap, getSteamId());
+        // players.forEach((player) => {
+
+        for (const player of players) {
+          const steamId = player.SteamId;
+          const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
+          const playerLookAt = new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ);
+
+          const transformedOrigin = transformVector(playerOrigin);
+          const transformedLookAt = transformVector(playerLookAt);
+
+          if (steamId === getSteamId()) {
+            // these vectors are transformed with updatePosition()
+            fpsCamera_.position_.copy(
+              new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z),
+            );
+            fpsCamera_.lookAt_.copy(
+              new THREE.Vector3(transformedLookAt.x, transformedLookAt.y, transformedLookAt.z),
+            );
+            // console.log(`SAVING our own steam id ${getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
+          } else {
+            for (const positionalSound of sounds_) {
+              if (positionalSound.steamId !== steamId) {
+                continue;
+              }
+
+              if (!player.IsAlive) {
+                positionalSound.Mute();
+                // positionalSound.soundObjSource_?.position.set(-9000, -9000, -9000);
+                // continue;
+              } else {
+                positionalSound.Unmute();
+              }
+
+              if (positionalSound.soundObjSource_) {
+                // positionalSound.soundObjSource_?.position.copy(playerOrigin);
+                positionalSound.soundObjSource_?.position.set(
+                  transformedOrigin.x,
+                  transformedOrigin.y,
+                  transformedOrigin.z,
+                );
+                positionalSound.soundObjSource_?.lookAt(transformedLookAt);
+                // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`);
+                // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(transformedOrigin)} LookAt=${JSON.stringify(transformedLookAt)}`);
+              } else {
+                console.warn(`No soundObjSource for steam ${steamId}`);
+              }
+              // break;
+              // TODO: we should validate there are no duplicate steamIds trying to join
+            }
+          }
+        }
+
+        // });
+      });
+
+      // Now you can use roomCode and steamId
+      // initializeRenderer_();
+
+      scene_ = new THREE.Scene();
+      listener_ = new THREE.AudioListener();
+
+      const fov = 60;
+      const aspect = 1920 / 1080;
+      const near = 1.0;
+      const far = 2000.0;
+      camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      camera_.position.set(-30, 2, 0);
+
+      // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
+      // uiScene_ = new THREE.Scene();
+
+      fpsCamera_ = new FirstPersonCamera(camera_);
+
+      // TODO: move into its own settings store file
+
+      socket_ = io(socketUrl);
+      initializeScene_();
+      // initializePostFX_();
+      // initializeMap_();
+      initializeAudio_();
+
       raf_();
       onWindowResize_();
     }
+  }
+
+  async function initializeMap_(mapName: string = 'de_dust2') {
+    // Destroy any previously loaded maps, including its textures
+    if (map_ && scene_) {
+      map_.traverse((child) => {
+        if (child instanceof THREE.Mesh) {
+          if (child.isMesh) {
+            // console.log('disposing old mesh');
+            child.geometry.dispose();
+            if (Array.isArray(child.material)) {
+              child.material.forEach((mat) => mat.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        }
+      });
+      scene_.remove(map_);
+      map_ = null;
+    }
+
+    console.log(`[GLTF] Fetching map blob (${mapName})`);
+
+    const buffer = await window.api.loadMap(mapName);
+    const blob = new Blob([buffer], { type: 'model/gltf-binary' });
+    const url = URL.createObjectURL(blob);
+
+    console.log('[GLTF] Fetched map. Loading into ThreeJS...');
+
+    const loader = new GLTFLoader();
+    loader.load(
+      url,
+      (gltf) => {
+        console.log('[GLTF] Loaded into ThreeJS!');
+        map_ = gltf.scene;
+        map_.scale.set(mapScale_, mapScale_, mapScale_);
+        map_.rotation.x = -Math.PI / 2;
+        if (scene_) {
+          scene_.add(map_);
+        }
+
+        // We don't care about textures, but to help see the map, we assign each mesh a random color
+        // However we want to re-use textures as much as possible to improve performance
+        const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
+          const hue = Math.random() * 360;
+          const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
+          return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+        });
+
+        map_.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            child.material = materials[Math.floor(Math.random() * materials.length)];
+          }
+        });
+      },
+      undefined,
+      (err) => {
+        console.error('Failed to load GLB:', err);
+      },
+    );
   }
 
   // Transform Source2 coordinate to Three.js (Z is up/down)
@@ -91,29 +244,6 @@
   function transformVector(input: THREE.Vector3) {
     return new THREE.Vector3(input.x, input.z, input.y * -1);
   }
-
-  // class SocketData {
-  //   public socket_: Socket;
-  //   public players_: any[];
-  //   constructor(wsUrl: string) {
-  //     this.socket_ = io(wsUrl);
-  //     this.players_ = [];
-  //     this.initialise_();
-  //   }
-  //   initialise_() {
-  //     // socket_.on("user-joined", (id) => {
-  //     //   console.log('joined room')
-  //     // });
-  //   }
-
-  //   socketFire_JoinRoom(roomCode: string) {
-  //     this.socket_.emit('join-room', roomCode);
-  //   }
-
-  //   sockerFire_SubmitSteamId(steamid: string) {
-  //     this.socket_.emit('submit-steamid', steamid);
-  //   }
-  // }
 
   // eslint-disable-next-line no-undef
   const DEFAULT_ICE_CONFIG: RTCConfiguration = {
@@ -216,25 +346,11 @@
         removeAfter: 2500,
         type: 'error',
       });
-      // alert('Invalid room code');
     }
   };
 
-  // submitSteamId() {
-  //   while (!steamId) {
-  //     if (steam) {
-  //       steamId = steam;
-  //       socket_?.sockerFire_SubmitSteamId(steamId);
-  //     } else {
-  //       // TODO: we could actually validate the steamId64, or convert it from steamid32
-  //       alert("Invalid steamId")
-  //     }
-  //   }
-  // }
-
   const getSteamId = () => {
     return clientSteamId;
-    // return window.localStorage.getItem(`steamid`) || null;
   };
 
   const initUserMedia = () => {
@@ -274,7 +390,6 @@
         // const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
         // console.log(audioOutputs);
 
-        // setupMicVisualization(stream);
         // const ac = new AudioContext();
         //TODO: microphone gain
         // const source = ac.createMediaStreamSource(inStream);
@@ -468,218 +583,16 @@
     }
   };
 
-  const initialize_ = () => {
-    // Log if we're receiving packets from remote stream
-    setInterval(() => {
-      Object.entries(peerConnections).forEach(([id, pc]) => {
-        const rtcPeer = (pc as any)._pc;
-        if (!rtcPeer) return;
-
-        rtcPeer.getStats().then((stats) => {
-          stats.forEach((report) => {
-            if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-              console.log(
-                `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
-              );
-            }
-          });
-        });
-      });
-    }, 1000);
-    // TODO: wait for socket connection before moving on..
-
-    // while (!getSteamId()) {
-    //   console.log('waiting for steam id');
-    //   // TODO: let's assume the server is already pulling player positions from cs2 server;
-    //   // TODO: we can validate player with this steamid is on the server prior to joining the room
-    //   // TODO: but ideally, we use openId to authenticate the real steam id
-    //   // TODO: maybe this could be a lobby option set by the host? "Validate steamIds", so that trusted friends don't need to all login
-    //   // TODO: the message would say "This steamId needs to be present on the server prior to joining the room"
-    //   // TODO: add UI for prompt
-    //   // const steam = prompt('Enter Steam ID:');
-    //   // const steam = '0';
-    //   // const steam = clientSteamId;
-    //   // if (steam) {
-    //   //   window.localStorage.setItem(`steamid`, steam);
-    //   // }
-    // }
-
-    // setTimeout(() => {
-    //   joinRoom_();
-    // }, 1000);
-
-    socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
-      // TODO: if (not connected... || is not in a room...)
-      const mySocketId = socket_?.id;
-      if (!mySocketId) {
-        return;
-      }
-      if (socketClientMap[mySocketId]) {
-        return;
-      }
-
-      playerPositions = players;
-      // socket_?.socketCallback_GetPlayerPositions(players, socketClientMap, steamIdSocketMap, getSteamId());
-      // players.forEach((player) => {
-
-      for (const player of players) {
-        const steamId = player.SteamId;
-        const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
-        const playerLookAt = new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ);
-        if (steamId === getSteamId()) {
-          // these vectors are transformed with updatePosition()
-          // setMyCameraPositionData_(playerOrigin, playerLookAt);\
-          fpsCamera_.position_.copy(
-            new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ),
-          );
-          fpsCamera_.lookAt_.copy(
-            new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ),
-          );
-          // console.log(`SAVING our own steam id ${getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
-
-          // TODO: we cant use .enabled = false because we need dead players to communicate to each other
-          // if (audioConnectionStuff?.instream?.getAudioTracks()?.[0]) {
-          //   if (!player.IsAlive) {
-          //     audioConnectionStuff.instream.getAudioTracks()[0].enabled = false;
-          //   } else {
-          //     audioConnectionStuff.instream.getAudioTracks()[0].enabled = true;
-          //   }
-          // }
-        } else {
-          for (const positionalSound of sounds_) {
-            if (positionalSound.steamId !== steamId) {
-              continue;
-            }
-
-            if (!player.IsAlive) {
-              positionalSound.Mute();
-              // positionalSound.soundObjSource_?.position.set(-9000, -9000, -9000);
-              // continue;
-            } else {
-              positionalSound.Unmute();
-            }
-
-            const transformedOrigin = transformVector(playerOrigin);
-            const transformedLookAt = transformVector(playerLookAt);
-            if (positionalSound.soundObjSource_) {
-              // positionalSound.soundObjSource_?.position.copy(playerOrigin);
-              positionalSound.soundObjSource_?.position.set(
-                transformedOrigin.x,
-                transformedOrigin.y,
-                transformedOrigin.z,
-              );
-              positionalSound.soundObjSource_?.lookAt(transformedLookAt);
-              // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`);
-              // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(transformedOrigin)} LookAt=${JSON.stringify(transformedLookAt)}`);
-            } else {
-              console.warn(`No soundObjSource for steam ${steamId}`);
-            }
-            // break; // TODO: we should validate there are no duplicate steamIds trying to join
-          }
-        }
-      }
-
-      // });
-    });
-
-    // TODO: don't initialize map until we have joined a room
-
-    // Now you can use roomCode and steamId
-    // initializeRenderer_();
-
-    scene_ = new THREE.Scene();
-    listener_ = new THREE.AudioListener();
-
-    const fov = 60;
-    const aspect = 1920 / 1080;
-    const near = 1.0;
-    const far = 2000.0;
-    camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
-    camera_.position.set(-30, 2, 0);
-
-    // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
-    // uiScene_ = new THREE.Scene();
-
-    fpsCamera_ = new FirstPersonCamera(camera_);
-
-    // TODO: move into its own settings store file
-
-    socket_ = io(socketUrl);
-    initializeScene_();
-    // initializePostFX_();
-    // initializeMap_();
-    initializeAudio_();
-  };
-
-  async function initializeMap_(mapName: string = 'de_dust2') {
-    // Destroy any previously loaded maps, including its textures
-    if (map_ && scene_) {
-      map_.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          if (child.isMesh) {
-            // console.log('disposing old mesh');
-            child.geometry.dispose();
-            if (Array.isArray(child.material)) {
-              child.material.forEach((mat) => mat.dispose());
-            } else {
-              child.material.dispose();
-            }
-          }
-        }
-      });
-      scene_.remove(map_);
-      map_ = null;
-    }
-
-    console.log(`[GLTF] Fetching map blob (${mapName})`);
-
-    const buffer = await window.api.loadMap(mapName);
-    const blob = new Blob([buffer], { type: 'model/gltf-binary' });
-    const url = URL.createObjectURL(blob);
-
-    console.log('[GLTF] Fetched map. Loading into ThreeJS...');
-
-    const loader = new GLTFLoader();
-    loader.load(
-      url,
-      (gltf) => {
-        console.log('[GLTF] Loaded into ThreeJS!');
-        map_ = gltf.scene;
-        map_.scale.set(mapScale_, mapScale_, mapScale_);
-        map_.rotation.x = -Math.PI / 2;
-        if (scene_) {
-          scene_.add(map_);
-        }
-
-        // We don't care about textures, but to help see the map, we assign each mesh a random color
-        // However we want to re-use textures as much as possible to improve performance
-        const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
-          const hue = Math.random() * 360;
-          const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-          return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
-        });
-
-        map_.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            child.material = materials[Math.floor(Math.random() * materials.length)];
-          }
-        });
-      },
-      undefined,
-      (err) => {
-        console.error('Failed to load GLB:', err);
-      },
-    );
-  }
-
   const updateSoundFilters = () => {
     for (const soundData of sounds_) {
-      // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through
+      // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
       soundData.updateOcclusion();
     }
   };
 
   const initialisePlayer_ = () => {
+    // TODO: this speaker1 is left idle in top mid.. does this function actually do anything?
+
     const speaker1Material = new THREE.MeshStandardMaterial({ color: 0x888888 });
     const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
     speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
@@ -804,11 +717,6 @@
     });
   };
 
-  // const setMyCameraPositionData_ = (origin: THREE.Vector3, lookAt: THREE.Vector3) => {
-  //   fpsCamera_.position_.copy(origin);
-  //   fpsCamera_.lookAt_.copy(lookAt);
-  // };
-
   const step_ = () => {
     if (map_ === null) {
       return;
@@ -816,17 +724,9 @@
     // const timeElapsedS = timeElapsed * 0.001;
 
     // camera position is now updated every time player positions are retrieved
-    // updateCameraPositionData_();
     fpsCamera_.update();
     updateSoundFilters();
   };
-
-  // window.addEventListener('DOMContentLoaded', () => {
-  //   const _Setup = () => {
-  //     document.body.removeEventListener('click', _Setup);
-  //   };
-  //   document.body.addEventListener('click', _Setup);
-  // });
 
   let mapName: string = 'de_dust2';
 
@@ -857,7 +757,7 @@
     isConnected = joinedRoom;
   };
 
-  setInterval(checkConnection, 1000); // every second, or use an event if available
+  setInterval(checkConnection, 500);
 
   async function getDevices() {
     const allDevices = await navigator.mediaDevices.enumerateDevices();
