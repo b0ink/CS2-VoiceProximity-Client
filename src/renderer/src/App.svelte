@@ -1,6 +1,13 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
-  import type { AudioConnectionStuff, PeerConnections, SocketClientMap, SteamIdSocketMap } from './type';
+  import type {
+    AudioConnectionStuff,
+    Client,
+    PeerConnections,
+    PlayerPositionApiData,
+    SocketClientMap,
+    SteamIdSocketMap,
+  } from './type';
 
   import * as THREE from 'three';
   import { GLTFLoader } from 'three-stdlib';
@@ -270,22 +277,22 @@
     iceTransportPolicy: 'relay', // protect IPs
     iceServers: [
       {
-        urls: 'turn:oceania.relay.metered.ca:80',
+        urls: 'turn:standard.relay.metered.ca:80',
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
       {
-        urls: 'turn:oceania.relay.metered.ca:80?transport=tcp',
+        urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
       {
-        urls: 'turn:oceania.relay.metered.ca:443',
+        urls: 'turn:standard.relay.metered.ca:443',
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
       {
-        urls: 'turns:oceania.relay.metered.ca:443?transport=tcp',
+        urls: 'turns:standard.relay.metered.ca:443?transport=tcp',
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
