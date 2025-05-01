@@ -640,7 +640,7 @@
             });
             setTimeout(() => {
               window.api.reloadApp();
-            }, 1500);
+            }, 2500);
           }
         });
       }

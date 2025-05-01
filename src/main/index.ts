@@ -128,10 +128,13 @@ if (!gotTheLock) {
       mainWindow.focus();
     }
 
-    const launchUrl = `${commandLine?.pop()?.slice(0, -1)}`;
-    console.log(`Client has arrived from ${launchUrl}`);
+    // console.log(commandLine);
 
-    if (!launchUrl.startsWith(appProtocolClient)) {
+    // Removes leading/trailing double quotes and trims whitespace
+    const launchUrl = commandLine?.pop()?.replace(/^"|"$/g, '').trim();
+
+    console.log(`Client has arrived from ${launchUrl}`);
+    if (!launchUrl || !launchUrl.startsWith(appProtocolClient)) {
       return;
     }
 
