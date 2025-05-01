@@ -60,20 +60,8 @@ export class SteamAuth {
 
   parseOpenIdResponse(openIdResponse: string) {
     const url = new URL(openIdResponse);
-    const params: SteamOpenIDParams = {
-      ns: url.searchParams.get('openid.ns') || undefined,
-      mode: url.searchParams.get('openid.mode') || undefined,
-      op_endpoint: url.searchParams.get('openid.op_endpoint') || undefined,
-      claimed_id: url.searchParams.get('openid.claimed_id') || undefined,
-      identity: url.searchParams.get('openid.identity') || undefined,
-      return_to: url.searchParams.get('openid.return_to') || undefined,
-      response_nonce: url.searchParams.get('openid.response_nonce') || undefined,
-      assoc_handle: url.searchParams.get('openid.assoc_handle') || undefined,
-      signed: url.searchParams.get('openid.signed') || undefined,
-      sig: url.searchParams.get('openid.sig') || undefined,
-    };
-
-    return params;
+    const token = url.searchParams.get('token') || undefined;
+    return token;
   }
 
   openSteamAuthenticationWindow() {

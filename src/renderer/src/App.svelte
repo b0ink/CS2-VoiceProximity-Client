@@ -25,6 +25,7 @@
   let playerPositions;
 
   let clientSteamId: string | null;
+  let clientToken: string | null;
   let socketUrl: string;
   let canvas;
   let audioCtx, analyser, source;
@@ -63,6 +64,7 @@
 
   async function intialise() {
     clientSteamId = await window.api.getStoreValue('steamId');
+    clientToken = await window.api.getStoreValue('token');
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !_APP) {
@@ -1271,6 +1273,7 @@
   <button
     on:click={async () => {
       await window.api.setStoreValue('steamId', null);
+      await window.api.setStoreValue('token', null);
       window.api.promptSteamAuthentication();
     }}
     class="steambutton"
@@ -1310,6 +1313,7 @@
         style="text-decoration:underline;cursor:pointer"
         on:click={async () => {
           await window.api.setStoreValue('steamId', null);
+          await window.api.setStoreValue('token', null);
           window.api.reloadApp();
         }}>Sign Out</button
       >

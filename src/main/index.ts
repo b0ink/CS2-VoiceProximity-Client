@@ -7,7 +7,10 @@ import { SteamAuth } from './SteamAuth';
 import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
 // import { initialiseIpcHandlers } from './ipc-handler';
+
+import jwt from 'jsonwebtoken';
 import './ipc-handlers';
+import { JwtAuthPayload } from './types';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -22,7 +25,33 @@ const auth = new SteamAuth();
 const store = new Store<StoreData>();
 let mainWindow: BrowserWindow;
 
+function validateJwtToken() {
+  const steamId = store.get('steamId');
+  const token = store.get('token');
+  if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
+    store.set('steamId', null);
+    store.set('token', null);
+  } else {
+    try {
+      const payload = jwt.decode(token) as JwtAuthPayload | null;
+      if (!payload || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+        throw new Error('Token is invalid, expired, or missing expiration');
+      }
+      // Token is valid
+    } catch (e) {
+      console.log(e);
+      // Reset token
+      store.set('steamId', null);
+      store.set('token', null);
+    }
+  }
+}
+
 function createWindow(): void {
+  // Reset token and steamid if invalid or expired token
+
+  validateJwtToken();
+
   const mainWindowState = windowStateKeeper({});
 
   // Create the browser window.
@@ -59,6 +88,7 @@ function createWindow(): void {
   mainWindowState.manage(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
+    validateJwtToken();
     mainWindow.show();
   });
 
@@ -105,23 +135,29 @@ if (!gotTheLock) {
       return;
     }
 
-    console.log(`Verifying steam authentication...`);
-    const openIdResponse = auth.parseOpenIdResponse(launchUrl);
-    console.log(openIdResponse);
-    // TODO: forward openIdResponse to our api and validate the payload with the sig against steam's openid api, then return our own signed JWT
-    const steamIdUrl = openIdResponse.identity;
-    const sig = openIdResponse.sig;
-
     // TODO: everything should be done in the SteamAuth class (when we have our shareable store modules)
 
-    if (!steamIdUrl || !sig) {
-      return console.log(`Invalid openid payload`);
+    console.log(`Verifying steam authentication...`);
+    const token = auth.parseOpenIdResponse(launchUrl);
+    // console.log(token);
+    if (!token) {
+      return console.log('Invalid or no token returned.');
     }
-    const steamId64 = steamIdUrl.split('.com/openid/id/')[1]; // TODO: we could install the steamid npm package to validate its a valid steamid64
-    if (steamId64) {
-      store.set('steamId', steamId64);
-      console.log(`Setting steamid ${steamId64}`);
+
+    const decoded = jwt.decode(token);
+    if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
+      return console.log('Invalid token');
     }
+    const payload = decoded as JwtAuthPayload;
+    const steamId64 = payload.steamId;
+    if (!steamId64) {
+      return console.log('Invalid steamid64');
+    }
+
+    store.set('token', token);
+    store.set('steamId', steamId64);
+    console.log(`Setting token ${token}`);
+    console.log(`Setting steamid ${steamId64}`);
   });
 
   // This method will be called when Electron has finished
