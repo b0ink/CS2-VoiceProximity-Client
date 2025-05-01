@@ -1,18 +1,18 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
+  import type { AudioConnectionStuff, PeerConnections, SocketClientMap, SteamIdSocketMap } from './type';
 
   import * as THREE from 'three';
   import { GLTFLoader } from 'three-stdlib';
   import { io, Socket } from 'socket.io-client';
   import Peer from 'simple-peer';
-  import type { CsTeam } from './type';
 
   import { getNotificationsContext } from 'svelte-notifications';
 
-  const { addNotification } = getNotificationsContext();
   import { onDestroy, onMount } from 'svelte';
   import PlayerList from './components/PlayerList.svelte';
 
+  const { addNotification } = getNotificationsContext();
   let _APP: FirstPersonCameraDemo | null = null;
 
   let playerPositions;
@@ -23,6 +23,13 @@
   let audioCtx, analyser, source;
   let devices = [];
   let selectedDeviceId = '';
+
+  let socketClientMap: SocketClientMap = {};
+  let steamIdSocketMap: SteamIdSocketMap = {};
+  let peerConnections: PeerConnections = {};
+  let audioConnectionStuff: AudioConnectionStuff;
+
+  let roomCode: string | undefined;
 
   export async function setupMicVisualization(stream) {
     audioCtx = new AudioContext();
@@ -244,65 +251,6 @@
     // TODO: occlusion calculations here
   }
 
-  interface AudioConnectionStuff {
-    // socket? typeof Socket;
-    stream?: MediaStream;
-    instream?: MediaStream;
-    // microphoneGain?: GainNode;
-    // audioListener?: VadNode;
-    muted: boolean;
-    deafened: boolean;
-    toggleMute: () => void;
-    toggleDeafen: () => void;
-  }
-
-  // interface AudioNodes {
-  //   dummyAudioElement: HTMLAudioElement;
-  //   audioElement: HTMLAudioElement;
-  //   // gain: GainNode;
-  //   // pan: PannerNode;
-  //   // reverb: ConvolverNode;
-  //   // muffle: BiquadFilterNode;
-  //   destination: AudioNode;
-  //   // reverbConnected: boolean;
-  //   // muffleConnected: boolean;
-  // }
-
-  // interface AudioElements {
-  //   // TODO: what is "peer" - socket id? steam id?
-  //   [peer: string]: AudioNodes; // TODO: replace AudioNodes with THREEjs alternative?
-  // }
-
-  interface Client {
-    steamId: string;
-    clientId: string; // this would have to be unique to the players PC?
-  }
-
-  interface SocketClientMap {
-    [socketId: string]: Client;
-  }
-
-  interface SteamIdSocketMap {
-    [steamId: string]: string;
-  }
-
-  interface PeerConnections {
-    [peer: string]: Peer.Instance;
-  }
-
-  interface PlayerPositionApiData {
-    SteamId?: string;
-    Name?: string;
-    OriginX?: number;
-    OriginY?: number;
-    OriginZ?: number;
-    LookAtX?: number;
-    LookAtY?: number;
-    LookAtZ?: number;
-    IsAlive?: boolean;
-    Team?: CsTeam;
-  }
-
   // eslint-disable-next-line no-undef
   const DEFAULT_ICE_CONFIG: RTCConfiguration = {
     iceTransportPolicy: 'all',
@@ -368,24 +316,20 @@
     // private soundSourceObjects: any[] = [];
 
     // private steamId?: string;
-    private roomCode?: string;
 
     public isConnected(): boolean {
-      return !!this.roomCode;
+      return roomCode !== undefined;
     }
-
-    private audioConnectionStuff: AudioConnectionStuff;
 
     // is this "player incoming audio streams?"
     // private audioElements: AudioElements = {};
     private currentLobby = '';
     // i hate all of this
-    private socketClientMap: SocketClientMap = {};
-    private steamIdSocketMap: SteamIdSocketMap = {};
-    private peerConnections: PeerConnections = {};
+    steamIdSocketMap: SteamIdSocketMap = {};
+    peerConnections: PeerConnections = {};
 
     constructor() {
-      this.audioConnectionStuff = {
+      audioConnectionStuff = {
         deafened: false,
         muted: false,
         toggleMute: () => {
@@ -435,12 +379,12 @@
     joinRoom_(code: string) {
       // TODO: implement UI
       if (code) {
-        this.roomCode = code;
+        roomCode = code;
         setTimeout(() => {
           this.initUserMedia();
         }, 1000);
       } else {
-        this.roomCode = null;
+        roomCode = null;
         // TODO: toast notification
         console.log('invalid room code');
         addNotification({
@@ -513,26 +457,25 @@
           // const source = ac.createMediaStreamSource(inStream);
 
           // TODO: what WILL be the difference between stream & inStream
-          this.audioConnectionStuff.stream = stream;
-          this.audioConnectionStuff.instream = inStream;
+          audioConnectionStuff.stream = stream;
+          audioConnectionStuff.instream = inStream;
 
           // TODO: toggleMute handler
-          this.audioConnectionStuff.toggleMute = () => {
-            this.audioConnectionStuff.muted = !this.audioConnectionStuff.muted;
-            if (this.audioConnectionStuff.deafened) {
-              this.audioConnectionStuff.deafened = false;
-              this.audioConnectionStuff.muted = false;
+          audioConnectionStuff.toggleMute = () => {
+            audioConnectionStuff.muted = !audioConnectionStuff.muted;
+            if (audioConnectionStuff.deafened) {
+              audioConnectionStuff.deafened = false;
+              audioConnectionStuff.muted = false;
             }
-            inStream.getAudioTracks()[0].enabled =
-              !this.audioConnectionStuff.muted && !this.audioConnectionStuff.deafened;
-            // setMuted(this.audioConnectionStuff.current.muted);
-            // setDeafened(this.audioConnectionStuff.current.deafened);
+            inStream.getAudioTracks()[0].enabled = !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
+            // setMuted(audioConnectionStuff.current.muted);
+            // setDeafened(audioConnectionStuff.current.deafened);
           };
 
           // this.audioElements = {};
           // TODO: call this.connect() when our lobby room code has been provided
           // this.connect(this.currentLobby, )
-          this.connect(this.roomCode!, this.getSteamId()!, this.getSteamId()!, false);
+          this.connect(roomCode!, this.getSteamId()!, this.getSteamId()!, false);
 
           const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
             console.log('CreatePeerConnection: ', peer, initiator, stream);
@@ -551,8 +494,8 @@
             //   connections[peer] = connection;
             //   return connections;
             // });
-            this.peerConnections[peer] = connection;
-            this.socketClientMap[peer] = client;
+            peerConnections[peer] = connection;
+            socketClientMap[peer] = client;
 
             connection.on('connect', () => {
               // setTimeout(() => {
@@ -579,9 +522,9 @@
               console.log(`ONSTREAM: my steamid is: ${this.getSteamId()} incoming steamid: ${client.steamId}`);
               console.log(`ONSTREAM: my socker id is: ${this.socket_?.socket_.id} incoming socketId: ${peer}`);
               // Map incoming steamid to socket
-              this.steamIdSocketMap[client.steamId] = peer;
+              steamIdSocketMap[client.steamId] = peer;
               // Map incoming socket to client (steamid)
-              this.socketClientMap[peer] = client;
+              socketClientMap[peer] = client;
               this.initialiseRemotePlayer_(stream, client);
             });
 
@@ -610,9 +553,9 @@
               return true;
             });
 
-            this.peerConnections[peer]?.destroy();
-            delete this.peerConnections[peer];
-            delete this.socketClientMap[peer];
+            peerConnections[peer]?.destroy();
+            delete peerConnections[peer];
+            delete socketClientMap[peer];
           });
 
           this.socket_?.socket_.on(
@@ -625,8 +568,8 @@
               //   return;
               // }
               if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-                if (this.peerConnections[from] && data.type !== 'offer') {
-                  connection = this.peerConnections[from];
+                if (peerConnections[from] && data.type !== 'offer') {
+                  connection = peerConnections[from];
                 } else {
                   connection = createPeerConnection(from, false, client);
                 }
@@ -651,7 +594,7 @@
         //   disconnectPeer(k);
         // });
         // setSocketClients({});
-        this.socketClientMap = {};
+        socketClientMap = {};
         this.currentLobby = lobbyCode;
       } else if (this.currentLobby !== lobbyCode) {
         console.log('Currentlobby', this.currentLobby, lobbyCode);
@@ -668,7 +611,7 @@
     initialize_() {
       // Log if we're receiving packets from remote stream
       setInterval(() => {
-        Object.entries(this.peerConnections).forEach(([id, pc]) => {
+        Object.entries(peerConnections).forEach(([id, pc]) => {
           const rtcPeer = (pc as any)._pc;
           if (!rtcPeer) return;
 
@@ -711,12 +654,12 @@
         if (!mySocketId) {
           return;
         }
-        if (this.socketClientMap[mySocketId]) {
+        if (socketClientMap[mySocketId]) {
           return;
         }
 
         playerPositions = players;
-        // this.socket_?.socketCallback_GetPlayerPositions(players, this.socketClientMap, this.steamIdSocketMap, this.getSteamId());
+        // this.socket_?.socketCallback_GetPlayerPositions(players, socketClientMap, steamIdSocketMap, this.getSteamId());
         // players.forEach((player) => {
 
         for (const player of players) {
@@ -731,11 +674,11 @@
             // console.log(`SAVING our own steam id ${this.getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
 
             // TODO: we cant use .enabled = false because we need dead players to communicate to each other
-            // if (this.audioConnectionStuff?.instream?.getAudioTracks()?.[0]) {
+            // if (audioConnectionStuff?.instream?.getAudioTracks()?.[0]) {
             //   if (!player.IsAlive) {
-            //     this.audioConnectionStuff.instream.getAudioTracks()[0].enabled = false;
+            //     audioConnectionStuff.instream.getAudioTracks()[0].enabled = false;
             //   } else {
-            //     this.audioConnectionStuff.instream.getAudioTracks()[0].enabled = true;
+            //     audioConnectionStuff.instream.getAudioTracks()[0].enabled = true;
             //   }
             // }
           } else {
@@ -1278,7 +1221,12 @@
   <button type="submit" on:click={joinRoom} disabled={!_APP || isConnected}>Join</button>
   <div id="threejs"></div>
 
-  <PlayerList mySteamId={clientSteamId} players={playerPositions}></PlayerList>
+  {#if _APP && !!roomCode}
+    <PlayerList mySteamId={clientSteamId} players={playerPositions} joinedSocketConnections={socketClientMap}
+    ></PlayerList>
+  {:else}
+    <div>Please join a room to view the player list</div>
+  {/if}
 {/if}
 
 {#if !clientSteamId}
