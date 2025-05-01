@@ -1,5 +1,15 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
+  import Peer from 'simple-peer';
+  import { io, Socket } from 'socket.io-client';
+  import { onDestroy, onMount } from 'svelte';
+  import { getNotificationsContext } from 'svelte-notifications';
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three-stdlib';
+  import PlayerList from './components/PlayerList.svelte';
+  import SteamLoginButton from './components/SteamLoginButton.svelte';
+  import { FirstPersonCamera } from './FirstPersonCamera';
+  import { SoundSourceData } from './SoundSourceData';
   import type {
     AudioConnectionStuff,
     Client,
@@ -8,19 +18,6 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
-
-  import * as THREE from 'three';
-  import { GLTFLoader } from 'three-stdlib';
-  import { io, Socket } from 'socket.io-client';
-  import Peer from 'simple-peer';
-
-  import { getNotificationsContext } from 'svelte-notifications';
-
-  import { onDestroy, onMount } from 'svelte';
-  import PlayerList from './components/PlayerList.svelte';
-  import { SoundSourceData } from './SoundSourceData';
-  import { FirstPersonCamera } from './FirstPersonCamera';
-  import SteamLoginButton from './components/SteamLoginButton.svelte';
 
   const { addNotification } = getNotificationsContext();
 
