@@ -17,6 +17,7 @@
   $: if (players && players.length) {
     joinedPlayers = [];
 
+    // Retrieve names from the cs2 server, and only display players that have joined the voice chat
     for (const player of players) {
       const SteamId = player.SteamId;
       if (!SteamId) continue;
@@ -28,19 +29,30 @@
         joinedPlayers.push({ SteamId, Name: player.Name });
       }
     }
+
+    // Some players could be in the call, but not on the server yet, let's display their steamID instead
+    for (const [_peer, client] of Object.entries(joinedSocketConnections)) {
+      const SteamId = client.steamId;
+      const player = joinedPlayers.find((p) => p.SteamId === SteamId);
+      if (!player) {
+        joinedPlayers.push({ SteamId, Name: SteamId });
+      }
+    }
   }
 </script>
 
-<div style="text-align: left;width:100%">
-  <div>Joined Players:</div>
-  {#if !clientIsOnServer}
-    <div style="color:red"><i>You are not on the server yet.</i></div>
-  {/if}
-  {#if players}
-    {#each joinedPlayers as player (player)}
-      {#if player.SteamId !== '0'}
-        <div>{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
-      {/if}
-    {/each}
-  {/if}
+<div style="width:100%">
+  <div style="text-align: center;">Joined Players</div>
+  <div style="text-align: left">
+    {#if !clientIsOnServer}
+      <div style="color:red"><i>You are not on the server yet.</i></div>
+    {/if}
+    {#if players}
+      {#each joinedPlayers as player (player)}
+        {#if player.SteamId !== '0'}
+          <div>{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
+        {/if}
+      {/each}
+    {/if}
+  </div>
 </div>
