@@ -210,8 +210,6 @@ const checkSteamAuthentication = () => {
 
   if (!steamId) {
     console.log('No steam id has been found, requesting sign in...');
-    // TODO: in the future we will be storing a JWT token instead of the steamId
-    // TODO: If the JWT token fails to validate (expiration + signature, etc.) we will request sign in again
     getSteamId();
   }
 };
@@ -226,19 +224,6 @@ ipcMain.handle('prompt-steam-authentication', async () => {
 
 async function getSteamId() {
   auth.openSteamAuthenticationWindow().then().catch(console.log);
-  // auth
-  //   .authenticate()
-  //   .then((token) => {
-  //     // use your token.steam_id
-  //     console.log(`WE GOT YOUR STEAM ID: ${token}`);
-  //     if (token) {
-  //       store.set('steamId', token);
-  //     }
-  //   })
-  //   .catch((error) => {
-  //     //TODO: throw error saying could not authenticate through Steam.
-  //     console.error(`SteamAuth error :( -> ${error}`);
-  //   });
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
