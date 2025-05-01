@@ -638,6 +638,14 @@
               removeAfter: 2500,
               type: 'error',
             });
+            if (
+              response.message.indexOf('Token has expired') !== -1 ||
+              response.message.indexOf('Invalid steamId') !== -1 ||
+              response.message.indexOf('Invalid token') !== -1
+            ) {
+              window.api.setStoreValue('steamId', null);
+              window.api.setStoreValue('token', null);
+            }
             setTimeout(() => {
               window.api.reloadApp();
             }, 2500);
