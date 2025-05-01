@@ -78,7 +78,9 @@ function createWindow(): void {
 
 if (process.defaultApp) {
   if (process.argv.length >= 2) {
-    app.setAsDefaultProtocolClient(appProtocolClient, process.execPath, [path.resolve(process.argv[1])]);
+    app.setAsDefaultProtocolClient(appProtocolClient, process.execPath, [
+      path.resolve(process.argv[1]),
+    ]);
   }
 } else {
   app.setAsDefaultProtocolClient(appProtocolClient);
@@ -145,19 +147,21 @@ if (!gotTheLock) {
       // On macOS it's common to re-create a window in the app when the
       // dock icon is clicked and there are no other windows open.
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
-      session.fromPartition('default').setPermissionRequestHandler((_webContents, permission, callback) => {
-        const allowedPermissions = ['audioCapture']; // Full list here: https://developer.chrome.com/extensions/declare_permissions#manifest
-        console.log('permission requested ', permission);
-        if (allowedPermissions.includes(permission)) {
-          callback(true); // Approve permission request
-        } else {
-          console.error(
-            `The application tried to request permission for '${permission}'. This permission was not whitelisted and has been blocked.`,
-          );
+      session
+        .fromPartition('default')
+        .setPermissionRequestHandler((_webContents, permission, callback) => {
+          const allowedPermissions = ['audioCapture']; // Full list here: https://developer.chrome.com/extensions/declare_permissions#manifest
+          console.log('permission requested ', permission);
+          if (allowedPermissions.includes(permission)) {
+            callback(true); // Approve permission request
+          } else {
+            console.error(
+              `The application tried to request permission for '${permission}'. This permission was not whitelisted and has been blocked.`,
+            );
 
-          callback(false); // Deny
-        }
-      });
+            callback(false); // Deny
+          }
+        });
     });
 
     // checkSteamAuthentication();

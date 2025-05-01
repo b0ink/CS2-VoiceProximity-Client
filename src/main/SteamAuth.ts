@@ -36,7 +36,9 @@ interface SteamOpenIDParams {
 //   return text.includes('is_valid:true');
 // }
 
-const realm = !app.isPackaged ? 'http://localhost:3000/' : `https://cs2-proximitychat-server.onrender.com/`;
+const realm = !app.isPackaged
+  ? 'http://localhost:3000/'
+  : `https://cs2-proximitychat-server.onrender.com/`;
 const return_url = `${realm}verify-steam`;
 
 const USE_EXTERNAL_BROWSER = true;

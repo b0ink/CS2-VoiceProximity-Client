@@ -3,7 +3,8 @@ import { electronAPI } from '@electron-toolkit/preload';
 
 // Custom APIs for renderer
 const api = {
-  getStoreValue: (key: string, defaultValue?: string) => ipcRenderer.invoke('get-store-value', key, defaultValue),
+  getStoreValue: (key: string, defaultValue?: string) =>
+    ipcRenderer.invoke('get-store-value', key, defaultValue),
   setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
   getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),

@@ -22,7 +22,10 @@
       const SteamId = player.SteamId;
       if (!SteamId) continue;
 
-      if (SteamId === mySteamId || Object.values(joinedSocketConnections).some((c) => c.steamId === SteamId)) {
+      if (
+        SteamId === mySteamId ||
+        Object.values(joinedSocketConnections).some((c) => c.steamId === SteamId)
+      ) {
         if (SteamId == mySteamId) {
           clientIsOnServer = true;
         }

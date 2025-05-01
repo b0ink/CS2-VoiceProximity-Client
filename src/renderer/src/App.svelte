@@ -474,7 +474,8 @@
               audioConnectionStuff.deafened = false;
               audioConnectionStuff.muted = false;
             }
-            inStream.getAudioTracks()[0].enabled = !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
+            inStream.getAudioTracks()[0].enabled =
+              !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
             // setMuted(audioConnectionStuff.current.muted);
             // setDeafened(audioConnectionStuff.current.deafened);
           };
@@ -526,8 +527,12 @@
             });
 
             connection.on('stream', async (stream: MediaStream) => {
-              console.log(`ONSTREAM: my steamid is: ${this.getSteamId()} incoming steamid: ${client.steamId}`);
-              console.log(`ONSTREAM: my socker id is: ${this.socket_?.socket_.id} incoming socketId: ${peer}`);
+              console.log(
+                `ONSTREAM: my steamid is: ${this.getSteamId()} incoming steamid: ${client.steamId}`,
+              );
+              console.log(
+                `ONSTREAM: my socker id is: ${this.socket_?.socket_.id} incoming socketId: ${peer}`,
+              );
               // Map incoming steamid to socket
               steamIdSocketMap[client.steamId] = peer;
               // Map incoming socket to client (steamid)
@@ -676,8 +681,12 @@
           if (steamId === this.getSteamId()) {
             // these vectors are transformed with updatePosition()
             // this.setMyCameraPositionData_(playerOrigin, playerLookAt);\
-            this.fpsCamera_.position_.copy(new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ));
-            this.fpsCamera_.lookAt_.copy(new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ));
+            this.fpsCamera_.position_.copy(
+              new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ),
+            );
+            this.fpsCamera_.lookAt_.copy(
+              new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ),
+            );
             // console.log(`SAVING our own steam id ${this.getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
 
             // TODO: we cant use .enabled = false because we need dead players to communicate to each other
@@ -801,7 +810,10 @@
       for (const soundData of this.sounds_) {
         // console.log('found sound data!');
         // TODO: move calculateOcclusion code inside of SoundSourceData
-        const { occlusion } = this.calculateOcclusion(soundData.camera_?.position, soundData.soundObjSource_?.position);
+        const { occlusion } = this.calculateOcclusion(
+          soundData.camera_?.position,
+          soundData.soundObjSource_?.position,
+        );
         const minimumAmt = 100;
         // const amount = 11000 - occlusion * 11000 + 250;
         const eased = Math.pow(occlusion, 0.25); // sqrt curve
@@ -828,7 +840,10 @@
         // const minHighpass = 0;
         // const occlusionThreshold = 0.4;
 
-        const distance = this.calculateDistance(soundData.camera_?.position, soundData.soundObjSource_?.position);
+        const distance = this.calculateDistance(
+          soundData.camera_?.position,
+          soundData.soundObjSource_?.position,
+        );
 
         if (!distance) {
           continue;
@@ -900,8 +915,16 @@
       const ListenerLeft = this.calculatePoint(Listener_, Sound_, SndOcclusonWidening, true);
       const ListenerRight = this.calculatePoint(Listener_, Sound_, SndOcclusonWidening, false);
 
-      const ListenerAbove = new THREE.Vector3(Listener_.x, Listener_.y, Listener_.z + SndOcclusonWidening * 0.5);
-      const ListenerBelow = new THREE.Vector3(Listener_.x, Listener_.y, Listener_.z - SndOcclusonWidening * 0.5);
+      const ListenerAbove = new THREE.Vector3(
+        Listener_.x,
+        Listener_.y,
+        Listener_.z + SndOcclusonWidening * 0.5,
+      );
+      const ListenerBelow = new THREE.Vector3(
+        Listener_.x,
+        Listener_.y,
+        Listener_.z - SndOcclusonWidening * 0.5,
+      );
 
       const line1 = this.didIntersect(SoundLeft, Listener_);
       const line2 = this.didIntersect(SoundLeft, Listener_);
@@ -1209,7 +1232,12 @@
 
 {#if clientSteamId}
   <label for="mic">Microphone:</label>
-  <select id="mic" bind:value={selectedDeviceId} style="width: 200px" disabled={_APP && isConnected}>
+  <select
+    id="mic"
+    bind:value={selectedDeviceId}
+    style="width: 200px"
+    disabled={_APP && isConnected}
+  >
     {#each devices as device (device.deviceId)}
       <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
     {/each}
@@ -1229,7 +1257,10 @@
   <div id="threejs"></div>
 
   {#if _APP && !!roomCode}
-    <PlayerList mySteamId={clientSteamId} players={playerPositions} joinedSocketConnections={socketClientMap}
+    <PlayerList
+      mySteamId={clientSteamId}
+      players={playerPositions}
+      joinedSocketConnections={socketClientMap}
     ></PlayerList>
   {:else}
     <div>Please join a room to view the player list</div>
