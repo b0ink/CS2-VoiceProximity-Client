@@ -629,6 +629,7 @@
             this.currentLobby = lobbyCode;
             // TODO: can we initialize renderer here?
             _APP.initializeMap_();
+            joinedRoom = true;
           } else {
             roomCode = null;
             // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
