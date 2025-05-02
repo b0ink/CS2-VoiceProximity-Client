@@ -45,6 +45,8 @@
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !scene_) {
+      socket_ = io(socketUrl);
+
       // TODO: one time notification when logging in for the first time
       // addNotification({
       //   text: 'Successfully authenticated',
@@ -163,7 +165,6 @@
 
       // TODO: move into its own settings store file
 
-      socket_ = io(socketUrl);
       initializeScene_();
       // initializePostFX_();
       // initializeMap_();
@@ -479,6 +480,8 @@
 
           connection.on('error', () => {
             console.log('ONERROR');
+            console.log('Attempting to reconnect');
+            connect(currentLobby, clientSteamId, clientSteamId, false);
             /*empty*/
           });
           return connection;
@@ -554,7 +557,7 @@
       const joinRoomPayload = {
         token: clientToken,
         roomCode: lobbyCode,
-        playerId: playerId,
+        steamId: playerId,
         clientId: clientId,
         isHost: isHost,
       };
