@@ -31,5 +31,6 @@ ipcMain.handle('get-socket-url', async () => {
   if (isDev) {
     return 'http://127.0.0.1:3000';
   }
-  return 'https://cs2-proximitychat-server.onrender.com';
+  return 'https://cs2voiceproximity.chat';
+  // return 'https://cs2-proximitychat-server.onrender.com';
 });
