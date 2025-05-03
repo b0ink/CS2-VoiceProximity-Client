@@ -263,18 +263,18 @@
     iceServers: [
       {
         urls: 'turn:cs2voiceproximity.chat:3478?transport=udp',
-        username: '96cfcb96272c895a9dbf7f90',
-        credential: 'YN9b9HCsFuc07FpF',
+        username: 'test',
+        credential: 'test123',
       },
       {
         urls: 'turn:cs2voiceproximity.chat:3478',
-        username: '96cfcb96272c895a9dbf7f90',
-        credential: 'YN9b9HCsFuc07FpF',
+        username: 'test',
+        credential: 'test123',
       },
       {
         urls: 'turn:cs2voiceproximity.chat:3478?transport=tcp',
-        username: '96cfcb96272c895a9dbf7f90',
-        credential: 'YN9b9HCsFuc07FpF',
+        username: 'test',
+        credential: 'test123',
       },
     ],
   };
