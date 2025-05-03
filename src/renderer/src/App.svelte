@@ -262,17 +262,7 @@
     iceTransportPolicy: 'relay', // protect IPs
     iceServers: [
       {
-        urls: 'turn:cs2voiceproximity.chat:3478?transport=udp',
-        username: 'test',
-        credential: 'test123',
-      },
-      {
-        urls: 'turn:cs2voiceproximity.chat:3478',
-        username: 'test',
-        credential: 'test123',
-      },
-      {
-        urls: 'turn:cs2voiceproximity.chat:3478?transport=tcp',
+        urls: 'turn:turn.cs2voiceproximity.chat',
         username: 'test',
         credential: 'test123',
       },
