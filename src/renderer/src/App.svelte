@@ -271,6 +271,11 @@
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
+      {
+        urls: 'turn:cs2voiceproximity.chat:3478?transport=tcp',
+        username: '96cfcb96272c895a9dbf7f90',
+        credential: 'YN9b9HCsFuc07FpF',
+      },
 
       //   {
       //     urls: 'turn:standard.relay.metered.ca:80',
