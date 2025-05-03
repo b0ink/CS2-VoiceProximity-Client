@@ -276,27 +276,6 @@
         username: '96cfcb96272c895a9dbf7f90',
         credential: 'YN9b9HCsFuc07FpF',
       },
-
-      //   {
-      //     urls: 'turn:standard.relay.metered.ca:80',
-      //     username: '96cfcb96272c895a9dbf7f90',
-      //     credential: 'YN9b9HCsFuc07FpF',
-      //   },
-      //   {
-      //     urls: 'turn:standard.relay.metered.ca:80?transport=tcp',
-      //     username: '96cfcb96272c895a9dbf7f90',
-      //     credential: 'YN9b9HCsFuc07FpF',
-      //   },
-      //   {
-      //     urls: 'turn:standard.relay.metered.ca:443',
-      //     username: '96cfcb96272c895a9dbf7f90',
-      //     credential: 'YN9b9HCsFuc07FpF',
-      //   },
-      //   {
-      //     urls: 'turns:standard.relay.metered.ca:443?transport=tcp',
-      //     username: '96cfcb96272c895a9dbf7f90',
-      //     credential: 'YN9b9HCsFuc07FpF',
-      //   },
     ],
   };
 
@@ -486,7 +465,8 @@
           connection.on('error', () => {
             console.log('ONERROR');
             console.log('Attempting to reconnect');
-            connect(currentLobby, clientSteamId, clientSteamId, false);
+            currentLobby = null;
+            connect(roomCode, clientSteamId, clientSteamId, false);
             /*empty*/
           });
           return connection;
