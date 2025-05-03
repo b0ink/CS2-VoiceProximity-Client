@@ -138,29 +138,8 @@ if (!gotTheLock) {
       return;
     }
 
+    Authenticate(launchUrl);
     // TODO: everything should be done in the SteamAuth class (when we have our shareable store modules)
-
-    console.log(`Verifying steam authentication...`);
-    const token = auth.parseOpenIdResponse(launchUrl);
-    // console.log(token);
-    if (!token) {
-      return console.log('Invalid or no token returned.');
-    }
-
-    const decoded = jwt.decode(token);
-    if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
-      return console.log('Invalid token');
-    }
-    const payload = decoded as JwtAuthPayload;
-    const steamId64 = payload.steamId;
-    if (!steamId64) {
-      return console.log('Invalid steamid64');
-    }
-
-    store.set('token', token);
-    store.set('steamId', steamId64);
-    console.log(`Setting token ${token}`);
-    console.log(`Setting steamid ${steamId64}`);
   });
 
   // This method will be called when Electron has finished
@@ -203,9 +182,35 @@ if (!gotTheLock) {
         });
     });
 
-    // checkSteamAuthentication();
+    app.on('open-url', (_, url) => {
+      Authenticate(url);
+    });
   });
 }
+
+const Authenticate = (launchUrl) => {
+  console.log(`Verifying steam authentication...`);
+  const token = auth.parseOpenIdResponse(launchUrl);
+  // console.log(token);
+  if (!token) {
+    return console.log('Invalid or no token returned.');
+  }
+
+  const decoded = jwt.decode(token);
+  if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
+    return console.log('Invalid token');
+  }
+  const payload = decoded as JwtAuthPayload;
+  const steamId64 = payload.steamId;
+  if (!steamId64) {
+    return console.log('Invalid steamid64');
+  }
+
+  store.set('token', token);
+  store.set('steamId', steamId64);
+  console.log(`Setting token ${token}`);
+  console.log(`Setting steamid ${steamId64}`);
+};
 
 const checkSteamAuthentication = () => {
   const steamId = store.get('steamId');
