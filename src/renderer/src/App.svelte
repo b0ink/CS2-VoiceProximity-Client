@@ -416,8 +416,8 @@
           // disconnectClient(client); // TODO:
           const connection = new Peer({
             stream,
-            initiator, // @ts-ignore-line
-            iceRestartEnabled: true,
+            initiator,
+            // iceRestartEnabled: true,
             config: useTurnConfig ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: DEFAULT_ICE_CONFIG,
           });
@@ -440,6 +440,10 @@
             //     }
             //   }
             // }, 1000);
+          });
+
+          connection.on('iceCandidate', (candidate) => {
+            console.log('Candidate:', candidate);
           });
 
           connection.on('signal', (data) => {
@@ -465,8 +469,8 @@
           connection.on('error', () => {
             console.log('ONERROR');
             console.log('Attempting to reconnect');
-            currentLobby = null;
-            connect(roomCode, clientSteamId, clientSteamId, false);
+            // currentLobby = null;
+            // connect(roomCode, clientSteamId, clientSteamId, false);
             /*empty*/
           });
           return connection;
