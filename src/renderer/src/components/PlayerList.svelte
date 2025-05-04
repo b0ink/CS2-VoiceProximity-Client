@@ -41,6 +41,10 @@
         joinedPlayers.push({ SteamId, Name: SteamId });
       }
     }
+
+    console.log(players);
+    console.log(joinedSocketConnections);
+    console.log(joinedPlayers);
   }
 </script>
 
