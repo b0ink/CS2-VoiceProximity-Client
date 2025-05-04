@@ -1,9 +1,10 @@
 import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
-import path from 'path';
 import fs from 'fs/promises';
+import path from 'path';
 import { getApiUrl } from './config';
 import { StoreData } from './types';
+import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 
 const store = new Store<StoreData>();
 
@@ -13,6 +14,10 @@ ipcMain.handle('get-store-value', async (_event, key: string, defaultValue?: str
 
 ipcMain.handle('set-store-value', async (_event, key: string, value: any) => {
   store.set(key, value);
+});
+
+ipcMain.handle('get-turn-credentials', async () => {
+  return await retrieveTurnCredentials();
 });
 
 ipcMain.handle('load-map', async (_event, map: string) => {

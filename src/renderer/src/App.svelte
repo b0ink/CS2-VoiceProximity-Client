@@ -392,11 +392,17 @@
         // connect(currentLobby, )
         connect(roomCode!, getSteamId()!, getSteamId()!, false);
 
-        const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
+        const createPeerConnection = async (peer: string, initiator: boolean, client: Client) => {
           console.log('CreatePeerConnection: ', peer, initiator, stream);
           console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
           const useTurnConfig = true;
           // disconnectClient(client); // TODO:
+
+          console.log(`before: ${turnPassword}`);
+          await window.api.retrieveTurnCredentials();
+          turnUsername = await window.api.getStoreValue('turnUsername');
+          turnPassword = await window.api.getStoreValue('turnPassword');
+          console.log(`after: ${turnPassword}`);
 
           // eslint-disable-next-line no-undef
           const ICE_CONFIG_TURN: RTCConfiguration = {
@@ -501,7 +507,15 @@
 
         socket_?.on(
           'signal',
-          ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
+          async ({
+            data,
+            from,
+            client,
+          }: {
+            data: Peer.SignalData;
+            from: string;
+            client: Client;
+          }) => {
             console.log(`received on signal: ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
             // if (!socketClientsRef.current[from]) {
@@ -512,7 +526,7 @@
               if (peerConnections[from] && data.type !== 'offer') {
                 connection = peerConnections[from];
               } else {
-                connection = createPeerConnection(from, false, client);
+                connection = await createPeerConnection(from, false, client);
               }
               connection.signal(data);
             }

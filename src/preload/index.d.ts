@@ -12,5 +12,6 @@ declare global {
     getSocketUrl: () => string;
     reloadApp: () => void;
     promptSteamAuthentication: () => void;
+    retrieveTurnCredentials: () => void;
   }
 }

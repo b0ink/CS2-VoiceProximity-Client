@@ -10,6 +10,7 @@ const api = {
   getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),
   reloadApp: () => ipcRenderer.invoke('reload-app'),
   promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
+  retrieveTurnCredentials: () => ipcRenderer.invoke('get-turn-credentials'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

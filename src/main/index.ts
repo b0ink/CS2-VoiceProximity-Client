@@ -1,17 +1,15 @@
-import { app, shell, BrowserWindow, ipcMain, session } from 'electron';
-import path from 'node:path';
-import { join } from 'path';
-import { electronApp, optimizer, is } from '@electron-toolkit/utils';
-import icon from '../../resources/icon.png?asset';
-import { SteamAuth } from './SteamAuth';
+import { electronApp, is, optimizer } from '@electron-toolkit/utils';
+import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
 import Store from 'electron-store';
 import windowStateKeeper from 'electron-window-state';
-// import { initialiseIpcHandlers } from './ipc-handler';
-
 import jwt from 'jsonwebtoken';
+import path from 'node:path';
+import { join } from 'path';
+import icon from '../../resources/icon.png?asset';
 import './ipc-handlers';
-import { JwtAuthPayload, StoreData, TurnCredential } from './types';
-import { getApiUrl } from './config';
+import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import { SteamAuth } from './SteamAuth';
+import { JwtAuthPayload, StoreData } from './types';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -42,53 +40,6 @@ async function validateJwtToken() {
       store.set('steamId', null);
       store.set('token', null);
     }
-  }
-}
-
-async function retrieveTurnCredentials(): Promise<TurnCredential | null> {
-  const token = store.get('token');
-  if (!token) {
-    return null;
-  }
-
-  const turnUsername = store.get('turnUsername');
-  const turnPassword = store.get('turnPassword');
-
-  console.log(turnUsername, turnPassword);
-  if (turnUsername && turnPassword && turnUsername.indexOf(':') !== -1) {
-    const [expiryStr] = turnUsername.split(':');
-    const expiry = parseInt(expiryStr, 10);
-    if (!isNaN(expiry) && expiry - 60 > Date.now() / 1000) {
-      console.log('Return cached credentials');
-      return {
-        username: turnUsername,
-        password: turnPassword,
-      };
-    }
-  }
-
-  store.delete('turnUsername');
-  store.delete('turnPassword');
-
-  try {
-    const response = await fetch(`${getApiUrl()}/get-turn-credential`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data: { message: string; data: TurnCredential } = await response.json();
-    const credential = data.data;
-    store.set('turnUsername', credential.username);
-    store.set('turnPassword', credential.password);
-    console.log(`Received turn credentials: ${JSON.stringify(credential)}`);
-    return {
-      username: credential.username,
-      password: credential.password,
-    };
-  } catch (e) {
-    console.error(e);
-    return null;
   }
 }
 
