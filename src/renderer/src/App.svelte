@@ -90,9 +90,9 @@
         if (!mySocketId) {
           return;
         }
-        if (socketClientMap[mySocketId]) {
-          return;
-        }
+        // if (socketClientMap[mySocketId]) {
+        //   return;
+        // }
 
         playerPositions = players;
         // socket_?.socketCallback_GetPlayerPositions(players, socketClientMap, steamIdSocketMap, getSteamId());
@@ -653,7 +653,7 @@
     // Needed to make threejs positional audio work with remoteStream
     let audioRef = new Audio();
     audioRef.srcObject = remoteStream;
-    // audioRef.muted = true;
+    audioRef.muted = true;
 
     sound1.setMediaStreamSource(remoteStream);
     audioRef = null;
@@ -663,7 +663,7 @@
     sound1.setRefDistance(39);
     sound1.setRolloffFactor(1);
     sound1.setMaxDistance(1000);
-    sound1.play();
+    // sound1.play();
     speaker1.add(sound1);
     const sound1Data = new SoundSourceData(map_, sound1, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
