@@ -516,7 +516,7 @@
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
             console.log(`received on signal: ${JSON.stringify(data)}`);
             console.log(`received on signal: ${from}`);
-            console.log(`received on signal: ${JSON.stringify(data)}`);
+            console.log(`received on signal: ${JSON.stringify(client)}`);
             let connection: Peer.Instance;
             // if (!socketClientsRef.current[from]) {
             //   console.warn('SIGNAL FROM UNKOWN SOCKET..');
