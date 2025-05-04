@@ -549,6 +549,7 @@
       //   disconnectPeer(k);
       // });
       // setSocketClients({});
+      socketClientMap = {};
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
       console.log('Currentlobby', currentLobby, lobbyCode);
