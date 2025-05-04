@@ -42,9 +42,9 @@
       }
     }
 
-    console.log(players);
-    console.log(joinedSocketConnections);
-    console.log(joinedPlayers);
+    // console.log(players);
+    // console.log(joinedSocketConnections);
+    // console.log(joinedPlayers);
   }
 </script>
 
