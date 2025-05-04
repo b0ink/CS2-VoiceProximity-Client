@@ -3,8 +3,9 @@ import Store from 'electron-store';
 import path from 'path';
 import fs from 'fs/promises';
 import { getApiUrl } from './config';
+import { StoreData } from './types';
 
-const store = new Store();
+const store = new Store<StoreData>();
 
 ipcMain.handle('get-store-value', async (_event, key: string, defaultValue?: string) => {
   return store.get(key, defaultValue);

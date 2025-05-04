@@ -39,12 +39,18 @@
   let roomCode: string | undefined;
   let joinedRoom: boolean = false;
 
+  let turnUsername: string | undefined;
+  let turnPassword: string | undefined;
+
   async function intialise() {
     clientSteamId = await window.api.getStoreValue('steamId');
     clientToken = await window.api.getStoreValue('token');
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !scene_) {
+      turnUsername = await window.api.getStoreValue('turnUsername');
+      turnPassword = await window.api.getStoreValue('turnPassword');
+
       socket_ = io(socketUrl);
 
       // TODO: one time notification when logging in for the first time
@@ -256,19 +262,6 @@
     ],
   };
 
-  // TODO: Uncaught ReferenceError: process is not defined
-  // eslint-disable-next-line no-undef
-  const DEFAULT_ICE_CONFIG_TURN: RTCConfiguration = {
-    iceTransportPolicy: 'relay', // protect IPs
-    iceServers: [
-      {
-        urls: 'turn:turn.cs2voiceproximity.chat',
-        username: 'test',
-        credential: 'test123',
-      },
-    ],
-  };
-
   let fpsCamera_: FirstPersonCamera;
   let socket_: Socket | undefined;
   let previousRAF_: any;
@@ -404,11 +397,26 @@
           console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
           const useTurnConfig = true;
           // disconnectClient(client); // TODO:
+
+          // eslint-disable-next-line no-undef
+          const ICE_CONFIG_TURN: RTCConfiguration = {
+            iceTransportPolicy: 'relay', // protect IPs
+            iceServers: [
+              {
+                urls: 'turn:turn.cs2voiceproximity.chat',
+                username: turnUsername,
+                credential: turnPassword,
+              },
+            ],
+          };
+
+          console.log(ICE_CONFIG_TURN);
+
           const connection = new Peer({
             stream,
             initiator,
             // iceRestartEnabled: true,
-            config: useTurnConfig ? DEFAULT_ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+            config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: DEFAULT_ICE_CONFIG,
           });
 
@@ -459,6 +467,8 @@
           connection.on('error', () => {
             console.log('ONERROR');
             console.log('Attempting to reconnect');
+            //TODO: refetch turn credentials
+            //TODO: reconnect into room
             // currentLobby = null;
             // connect(roomCode, clientSteamId, clientSteamId, false);
             /*empty*/

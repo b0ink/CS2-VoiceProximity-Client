@@ -9,3 +9,10 @@ export interface TurnCredential {
   username: string;
   password: string;
 }
+
+export interface StoreData {
+  steamId?: string;
+  token?: string;
+  turnUsername?: string;
+  turnPassword?: string;
+}

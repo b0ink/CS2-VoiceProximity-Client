@@ -10,19 +10,12 @@ import windowStateKeeper from 'electron-window-state';
 
 import jwt from 'jsonwebtoken';
 import './ipc-handlers';
-import { JwtAuthPayload, TurnCredential } from './types';
+import { JwtAuthPayload, StoreData, TurnCredential } from './types';
 import { getApiUrl } from './config';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
-
-interface StoreData {
-  steamId?: string;
-  token?: string;
-  turnUsername?: string;
-  turnPassword?: string;
-}
 
 const auth = new SteamAuth();
 
