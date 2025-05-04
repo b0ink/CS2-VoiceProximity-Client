@@ -34,6 +34,7 @@
     }
 
     // Some players could be in the call, but not on the server yet, let's display their steamID instead
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_peer, client] of Object.entries(joinedSocketConnections)) {
       const SteamId = client.steamId;
       const player = joinedPlayers.find((p) => p.SteamId === SteamId);
