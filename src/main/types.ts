@@ -4,3 +4,8 @@ export interface JwtAuthPayload {
   iat?: number;
   aud?: string;
 }
+
+export interface TurnCredential {
+  username: string;
+  password: string;
+}

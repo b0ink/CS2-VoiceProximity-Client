@@ -2,6 +2,7 @@ import { app, ipcMain } from 'electron';
 import Store from 'electron-store';
 import path from 'path';
 import fs from 'fs/promises';
+import { getApiUrl } from './config';
 
 const store = new Store();
 
@@ -27,10 +28,5 @@ ipcMain.handle('load-map', async (_event, map: string) => {
 
 // TODO: replace with get-store-value once there's a UI for settings
 ipcMain.handle('get-socket-url', async () => {
-  const isDev = !app.isPackaged;
-  if (isDev) {
-    return 'http://127.0.0.1:3000';
-  }
-  return 'https://cs2voiceproximity.chat';
-  // return 'https://cs2-proximitychat-server.onrender.com';
+  return getApiUrl();
 });

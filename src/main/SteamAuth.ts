@@ -1,7 +1,8 @@
 import { app, shell } from 'electron';
 import openid from 'openid';
+import { getApiUrl } from './config';
 
-const realm = !app.isPackaged ? 'http://localhost:3000/' : `https://cs2voiceproximity.chat/`;
+const realm = !app.isPackaged ? 'http://127.0.01:3000/' : getApiUrl();
 const return_url = `${realm}verify-steam`;
 
 const USE_EXTERNAL_BROWSER = true;

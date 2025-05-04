@@ -10,14 +10,18 @@ import windowStateKeeper from 'electron-window-state';
 
 import jwt from 'jsonwebtoken';
 import './ipc-handlers';
-import { JwtAuthPayload } from './types';
+import { JwtAuthPayload, TurnCredential } from './types';
+import { getApiUrl } from './config';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 
 interface StoreData {
-  steamId: string;
+  steamId?: string;
+  token?: string;
+  turnUsername?: string;
+  turnPassword?: string;
 }
 
 const auth = new SteamAuth();
@@ -25,7 +29,7 @@ const auth = new SteamAuth();
 const store = new Store<StoreData>();
 let mainWindow: BrowserWindow;
 
-function validateJwtToken() {
+async function validateJwtToken() {
   const steamId = store.get('steamId');
   const token = store.get('token');
   if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
@@ -38,6 +42,7 @@ function validateJwtToken() {
         throw new Error('Token is invalid, expired, or missing expiration');
       }
       // Token is valid
+      await retrieveTurnCredentials();
     } catch (e) {
       console.log(e);
       // Reset token
@@ -47,10 +52,55 @@ function validateJwtToken() {
   }
 }
 
+async function retrieveTurnCredentials(): Promise<TurnCredential | null> {
+  const token = store.get('token');
+  if (!token) {
+    return null;
+  }
+
+  const turnUsername = store.get('turnUsername');
+  const turnPassword = store.get('turnPassword');
+
+  console.log(turnUsername, turnPassword);
+  if (turnUsername && turnPassword && turnUsername.indexOf(':') !== -1) {
+    const [expiryStr] = turnUsername.split(':');
+    const expiry = parseInt(expiryStr, 10);
+    if (!isNaN(expiry) && expiry - 60 > Date.now() / 1000) {
+      console.log('Return cached credentials');
+      return {
+        username: turnUsername,
+        password: turnPassword,
+      };
+    }
+  }
+
+  store.delete('turnUsername');
+  store.delete('turnPassword');
+
+  try {
+    const response = await fetch(`${getApiUrl()}/get-turn-credential`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    const data: { message: string; data: TurnCredential } = await response.json();
+    const credential = data.data;
+    store.set('turnUsername', credential.username);
+    store.set('turnPassword', credential.password);
+    console.log(`Received turn credentials: ${JSON.stringify(credential)}`);
+    return {
+      username: credential.username,
+      password: credential.password,
+    };
+  } catch (e) {
+    console.error(e);
+    return null;
+  }
+}
+
 function createWindow(): void {
   // Reset token and steamid if invalid or expired token
-
-  validateJwtToken();
 
   const mainWindowState = windowStateKeeper({});
 
@@ -210,6 +260,9 @@ const Authenticate = (launchUrl) => {
   store.set('steamId', steamId64);
   console.log(`Setting token ${token}`);
   console.log(`Setting steamid ${steamId64}`);
+
+  // validate again and fetch turn credentials
+  validateJwtToken();
 };
 
 const checkSteamAuthentication = () => {
