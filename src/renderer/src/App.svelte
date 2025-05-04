@@ -429,6 +429,7 @@
           // });
           peerConnections[peer] = connection;
           socketClientMap[peer] = client;
+          console.log(`Assigning ${peer} to ${client.steamId}`);
 
           connection.on('connect', () => {
             // setTimeout(() => {
@@ -464,6 +465,7 @@
             steamIdSocketMap[client.steamId] = peer;
             // Map incoming socket to client (steamid)
             socketClientMap[peer] = client;
+            console.log(`on stream: Assigning ${peer} to ${client.steamId}`);
             initialiseRemotePlayer_(stream, client);
           });
 
@@ -480,7 +482,7 @@
         };
 
         socket_?.on('user-joined', async (peer: string, client: Client) => {
-          console.log('user has joined!');
+          console.log(`user has joined! ${JSON.stringify(client)}`);
 
           console.log(`before: ${turnPassword}`);
           await window.api.retrieveTurnCredentials();
@@ -545,7 +547,6 @@
       //   disconnectPeer(k);
       // });
       // setSocketClients({});
-      socketClientMap = {};
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
       console.log('Currentlobby', currentLobby, lobbyCode);
@@ -665,7 +666,7 @@
     sound1Data.steamId = client.steamId;
     sounds_.push(sound1Data);
 
-    console.log('created remote player');
+    console.log(`Creating remote player: ${client.steamId}`);
   };
 
   // const initializeAudio_ = () => {
