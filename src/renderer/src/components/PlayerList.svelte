@@ -50,6 +50,12 @@
     {#if !clientIsOnServer}
       <div style="color:red"><i>You are not on the server yet.</i></div>
     {/if}
+    <!-- {#each players as player (player)}
+      {#if player.SteamId !== '0'}
+        <div>{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
+      {/if}
+    {/each} -->
+
     {#if players}
       {#each joinedPlayers as player (player)}
         {#if player.SteamId !== '0'}

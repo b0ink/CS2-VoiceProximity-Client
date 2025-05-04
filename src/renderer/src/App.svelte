@@ -21,7 +21,7 @@
 
   const { addNotification } = getNotificationsContext();
 
-  let playerPositions;
+  let playerPositions = [];
 
   let clientSteamId: string | null;
   let clientToken: string | null;
@@ -48,11 +48,31 @@
     socketUrl = await window.api.getSocketUrl();
 
     if (clientSteamId && socketUrl && !scene_) {
+      await window.api.retrieveTurnCredentials();
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
-
       socket_ = io(socketUrl);
 
+      // Now you can use roomCode and steamId
+      // initializeRenderer_();
+
+      scene_ = new THREE.Scene();
+      listener_ = new THREE.AudioListener();
+
+      const fov = 60;
+      const aspect = 1920 / 1080;
+      const near = 1.0;
+      const far = 2000.0;
+      camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      camera_.position.set(-30, 2, 0);
+
+      // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
+      // uiScene_ = new THREE.Scene();
+
+      fpsCamera_ = new FirstPersonCamera(camera_);
+      const axesHelper = new THREE.AxesHelper(50);
+      scene_.add(axesHelper);
+      camera_.add(listener_);
       // TODO: one time notification when logging in for the first time
       // addNotification({
       //   text: 'Successfully authenticated',
@@ -79,17 +99,28 @@
         });
       }, 1000);
 
+      // TODO: move into its own settings store file
+
+      // initializeScene_();
+
+      // initializePostFX_();
+      // initializeMap_();
+      // initializeAudio_();
+
+      raf_();
+      onWindowResize_();
+
       socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
         // TODO: if (not connected... || is not in a room...)
+        // console.log(players);
+        // if (!joinedRoom) {
+        //   return;
+        // }
 
-        if (!joinedRoom) {
-          return;
-        }
-
-        const mySocketId = socket_?.id;
-        if (!mySocketId) {
-          return;
-        }
+        // const mySocketId = socket_?.id;
+        // if (!mySocketId) {
+        //   return;
+        // }
         // if (socketClientMap[mySocketId]) {
         //   return;
         // }
@@ -150,34 +181,6 @@
 
         // });
       });
-
-      // Now you can use roomCode and steamId
-      // initializeRenderer_();
-
-      scene_ = new THREE.Scene();
-      listener_ = new THREE.AudioListener();
-
-      const fov = 60;
-      const aspect = 1920 / 1080;
-      const near = 1.0;
-      const far = 2000.0;
-      camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      camera_.position.set(-30, 2, 0);
-
-      // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
-      // uiScene_ = new THREE.Scene();
-
-      fpsCamera_ = new FirstPersonCamera(camera_);
-
-      // TODO: move into its own settings store file
-
-      initializeScene_();
-      // initializePostFX_();
-      // initializeMap_();
-      initializeAudio_();
-
-      raf_();
-      onWindowResize_();
     }
   }
 
@@ -392,17 +395,11 @@
         // connect(currentLobby, )
         connect(roomCode!, getSteamId()!, getSteamId()!, false);
 
-        const createPeerConnection = async (peer: string, initiator: boolean, client: Client) => {
+        const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
           console.log('CreatePeerConnection: ', peer, initiator, stream);
           console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
           const useTurnConfig = true;
           // disconnectClient(client); // TODO:
-
-          console.log(`before: ${turnPassword}`);
-          await window.api.retrieveTurnCredentials();
-          turnUsername = await window.api.getStoreValue('turnUsername');
-          turnPassword = await window.api.getStoreValue('turnPassword');
-          console.log(`after: ${turnPassword}`);
 
           // eslint-disable-next-line no-undef
           const ICE_CONFIG_TURN: RTCConfiguration = {
@@ -484,6 +481,13 @@
 
         socket_?.on('user-joined', async (peer: string, client: Client) => {
           console.log('user has joined!');
+
+          console.log(`before: ${turnPassword}`);
+          await window.api.retrieveTurnCredentials();
+          turnUsername = await window.api.getStoreValue('turnUsername');
+          turnPassword = await window.api.getStoreValue('turnPassword');
+          console.log(`after: ${turnPassword}`);
+
           createPeerConnection(peer, true, client);
           // setSocketClients((old) => ({ ...old, [peer]: client }));
         });
@@ -507,15 +511,7 @@
 
         socket_?.on(
           'signal',
-          async ({
-            data,
-            from,
-            client,
-          }: {
-            data: Peer.SignalData;
-            from: string;
-            client: Client;
-          }) => {
+          ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
             console.log(`received on signal: ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
             // if (!socketClientsRef.current[from]) {
@@ -526,7 +522,7 @@
               if (peerConnections[from] && data.type !== 'offer') {
                 connection = peerConnections[from];
               } else {
-                connection = await createPeerConnection(from, false, client);
+                connection = createPeerConnection(from, false, client);
               }
               connection.signal(data);
             }
@@ -604,42 +600,42 @@
     }
   };
 
-  const initialisePlayer_ = () => {
-    // TODO: this speaker1 is left idle in top mid.. does this function actually do anything?
+  // const initialisePlayer_ = () => {
+  //   // TODO: this speaker1 is left idle in top mid.. does this function actually do anything?
 
-    const speaker1Material = new THREE.MeshStandardMaterial({ color: 0x888888 });
-    const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
-    speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
-    // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
-    // speakerMesh1_ = speaker1;
+  //   const speaker1Material = new THREE.MeshStandardMaterial({ color: 0x888888 });
+  //   const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
+  //   speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
+  //   // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
+  //   // speakerMesh1_ = speaker1;
 
-    const sound1 = new THREE.PositionalAudio(listener_);
-    speaker1.add(sound1);
-    const sound1Data = new SoundSourceData(map_, sound1, speaker1, listener_, camera_);
-    if (getSteamId()) {
-      sound1Data.steamId = getSteamId()!;
-    } else {
-      console.error(`initialising local player without a steam id!`);
-    }
-    sounds_.push(sound1Data);
+  //   const sound1 = new THREE.PositionalAudio(listener_);
+  //   speaker1.add(sound1);
+  //   const sound1Data = new SoundSourceData(map_, sound1, speaker1, listener_, camera_);
+  //   if (getSteamId()) {
+  //     sound1Data.steamId = getSteamId()!;
+  //   } else {
+  //     console.error(`initialising local player without a steam id!`);
+  //   }
+  //   sounds_.push(sound1Data);
 
-    scene_.add(speaker1);
+  //   scene_.add(speaker1);
 
-    // const loader = new THREE.AudioLoader();
-    // loader.load("resources/music/Ectoplasm.mp3", (buffer) => {
-    //   setTimeout(() => {
-    //     sound1.setBuffer(buffer);
-    //     sound1.setLoop(true);
-    //     sound1.setVolume(0.85);
-    //     sound1.setRefDistance(39);
-    //     sound1.setRolloffFactor(1);
-    //     sound1.setMaxDistance(1000);
-    //     sound1.play();
-    //     // analyzer1_ = new THREE.AudioAnalyser(sound1, 32);
-    //     // analyzer1Data_ = [];
-    //   }, 1000);
-    // });
-  };
+  //   // const loader = new THREE.AudioLoader();
+  //   // loader.load("resources/music/Ectoplasm.mp3", (buffer) => {
+  //   //   setTimeout(() => {
+  //   //     sound1.setBuffer(buffer);
+  //   //     sound1.setLoop(true);
+  //   //     sound1.setVolume(0.85);
+  //   //     sound1.setRefDistance(39);
+  //   //     sound1.setRolloffFactor(1);
+  //   //     sound1.setMaxDistance(1000);
+  //   //     sound1.play();
+  //   //     // analyzer1_ = new THREE.AudioAnalyser(sound1, 32);
+  //   //     // analyzer1Data_ = [];
+  //   //   }, 1000);
+  //   // });
+  // };
 
   const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client) => {
     const speaker1Material = new THREE.MeshStandardMaterial({ color: 0xffffff });
@@ -672,20 +668,20 @@
     console.log('created remote player');
   };
 
-  const initializeAudio_ = () => {
-    camera_.add(listener_);
-    initialisePlayer_();
-  };
+  // const initializeAudio_ = () => {
+  //   camera_.add(listener_);
+  //   // initialisePlayer_();
+  // };
 
-  const initializeScene_ = () => {
-    if (!scene_) {
-      scene_ = new THREE.Scene();
-    }
+  // const initializeScene_ = () => {
+  //   // if (!scene_) {
+  //   //   scene_ = new THREE.Scene();
+  //   // }
 
-    // TODO: if DEBUG is enabled
-    const axesHelper = new THREE.AxesHelper(50);
-    scene_.add(axesHelper);
-  };
+  //   // TODO: if DEBUG is enabled
+  //   const axesHelper = new THREE.AxesHelper(50);
+  //   scene_.add(axesHelper);
+  // };
 
   const initializeRenderer_ = () => {
     // threejs_.shadowMap.enabled = true;
