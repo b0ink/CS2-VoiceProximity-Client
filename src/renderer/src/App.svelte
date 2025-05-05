@@ -1,5 +1,6 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
+  import { decode } from '@msgpack/msgpack';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
@@ -21,7 +22,7 @@
 
   const { addNotification } = getNotificationsContext();
 
-  let playerPositions = [];
+  let playerPositions: PlayerPositionApiData[] = [];
 
   let clientSteamId: string | null;
   let clientToken: string | null;
@@ -112,7 +113,37 @@
       raf_();
       onWindowResize_();
 
-      socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
+      // socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
+      socket_?.on('player-positions', (data) => {
+        const decoded = decode(new Uint8Array(data));
+        const players = decoded as Array<
+          [string, string, number, number, number, number, number, number, number, boolean]
+        >;
+
+        let localPlayerData: PlayerPositionApiData[] = [];
+
+        for (const player of players) {
+          const [SteamId, Name, ox, oy, oz, lx, ly, lz, Team, IsAlive] = player;
+
+          // Cast to PlayerData interface
+          const playerData: PlayerPositionApiData = {
+            SteamId,
+            Name,
+            OriginX: ox / 10000,
+            OriginY: oy / 10000,
+            OriginZ: oz / 10000,
+            LookAtX: lx / 10000,
+            LookAtY: ly / 10000,
+            LookAtZ: lz / 10000,
+            // origin: { x: ox / 10000, y: oy / 10000, z: oz / 10000 },
+            // lookAt: { x: lx / 10000, y: ly / 10000, z: lz / 10000 },
+            Team,
+            IsAlive,
+          };
+          localPlayerData.push(playerData);
+        }
+        playerPositions = localPlayerData;
+
         // TODO: if (not connected... || is not in a room...)
         // console.log(players);
         // if (!joinedRoom) {
@@ -127,11 +158,7 @@
         //   return;
         // }
 
-        playerPositions = players;
-        // socket_?.socketCallback_GetPlayerPositions(players, socketClientMap, steamIdSocketMap, getSteamId());
-        // players.forEach((player) => {
-
-        for (const player of players) {
+        for (const player of localPlayerData) {
           const steamId = player.SteamId;
           const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
           const playerLookAt = new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ);
