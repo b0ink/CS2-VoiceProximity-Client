@@ -172,10 +172,21 @@ export class SoundSourceData {
       return;
     }
 
+    const maximumHighpass = 20000;
+    let targetHighpass = 100;
+
+    if (distance > 500) {
+      const clamped = Math.min(Math.max(distance, 500), 2000);
+      const t = (clamped - 500) / (2000 - 500);
+      targetHighpass = 100 + t * (maximumHighpass - 100);
+    }
+
+    if (occlusion < 0.3) {
+      targetHighpass /= 2;
+    }
+
     // const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
     // const easedDistance = Math.pow(normalized, 5);
-
-    const targetHighpass = 100;
 
     //TODO: if i see someone from T spawn -> mid on dust 2 i cant hear them (due to occlusion)
     // if (distance > fullAudibleDistance) {
