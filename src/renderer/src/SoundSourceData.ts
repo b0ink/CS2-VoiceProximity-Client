@@ -61,7 +61,7 @@ export class SoundSourceData {
 
     // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
 
-    this.highPassFilter_ = highpass;
+    this.gainFilter = gain;
 
     this.sound_.setFilters([gain, highpass, filter]);
   }
