@@ -172,18 +172,20 @@ export class SoundSourceData {
       return;
     }
 
-    const maximumHighpass = 20000;
-    let targetHighpass = 100;
+    // const maximumHighpass = 20000;
+    const targetHighpass = 100;
 
-    if (distance > 500) {
-      const clamped = Math.min(Math.max(distance, 500), 2000);
-      const t = (clamped - 500) / (2000 - 500);
-      targetHighpass = 100 + t * (maximumHighpass - 100);
-    }
+    // if (distance > 1000) {
+    //   const clamped = Math.min(Math.max(distance, 500), 3000);
+    //   const t = (clamped - 500) / (3000 - 500);
+    //   targetHighpass = 100 + t * (maximumHighpass - 100);
+    // }
 
-    if (occlusion < 0.3) {
-      targetHighpass /= 2;
-    }
+    // if (occlusion < 0.3) {
+    //   targetHighpass /= 2;
+    // }
+
+    this.setHighPassFilterFrequency(targetHighpass);
 
     // const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
     // const easedDistance = Math.pow(normalized, 5);
@@ -208,7 +210,6 @@ export class SoundSourceData {
     // - it was being set 0 -> 24000 -> 0 -> 24000.. on a loop.
 
     // console.log(`setting highpass to ${targetHighpass}`);
-    this.setHighPassFilterFrequency(targetHighpass);
     // console.log(`setting highpass to ${targetHighpass} (${distance} units away)`)
   }
   calculateOcclusion = (Listener_?: THREE.Vector3, Sound_?: THREE.Vector3) => {
