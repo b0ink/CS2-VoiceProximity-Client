@@ -42,6 +42,8 @@
   let turnUsername: string | undefined;
   let turnPassword: string | undefined;
 
+  let roomCodeInput: string = '';
+
   async function intialise() {
     clientSteamId = await window.api.getStoreValue('steamId');
     clientToken = await window.api.getStoreValue('token');
@@ -745,11 +747,14 @@
   let mapName: string = 'de_dust2';
 
   const joinRoom = (): void => {
-    const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
+    // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
+    const roomCode = roomCodeInput;
     console.log(`Attempting to join room code ${roomCode}`);
     document.querySelector('#threejs').innerHTML = '';
     initializeRenderer_();
     joinRoom_(roomCode);
+
+    window.api.setStoreValue('savedRoomCode', roomCode);
     // if (isConnected) {
     //   initializeMap_(mapName);
     // }
@@ -791,7 +796,12 @@
     onDestroy(() => {
       clearInterval(interval);
     });
+    getSavedRoomCode();
   });
+
+  async function getSavedRoomCode() {
+    roomCodeInput = await window.api.getStoreValue('savedRoomCode');
+  }
 
   // Allows debugging of steam auth, still requires a valid jwt
   (window as any).saveAuth = function (steamId: string, jwt: string) {
@@ -823,7 +833,13 @@
   </select>
 
   <label for="room-code">Room Code:</label>
-  <input type="text" id="room-code" name="room-code" disabled={isConnected} />
+  <input
+    type="text"
+    id="room-code"
+    name="room-code"
+    disabled={isConnected}
+    bind:value={roomCodeInput}
+  />
   <button type="submit" on:click={joinRoom} disabled={isConnected}>Join</button>
   <div id="threejs"></div>
 
