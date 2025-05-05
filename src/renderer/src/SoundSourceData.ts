@@ -4,8 +4,12 @@ export class SoundSourceData {
   // TODO: if this doesnt work, this is renamed to ListenerData
   private lowPassFilter_?: BiquadFilterNode;
   private lowPassAmount?: number;
+
   private highPassFilter_?: BiquadFilterNode;
   private highPassAmount?: number;
+
+  private gainFilter?: GainNode;
+  private gainAmount?: number;
 
   public sound_?: THREE.PositionalAudio;
   private listener_?: THREE.AudioListener;
@@ -50,7 +54,16 @@ export class SoundSourceData {
 
     this.highPassFilter_ = highpass;
 
-    this.sound_.setFilters([highpass, filter]);
+    const gain = this.listener_.context.createGain();
+    gain.gain.value = 1;
+    gain.gain.setValueAtTime(1, this.listener_.context.currentTime);
+    // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
+
+    // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
+
+    this.highPassFilter_ = highpass;
+
+    this.sound_.setFilters([gain, highpass, filter]);
   }
 
   public Mute() {
