@@ -1,6 +1,8 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
+  import { Button, ButtonGroup, Input, Label } from 'flowbite-svelte';
+  import { CogSolid } from 'flowbite-svelte-icons';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
@@ -10,6 +12,7 @@
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { FirstPersonCamera } from './FirstPersonCamera';
+  import SettingsOverlay from './SettingsOverlay.svelte';
   import { SoundSourceData } from './SoundSourceData';
   import type {
     AudioConnectionStuff,
@@ -19,10 +22,10 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
-  import { Button, Input, Label, Select } from 'flowbite-svelte';
-  import ClientInfo from './components/ClientInfo.svelte';
 
   const { addNotification } = getNotificationsContext();
+
+  let settingsOpen: boolean;
 
   let playerPositions: PlayerPositionApiData[] = [];
 
@@ -845,49 +848,66 @@
 
 <!-- TODO: devices will go on a settings page, requiring an app refresh to get user media again -->
 
-{#if clientSteamId}
-  <Label for="mic">Microphone:</Label>
-  <Select id="mic" bind:value={selectedDeviceId} style="width: 200px" disabled={isConnected}>
-    {#each devices as device (device.deviceId)}
-      <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
-    {/each}
-  </Select>
+<CogSolid
+  onclick={() => {
+    settingsOpen = !settingsOpen;
+  }}
+  color="white"
+  class="cursor-pointer absolute bottom-2 right-2 opacity-50 z-20 select-none"
+  size="xl"
+/>
 
-  <Label for="map">Map:</Label>
+<SettingsOverlay
+  bind:open={settingsOpen}
+  {selectedDeviceId}
+  {isConnected}
+  {devices}
+  bind:mapName
+  {onMapChange}
+  {clientSteamId}
+  {socketUrl}
+/>
+<div class="p-5">
+  {#if clientSteamId}
+    <div>
+      <Label for="room-code" class="mb-2">Room Code:</Label>
 
-  <Select bind:value={mapName} onchange={onMapChange} id="map">
-    <option value="de_dust2">Dust 2</option>
-    <option value="de_mirage">Mirage</option>
-    <option value="de_inferno">Inferno</option>
-  </Select>
+      <ButtonGroup class="w-full">
+        <Input
+          type="text"
+          id="room-code"
+          name="room-code"
+          disabled={isConnected}
+          bind:value={roomCodeInput}
+          placeholder="Room code"
+        />
+        <Button
+          color="primary"
+          class="cursor-pointer"
+          type="submit"
+          onclick={joinRoom}
+          disabled={isConnected}
+        >
+          Join</Button
+        >
+      </ButtonGroup>
+    </div>
 
-  <Label for="room-code" class="mb-2 block">Room Code:</Label>
-  <Input
-    type="text"
-    id="room-code"
-    name="room-code"
-    disabled={isConnected}
-    bind:value={roomCodeInput}
-    placeholder="Room code"
-  />
+    <div class="m-2 overflow-hidden">
+      <div class="bg-black" id="threejs"></div>
+    </div>
 
-  <Button type="submit" onclick={joinRoom} disabled={isConnected}>Join</Button>
-  <div id="threejs"></div>
-
-  {#if !!roomCode}
-    <PlayerList
-      mySteamId={clientSteamId}
-      players={playerPositions}
-      joinedSocketConnections={socketClientMap}
-    ></PlayerList>
-  {:else}
-    <div>Please join a room to view the player list</div>
+    {#if !!roomCode}
+      <PlayerList
+        mySteamId={clientSteamId}
+        players={playerPositions}
+        joinedSocketConnections={socketClientMap}
+      ></PlayerList>
+    {/if}
   {/if}
-{/if}
 
-<SteamLoginButton {clientSteamId} />
-<!-- <div style="border: 1px solid lime">
-  <canvas bind:this={canvas} width="300" height="25"></canvas>
+  <SteamLoginButton {clientSteamId} />
+  <!-- <div style="border: 1px solid lime">
+<canvas bind:this={canvas} width="300" height="25"></canvas>
 </div> -->
-
-<ClientInfo {clientSteamId} {socketUrl} />
+</div>

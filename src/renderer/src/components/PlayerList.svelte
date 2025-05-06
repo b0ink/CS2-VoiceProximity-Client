@@ -10,7 +10,7 @@
     Name: string;
   }
 
-  let joinedPlayers: PlayerData[];
+  let joinedPlayers: PlayerData[] = [];
 
   let clientIsOnServer: boolean = false;
 
@@ -50,24 +50,24 @@
   }
 </script>
 
-<div style="width:100%">
-  <div style="text-align: center;">Joined Players</div>
-  <div style="text-align: left">
+<div class="w-full">
+  <div class="text-center text-white">Joined Players</div>
+  <div class="text-center w-full">
     {#if !clientIsOnServer}
-      <div style="color:red"><i>You are not on the server yet.</i></div>
+      <div class="text-red-600 italic"><i>You are not on the server yet.</i></div>
     {/if}
-    <!-- {#each players as player (player)}
-      {#if player.SteamId !== '0'}
-        <div>{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
-      {/if}
-    {/each} -->
 
     {#if players}
-      {#each joinedPlayers as player (player)}
-        {#if player.SteamId !== '0'}
-          <div>{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
-        {/if}
-      {/each}
+      <!-- TODO: fix up css of columns -->
+      <div
+        class="columns-1 sm:columns-2 md:columns-3 text-white space-y-1 h-28 overflow-auto-y w-fit text-center"
+      >
+        {#each joinedPlayers as player (player)}
+          {#if player.SteamId !== '0'}
+            <div class="w-fit">{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
+          {/if}
+        {/each}
+      </div>
     {/if}
   </div>
 </div>
