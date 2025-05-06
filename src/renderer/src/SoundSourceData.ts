@@ -19,10 +19,10 @@ export class SoundSourceData {
 
   private isMuted: boolean = false;
 
-  private occlusionMesh?: THREE.Group<THREE.Object3DEventMap>;
+  // private occlusionMesh?: THREE.Group<THREE.Object3DEventMap>;
 
   constructor(
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap> | undefined,
+    // occlusionMesh: THREE.Group<THREE.Object3DEventMap> | undefined,
     sound: THREE.PositionalAudio,
     soundObjSource: THREE.Object3D, // TODO: THREE.Mesh?
     listener: THREE.AudioListener,
@@ -32,7 +32,7 @@ export class SoundSourceData {
     this.listener_ = listener;
     this.soundObjSource_ = soundObjSource;
     this.camera_ = camera;
-    this.occlusionMesh = occlusionMesh;
+    // this.occlusionMesh = occlusionMesh;
     // steamId = null; // ? maybe?
     // intialise_();
 
@@ -63,7 +63,7 @@ export class SoundSourceData {
 
     this.gainFilter = gain;
 
-    this.sound_.setFilters([highpass, filter]);
+    this.sound_.setFilters([gain, highpass, filter]);
   }
 
   public Mute() {
@@ -133,10 +133,11 @@ export class SoundSourceData {
     this.setFilterFrequency(this.highPassFilter_, amount);
   }
 
-  public updateOcclusion() {
+  public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
     // console.log('found sound data!');
     // TODO: move calculateOcclusion code inside of SoundSourceData
     const { occlusion } = this.calculateOcclusion(
+      occlusionMesh,
       this.camera_?.position,
       this.soundObjSource_?.position,
     );
@@ -212,7 +213,12 @@ export class SoundSourceData {
     // console.log(`setting highpass to ${targetHighpass}`);
     // console.log(`setting highpass to ${targetHighpass} (${distance} units away)`)
   }
-  calculateOcclusion = (Listener_?: THREE.Vector3, Sound_?: THREE.Vector3) => {
+
+  calculateOcclusion = (
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    Listener_?: THREE.Vector3,
+    Sound_?: THREE.Vector3,
+  ) => {
     if (!Listener_ || !Sound_) {
       // TODO: interface
       return {
@@ -252,17 +258,17 @@ export class SoundSourceData {
       Listener_.z - SndOcclusonWidening * 0.5,
     );
 
-    const line1 = this.didIntersect(SoundLeft, Listener_);
-    const line2 = this.didIntersect(SoundLeft, Listener_);
-    const line3 = this.didIntersect(SoundLeft, ListenerRight);
-    const line4 = this.didIntersect(Sound_, ListenerLeft);
-    const line5 = this.didIntersect(Sound_, Listener_);
-    const line6 = this.didIntersect(Sound_, ListenerRight);
-    const line7 = this.didIntersect(SoundRight, ListenerLeft);
-    const line8 = this.didIntersect(SoundRight, Listener_);
-    const line9 = this.didIntersect(SoundRight, ListenerRight);
-    const line10 = this.didIntersect(SoundAbove, ListenerAbove);
-    const line11 = this.didIntersect(SoundBelow, ListenerBelow);
+    const line1 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
+    const line2 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
+    const line3 = this.didIntersect(occlusionMesh, SoundLeft, ListenerRight);
+    const line4 = this.didIntersect(occlusionMesh, Sound_, ListenerLeft);
+    const line5 = this.didIntersect(occlusionMesh, Sound_, Listener_);
+    const line6 = this.didIntersect(occlusionMesh, Sound_, ListenerRight);
+    const line7 = this.didIntersect(occlusionMesh, SoundRight, ListenerLeft);
+    const line8 = this.didIntersect(occlusionMesh, SoundRight, Listener_);
+    const line9 = this.didIntersect(occlusionMesh, SoundRight, ListenerRight);
+    const line10 = this.didIntersect(occlusionMesh, SoundAbove, ListenerAbove);
+    const line11 = this.didIntersect(occlusionMesh, SoundBelow, ListenerBelow);
     const lines = [line1, line2, line3, line4, line5, line6, line7, line8, line9, line10, line11];
     let hits = 0;
     for (const line of lines) {
@@ -295,16 +301,20 @@ export class SoundSourceData {
     // return hits / 11;
   };
 
-  didIntersect = (v1: THREE.Vector3, v2: THREE.Vector3) => {
+  didIntersect = (
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    v1: THREE.Vector3,
+    v2: THREE.Vector3,
+  ) => {
     const raycaster = new THREE.Raycaster();
     const dir = v2.clone().sub(v1).normalize();
     raycaster.set(v1, dir);
 
-    if (this.occlusionMesh == null) {
+    if (occlusionMesh == null) {
       return 0;
     }
 
-    const hits = raycaster.intersectObject(this.occlusionMesh, true);
+    const hits = raycaster.intersectObject(occlusionMesh, true);
 
     const maxDistance = v1.distanceTo(v2);
     const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);

@@ -634,7 +634,7 @@
   const updateSoundFilters = () => {
     for (const soundData of sounds_) {
       // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
-      soundData.updateOcclusion();
+      soundData.updateOcclusion(map_);
     }
   };
 
@@ -699,7 +699,7 @@
     sound1.setMaxDistance(1000);
     // sound1.play();
     speaker1.add(sound1);
-    const sound1Data = new SoundSourceData(map_, sound1, speaker1, listener_, camera_);
+    const sound1Data = new SoundSourceData(sound1, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
     sounds_.push(sound1Data);
 
