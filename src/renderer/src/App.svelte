@@ -17,6 +17,7 @@
   import type {
     AudioConnectionStuff,
     Client,
+    JoinRoomResponse,
     PeerConnections,
     PlayerPositionApiData,
     SocketClientMap,
@@ -117,6 +118,11 @@
 
       raf_();
       onWindowResize_();
+
+      socket_?.on('current-map', (mapName) => {
+        console.log(`Received map change request ${mapName}`);
+        initializeMap_(mapName);
+      });
 
       // socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
       socket_?.on('player-positions', (data) => {
@@ -599,12 +605,12 @@
         isHost: isHost,
       };
 
-      socket_?.emit('join-room', joinRoomPayload, (response) => {
+      socket_?.emit('join-room', joinRoomPayload, (response: JoinRoomResponse) => {
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
           // TODO: can we initialize renderer here?
-          initializeMap_();
+          initializeMap_(response.mapName);
           joinedRoom = true;
         } else {
           roomCode = null;

@@ -49,6 +49,12 @@ export interface AudioConnectionStuff {
   toggleDeafen: () => void;
 }
 
+export interface JoinRoomResponse {
+  success: boolean;
+  message: string;
+  mapName?: string;
+}
+
 // interface AudioNodes {
 //   dummyAudioElement: HTMLAudioElement;
 //   audioElement: HTMLAudioElement;
