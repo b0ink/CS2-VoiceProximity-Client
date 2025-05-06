@@ -19,6 +19,7 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
+  import { Button } from 'flowbite-svelte';
 
   const { addNotification } = getNotificationsContext();
 
@@ -893,13 +894,13 @@
   <div style="opacity:50%" class="">
     Steam ID: <span style="opacity:50%;">{clientSteamId || 'N/A'}</span>
     {#if clientSteamId}
-      <button
-        style="text-decoration:underline;cursor:pointer"
-        on:click={async () => {
+      <Button
+        class="text-decoration-line cursor"
+        onclick={async () => {
           await window.api.setStoreValue('steamId', null);
           await window.api.setStoreValue('token', null);
           window.api.reloadApp();
-        }}>Sign Out</button
+        }}>Sign Out</Button
       >
     {/if}
   </div>
