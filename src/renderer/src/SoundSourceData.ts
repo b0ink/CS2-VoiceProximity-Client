@@ -63,7 +63,7 @@ export class SoundSourceData {
 
     this.gainFilter = gain;
 
-    this.sound_.setFilters([gain, highpass, filter]);
+    this.sound_.setFilters([highpass, filter]);
   }
 
   public Mute() {
