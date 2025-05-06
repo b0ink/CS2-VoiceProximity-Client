@@ -13,6 +13,7 @@
     "allowJs": true,
     "checkJs": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "composite": true
+    "composite": true,
+    "moduleResolution": "bundler"
   }
 }

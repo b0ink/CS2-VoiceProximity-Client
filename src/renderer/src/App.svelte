@@ -886,11 +886,11 @@
   <canvas bind:this={canvas} width="300" height="25"></canvas>
 </div> -->
 
-<div style="position: absolute; bottom: 5px; font-size: 12px; text-align: center">
+<div style="position: absolute; bottom: 5px; font-size: 12px" class="text-center">
   <div style="opacity:50%">
     Socket URL: <span style="opacity:50%;">{socketUrl || 'N/A'}</span>
   </div>
-  <div style="opacity:50%">
+  <div style="opacity:50%" class="">
     Steam ID: <span style="opacity:50%;">{clientSteamId || 'N/A'}</span>
     {#if clientSteamId}
       <button
