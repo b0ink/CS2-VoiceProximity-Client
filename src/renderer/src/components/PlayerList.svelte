@@ -15,6 +15,7 @@
   let clientIsOnServer: boolean = false;
 
   $: if (players && players.length) {
+    clientIsOnServer = false;
     joinedPlayers = [];
 
     // Retrieve names from the cs2 server, and only display players that have joined the voice chat
