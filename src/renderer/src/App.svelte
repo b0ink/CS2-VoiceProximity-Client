@@ -19,7 +19,8 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
-  import { Button } from 'flowbite-svelte';
+  import { Button, Input, Label, Select } from 'flowbite-svelte';
+  import ClientInfo from './components/ClientInfo.svelte';
 
   const { addNotification } = getNotificationsContext();
 
@@ -845,30 +846,32 @@
 <!-- TODO: devices will go on a settings page, requiring an app refresh to get user media again -->
 
 {#if clientSteamId}
-  <label for="mic">Microphone:</label>
-  <select id="mic" bind:value={selectedDeviceId} style="width: 200px" disabled={isConnected}>
+  <Label for="mic">Microphone:</Label>
+  <Select id="mic" bind:value={selectedDeviceId} style="width: 200px" disabled={isConnected}>
     {#each devices as device (device.deviceId)}
       <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
     {/each}
-  </select>
+  </Select>
 
-  <label for="map">Map:</label>
+  <Label for="map">Map:</Label>
 
-  <select bind:value={mapName} on:change={onMapChange} id="map">
+  <Select bind:value={mapName} onchange={onMapChange} id="map">
     <option value="de_dust2">Dust 2</option>
     <option value="de_mirage">Mirage</option>
     <option value="de_inferno">Inferno</option>
-  </select>
+  </Select>
 
-  <label for="room-code">Room Code:</label>
-  <input
+  <Label for="room-code" class="mb-2 block">Room Code:</Label>
+  <Input
     type="text"
     id="room-code"
     name="room-code"
     disabled={isConnected}
     bind:value={roomCodeInput}
+    placeholder="Room code"
   />
-  <button type="submit" on:click={joinRoom} disabled={isConnected}>Join</button>
+
+  <Button type="submit" onclick={joinRoom} disabled={isConnected}>Join</Button>
   <div id="threejs"></div>
 
   {#if !!roomCode}
@@ -887,21 +890,4 @@
   <canvas bind:this={canvas} width="300" height="25"></canvas>
 </div> -->
 
-<div style="position: absolute; bottom: 5px; font-size: 12px" class="text-center">
-  <div style="opacity:50%">
-    Socket URL: <span style="opacity:50%;">{socketUrl || 'N/A'}</span>
-  </div>
-  <div style="opacity:50%" class="">
-    Steam ID: <span style="opacity:50%;">{clientSteamId || 'N/A'}</span>
-    {#if clientSteamId}
-      <Button
-        class="text-decoration-line cursor"
-        onclick={async () => {
-          await window.api.setStoreValue('steamId', null);
-          await window.api.setStoreValue('token', null);
-          window.api.reloadApp();
-        }}>Sign Out</Button
-      >
-    {/if}
-  </div>
-</div>
+<ClientInfo {clientSteamId} {socketUrl} />
