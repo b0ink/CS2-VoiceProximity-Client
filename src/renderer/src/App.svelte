@@ -268,6 +268,8 @@
         map_ = gltf.scene;
         map_.scale.set(mapScale_, mapScale_, mapScale_);
         map_.rotation.x = -Math.PI / 2;
+        map_.matrixAutoUpdate = false;
+
         if (scene_) {
           scene_.add(map_);
         }
@@ -690,7 +692,6 @@
 
     const threeJsDom = document.querySelector('#threejs');
     threeJsDom.appendChild(threejs_.domElement);
-
     // window.addEventListener(
     //   'resize',
     //   () => {
@@ -802,6 +803,14 @@
     window.api.setStoreValue('token', jwt);
   };
 
+  (window as any).debugRenderer = function () {
+    console.log(threejs_.info);
+  };
+
+  // (window as any).debugSocket = function () {
+  //   console.log(socket_);
+  // };
+
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
 </script>
 
@@ -829,6 +838,9 @@
   {socketUrl}
 />
 <div class="p-5">
+  {#if !socket_?.connected}
+    <p class="text-white text-center">Connecting to server...</p>
+  {/if}
   {#if clientSteamId}
     <div>
       <Label for="room-code" class="mb-2">Room Code:</Label>
@@ -838,7 +850,7 @@
           type="text"
           id="room-code"
           name="room-code"
-          disabled={isConnected}
+          disabled={isConnected || !socket_?.connected}
           bind:value={roomCodeInput}
           placeholder="Room code"
         />
@@ -847,7 +859,7 @@
           class="cursor-pointer"
           type="submit"
           onclick={joinRoom}
-          disabled={isConnected}
+          disabled={isConnected || !socket_?.connected}
         >
           Join</Button
         >
