@@ -9,9 +9,9 @@
       await window.api.setStoreValue('token', null);
       window.api.promptSteamAuthentication();
     }}
-    class="steambutton"
+    class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 steambutton"
     ><span>Login With Steam</span>
-    <div class="icon">
+    <div class="absolute icon right-5 bottom-3">
       <svg
         xmlns="http://www.w3.org/2000/svg"
         width="24"
@@ -57,40 +57,15 @@
     font-size: 14px;
     text-transform: uppercase;
     left: 0;
-    -webkit-transition: all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4);
-    transition: all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4);
-  }
-
-  .steambutton span,
-  .steambutton .icon {
-    display: block;
-    height: 100%;
-    text-align: center;
-    position: absolute;
-    top: 0;
-  }
-
-  .steambutton .icon svg {
-    font-size: 30px;
-    margin-top: 12px;
-    line-height: 50px;
     -webkit-transition:
-      all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4),
-      height 0.25s ease;
+      all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+      height 0.4s ease;
     transition:
-      all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4),
-      height 0.25s ease;
+      all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+      height 0.4s ease;
   }
 
-  .steambutton .icon {
-    width: 25%;
-    right: 0;
-    -webkit-transition: all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4);
-    transition: all 0.25s cubic-bezier(0.31, -0.105, 0.43, 1.4);
-  }
-
-  .steambutton span,
-  .steambutton .icon {
+  .steambutton span {
     display: block;
     height: 100%;
     text-align: center;
@@ -98,14 +73,25 @@
     top: 0;
   }
 
-  svg {
-    display: inline-block;
-    font: normal normal normal 14px/1 FontAwesome;
-    font-size: inherit;
-    text-rendering: auto;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    transform: translate(0, 0);
+  .steambutton .icon svg,
+  .steambutton .icon {
+    font-size: 30px;
+    /* margin-top: 12px; */
+    /* line-height: 50px; */
+    -webkit-transition:
+      all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+      height 0.4s ease;
+    transition:
+      all 0.4s cubic-bezier(0.25, 0.1, 0.25, 1),
+      height 0.4s ease;
+  }
+
+  .steambutton span {
+    display: block;
+    height: 100%;
+    text-align: center;
+    position: absolute;
+    top: 0;
   }
 
   .steambutton span:after {
@@ -124,10 +110,7 @@
   }
 
   .steambutton:hover .icon {
-    width: 100%;
-  }
-
-  .steambutton:hover .icon svg {
-    font-size: 45px;
+    right: 50%;
+    transform: translateX(50%);
   }
 </style>

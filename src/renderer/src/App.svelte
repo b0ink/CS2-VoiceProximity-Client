@@ -24,6 +24,7 @@
     SteamIdSocketMap,
   } from './type';
   import maps from './maps';
+  import { Alert } from 'flowbite-svelte';
 
   const { addNotification } = getNotificationsContext();
 
@@ -839,7 +840,9 @@
 />
 <div class="p-5">
   {#if !socket_?.connected}
-    <p class="text-white text-center">Connecting to server...</p>
+    <Alert color="yellow" class="text-center">
+      <span class="font-medium">Connecting to the backend service...</span>
+    </Alert>
   {/if}
   {#if clientSteamId}
     <div>
