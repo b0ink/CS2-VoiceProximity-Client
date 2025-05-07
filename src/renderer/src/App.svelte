@@ -65,6 +65,15 @@
       turnPassword = await window.api.getStoreValue('turnPassword');
       socket_ = io(socketUrl);
 
+      // Trigger reactive state of socket_
+      //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
+      socket_.on('connect', () => {
+        socket_ = socket_;
+      });
+      socket_.on('disconnect', () => {
+        socket_ = socket_;
+      });
+
       // Now you can use roomCode and steamId
       // initializeRenderer_();
 
@@ -318,6 +327,8 @@
 
   let fpsCamera_: FirstPersonCamera;
   let socket_: Socket | undefined;
+  $: socketConnected = socket_?.connected;
+
   let previousRAF_: any;
   let mapScale_: number;
   let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
@@ -839,8 +850,8 @@
   {socketUrl}
 />
 <div class="p-5">
-  {#if !socket_?.connected}
-    <Alert color="yellow" class="text-center">
+  {#if !socketConnected}
+    <Alert color="yellow" class="text-center mb-4">
       <span class="font-medium">Connecting to the backend service...</span>
     </Alert>
   {/if}
