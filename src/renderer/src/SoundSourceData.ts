@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 
 export class SoundSourceData {
-  // TODO: if this doesnt work, this is renamed to ListenerData
   private lowPassFilter_?: BiquadFilterNode;
   private lowPassAmount?: number;
 
@@ -14,7 +13,7 @@ export class SoundSourceData {
   public sound_?: THREE.PositionalAudio;
   private listener_?: THREE.AudioListener;
   public steamId?: string;
-  public soundObjSource_?: THREE.Object3D; // TODO: THREE.Mesh?
+  public soundObjSource_?: THREE.Object3D;
   public camera_?: THREE.Camera;
 
   private isMuted: boolean = false;
@@ -24,7 +23,7 @@ export class SoundSourceData {
   constructor(
     // occlusionMesh: THREE.Group<THREE.Object3DEventMap> | undefined,
     sound: THREE.PositionalAudio,
-    soundObjSource: THREE.Object3D, // TODO: THREE.Mesh?
+    soundObjSource: THREE.Object3D,
     listener: THREE.AudioListener,
     camera: THREE.Camera,
   ) {

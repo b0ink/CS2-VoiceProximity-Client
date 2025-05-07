@@ -53,6 +53,7 @@
   let roomCodeInput: string = '';
 
   async function intialise() {
+    // TODO: move into its own settings store file
     clientSteamId = await window.api.getStoreValue('steamId');
     clientToken = await window.api.getStoreValue('token');
     socketUrl = await window.api.getSocketUrl();
@@ -83,6 +84,9 @@
       const axesHelper = new THREE.AxesHelper(50);
       scene_.add(axesHelper);
       camera_.add(listener_);
+
+      initializeRenderer_();
+
       // TODO: one time notification when logging in for the first time
       // addNotification({
       //   text: 'Successfully authenticated',
@@ -108,8 +112,6 @@
           });
         });
       }, 1000);
-
-      // TODO: move into its own settings store file
 
       // initializeScene_();
 
@@ -215,7 +217,6 @@
                 console.warn(`No soundObjSource for steam ${steamId}`);
               }
               // break;
-              // TODO: we should validate there are no duplicate steamIds trying to join
             }
           }
         }
@@ -344,10 +345,6 @@
     },
   };
 
-  threejs_ = new THREE.WebGLRenderer({
-    antialias: false,
-  });
-
   // const ambient = new THREE.AmbientLight(0xffffff, 1);
   // scene_.add(ambient);
 
@@ -364,7 +361,6 @@
       initUserMedia();
     } else {
       roomCode = null;
-      // TODO: toast notification
       console.log('invalid room code');
       addNotification({
         text: 'Invalid room code',
@@ -613,10 +609,11 @@
       };
 
       socket_?.emit('join-room', joinRoomPayload, (response: JoinRoomResponse) => {
+        // TODO: we should validate there are no duplicate steamIds trying to join
+
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
-          // TODO: can we initialize renderer here?
           initializeMap_(response.mapName);
           joinedRoom = true;
         } else {
@@ -651,43 +648,6 @@
     }
   };
 
-  // const initialisePlayer_ = () => {
-  //   // TODO: this speaker1 is left idle in top mid.. does this function actually do anything?
-
-  //   const speaker1Material = new THREE.MeshStandardMaterial({ color: 0x888888 });
-  //   const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
-  //   speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
-  //   // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
-  //   // speakerMesh1_ = speaker1;
-
-  //   const sound1 = new THREE.PositionalAudio(listener_);
-  //   speaker1.add(sound1);
-  //   const sound1Data = new SoundSourceData(map_, sound1, speaker1, listener_, camera_);
-  //   if (getSteamId()) {
-  //     sound1Data.steamId = getSteamId()!;
-  //   } else {
-  //     console.error(`initialising local player without a steam id!`);
-  //   }
-  //   sounds_.push(sound1Data);
-
-  //   scene_.add(speaker1);
-
-  //   // const loader = new THREE.AudioLoader();
-  //   // loader.load("resources/music/Ectoplasm.mp3", (buffer) => {
-  //   //   setTimeout(() => {
-  //   //     sound1.setBuffer(buffer);
-  //   //     sound1.setLoop(true);
-  //   //     sound1.setVolume(0.85);
-  //   //     sound1.setRefDistance(39);
-  //   //     sound1.setRolloffFactor(1);
-  //   //     sound1.setMaxDistance(1000);
-  //   //     sound1.play();
-  //   //     // analyzer1_ = new THREE.AudioAnalyser(sound1, 32);
-  //   //     // analyzer1Data_ = [];
-  //   //   }, 1000);
-  //   // });
-  // };
-
   const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client) => {
     const speaker1Material = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
@@ -719,21 +679,6 @@
 
     console.log(`Creating remote player: ${client.steamId}`);
   };
-
-  // const initializeAudio_ = () => {
-  //   camera_.add(listener_);
-  //   // initialisePlayer_();
-  // };
-
-  // const initializeScene_ = () => {
-  //   // if (!scene_) {
-  //   //   scene_ = new THREE.Scene();
-  //   // }
-
-  //   // TODO: if DEBUG is enabled
-  //   const axesHelper = new THREE.AxesHelper(50);
-  //   scene_.add(axesHelper);
-  // };
 
   const initializeRenderer_ = () => {
     // threejs_.shadowMap.enabled = true;
@@ -797,7 +742,6 @@
     const roomCode = roomCodeInput;
     console.log(`Attempting to join room code ${roomCode}`);
     document.querySelector('#threejs').innerHTML = '';
-    initializeRenderer_();
     joinRoom_(roomCode);
 
     window.api.setStoreValue('savedRoomCode', roomCode);
@@ -833,6 +777,9 @@
   }
 
   onMount(() => {
+    threejs_ = new THREE.WebGLRenderer({
+      antialias: false,
+    });
     intialise();
     getDevices();
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
