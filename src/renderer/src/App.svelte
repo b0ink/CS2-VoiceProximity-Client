@@ -881,7 +881,7 @@
     </div>
 
     <div class="m-2 overflow-hidden">
-      <div class="bg-black" id="threejs"></div>
+      <div class=" dark:bg-gray-900" id="threejs"></div>
     </div>
 
     {#if !!roomCode}
