@@ -691,7 +691,8 @@
   const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client) => {
     const speaker1Material = new THREE.MeshStandardMaterial({ color: 0xffffff });
     const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
-    speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
+    // speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
+    speaker1.position.copy(transformVector(new THREE.Vector3(457.5018, 1833.5608, 136.03122))); // banana half wall CT side
     // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
     scene_.add(speaker1);
     // speakerMesh1_ = speaker1;

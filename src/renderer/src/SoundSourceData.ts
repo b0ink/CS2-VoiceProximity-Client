@@ -134,18 +134,35 @@ export class SoundSourceData {
   }
 
   public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
-    // console.log('found sound data!');
-    // TODO: move calculateOcclusion code inside of SoundSourceData
+    const distance = calculateDistance(this.camera_?.position, this.soundObjSource_?.position);
+
+    // TODO: increase occlusion for each mesh hit
     const { occlusion } = this.calculateOcclusion(
       occlusionMesh,
       this.camera_?.position,
       this.soundObjSource_?.position,
     );
-    const minimumAmt = 100;
-    // const amount = 11000 - occlusion * 11000 + 250;
-    const eased = Math.pow(occlusion, 0.25); // sqrt curve
-    const amount = minimumAmt + (1 - eased) * (11000 - minimumAmt);
-    // console.log(`setting occlusion to ${amount} (${occlusion * 11} hits) extra hits: ${totalExtraHits}`);
+    const maxDist = 1000;
+    const fadeStart = 1500;
+    const fadeEnd = 2000; // where it fully reaches 25
+
+    const distRatio = Math.min(distance / maxDist, 1);
+    let minOcclusion;
+
+    if (distance <= fadeStart) {
+      minOcclusion = 100;
+    } else {
+      const fadeRatio = Math.min((distance - fadeStart) / (fadeEnd - fadeStart), 1);
+      minOcclusion = 100 - fadeRatio * (100 - 25); // fades from 100 → 25
+    }
+
+    const minFreq = minOcclusion + (1 - distRatio) * (500 - minOcclusion);
+
+    const easing = 0.5;
+    const eased = Math.pow(occlusion, easing);
+
+    const amount = Math.round((minFreq + (1 - eased) * (11000 - minFreq)) / 5) * 5;
+
     this.setLowPassFilterFrequency(amount);
 
     // const distance = calculateDistance(soundData.camera_.position, soundData.soundObjSource_.position);
@@ -166,8 +183,6 @@ export class SoundSourceData {
     // const maxHighpass = 24000;
     // const minHighpass = 0;
     // const occlusionThreshold = 0.4;
-
-    const distance = calculateDistance(this.camera_?.position, this.soundObjSource_?.position);
 
     if (!distance) {
       return;
