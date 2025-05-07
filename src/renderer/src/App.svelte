@@ -23,6 +23,7 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
+  import maps from './maps';
 
   const { addNotification } = getNotificationsContext();
 
@@ -226,6 +227,12 @@
 
   async function initializeMap_(mapName: string = 'de_dust2') {
     // Destroy any previously loaded maps, including its textures
+
+    if (!maps.includes(mapName)) {
+      console.log(`Failed to load map: '${mapName}'.glb could not be found.`);
+      return;
+    }
+
     if (map_ && scene_) {
       map_.traverse((child) => {
         if (child instanceof THREE.Mesh) {
