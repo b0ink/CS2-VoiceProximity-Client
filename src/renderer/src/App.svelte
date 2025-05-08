@@ -481,7 +481,8 @@
           const connection = new Peer({
             stream,
             initiator,
-            // iceRestartEnabled: true,
+            // @ts-ignore line
+            iceRestartEnabled: true,
             config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: DEFAULT_ICE_CONFIG,
           });
