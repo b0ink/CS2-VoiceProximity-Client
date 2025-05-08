@@ -67,6 +67,7 @@
       await window.api.retrieveTurnCredentials();
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
+
       socket_ = io(socketUrl);
 
       // Trigger reactive state of socket_
@@ -879,6 +880,13 @@
         <span class="font-medium">Connecting to the backend service...</span>
       </Alert>
     {/if}
+
+    {#if !turnUsername || !turnPassword}
+      <Alert color="orange" class="text-center mb-4">
+        <span class="font-medium">Failed to fetch TURN credentials.</span>
+        <p>Please try logging out and back in, restarting the app, or try again later.</p>
+      </Alert>
+    {/if}
     <div>
       <Label for="room-code" class="mb-2">Room Code:</Label>
 
@@ -895,7 +903,7 @@
           class="cursor-pointer"
           type="submit"
           onclick={joinRoom}
-          disabled={isConnected || !socket_?.connected}
+          disabled={isConnected || !socket_?.connected || !turnUsername || !turnPassword}
         >
           Join</Button
         >
