@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Heading, Label, Select } from 'flowbite-svelte';
   import ClientInfo from './components/ClientInfo.svelte';
-
+  import ChangeSocketServer from './components/ChangeSocketServer.svelte';
   export let open: boolean;
   export let selectedDeviceId: string;
   export let isConnected: boolean;
@@ -37,6 +37,9 @@
           <option value="de_inferno">Inferno</option>
         </Select>
       </div>
+
+      <ChangeSocketServer open={true} />
+
       <!-- 
       <Button
         class="cursor-pointer"

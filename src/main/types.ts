@@ -15,4 +15,5 @@ export interface StoreData {
   token?: string;
   turnUsername?: string;
   turnPassword?: string;
+  socketServer?: string;
 }

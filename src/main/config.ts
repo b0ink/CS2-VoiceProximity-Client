@@ -1,9 +1,8 @@
-import { app } from 'electron';
+import Store from 'electron-store';
+import { StoreData } from './types';
+
+const store = new Store<StoreData>();
 
 export function getApiUrl() {
-  const isDev = !app.isPackaged;
-  if (isDev) {
-    return 'http://127.0.0.1:3000';
-  }
-  return 'https://cs2voiceproximity.chat';
+  return store.get('socketServer') || 'https://cs2voiceproximity.chat';
 }

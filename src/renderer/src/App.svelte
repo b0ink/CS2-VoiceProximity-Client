@@ -850,12 +850,12 @@
   {socketUrl}
 />
 <div class="p-5">
-  {#if !socketConnected}
-    <Alert color="yellow" class="text-center mb-4">
-      <span class="font-medium">Connecting to the backend service...</span>
-    </Alert>
-  {/if}
   {#if clientSteamId}
+    {#if !socketConnected}
+      <Alert color="yellow" class="text-center mb-4">
+        <span class="font-medium">Connecting to the backend service...</span>
+      </Alert>
+    {/if}
     <div>
       <Label for="room-code" class="mb-2">Room Code:</Label>
 
