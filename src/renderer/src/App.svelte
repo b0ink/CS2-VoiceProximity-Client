@@ -633,12 +633,7 @@
         } else {
           roomCode = null;
           // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
-          addNotification({
-            text: 'Failed to join room',
-            position: 'top-center',
-            removeAfter: 2500,
-            type: 'error',
-          });
+
           if (
             response.message.indexOf('Token has expired') !== -1 ||
             response.message.indexOf('Invalid steamId') !== -1 ||
@@ -646,10 +641,17 @@
           ) {
             window.api.setStoreValue('steamId', null);
             window.api.setStoreValue('token', null);
+            setTimeout(() => {
+              window.api.reloadApp();
+            }, 2500);
+          } else {
+            addNotification({
+              text: response.message,
+              position: 'top-center',
+              removeAfter: 2500,
+              type: 'error',
+            });
           }
-          setTimeout(() => {
-            window.api.reloadApp();
-          }, 2500);
         }
       });
     }
