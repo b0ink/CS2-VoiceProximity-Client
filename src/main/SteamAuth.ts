@@ -1,4 +1,4 @@
-import { app, shell } from 'electron';
+import { shell } from 'electron';
 import openid from 'openid';
 import { getApiUrl } from './config';
 
