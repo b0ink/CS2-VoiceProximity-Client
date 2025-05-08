@@ -30,7 +30,7 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
   store.delete('turnPassword');
   const apiUrl = await getApiUrl();
   try {
-    const response = await fetch(`${apiUrl};/get-turn-credential`, {
+    const response = await fetch(`${apiUrl}/get-turn-credential`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
