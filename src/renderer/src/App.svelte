@@ -755,6 +755,7 @@
     const roomCode = roomCodeInput;
     console.log(`Attempting to join room code ${roomCode}`);
     document.querySelector('#threejs').innerHTML = '';
+    initializeRenderer_();
     joinRoom_(roomCode);
 
     window.api.setStoreValue('savedRoomCode', roomCode);
