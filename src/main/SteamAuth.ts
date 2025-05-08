@@ -2,9 +2,6 @@ import { shell } from 'electron';
 import openid from 'openid';
 import { getApiUrl } from './config';
 
-const realm = getApiUrl();
-const return_url = `${realm}/verify-steam`;
-
 const USE_EXTERNAL_BROWSER = true;
 
 export class SteamAuth {
@@ -14,7 +11,10 @@ export class SteamAuth {
     return token;
   }
 
-  openSteamAuthenticationWindow() {
+  async openSteamAuthenticationWindow() {
+    const realm = await getApiUrl();
+    const return_url = `${realm}/verify-steam`;
+
     const rely = new openid.RelyingParty(
       return_url,
       realm,
