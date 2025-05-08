@@ -13,7 +13,9 @@
 </script>
 
 {#if open}
-  <div class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 overflow-auto-y">
+  <div
+    class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 overflow-y-scroll scrollbar"
+  >
     <div class="text-center">
       <Heading tag="h1" class="mb-4 text-4xl font-extrabold  md:text-5xl lg:text-6xl"
         >Settings</Heading
@@ -35,6 +37,7 @@
           <option value="de_dust2">Dust 2</option>
           <option value="de_mirage">Mirage</option>
           <option value="de_inferno">Inferno</option>
+          <option value="de_nuke">Nuke</option>
         </Select>
       </div>
 
@@ -63,3 +66,11 @@
     <ClientInfo {clientSteamId} {socketUrl} />
   </div>
 {/if}
+
+<style>
+  .scrollbar {
+    overflow-y: scroll;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+  }
+</style>

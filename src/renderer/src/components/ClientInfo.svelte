@@ -3,7 +3,7 @@
   export let socketUrl;
 </script>
 
-<div class="absolute bottom-1 left-0 right-0 text-xs text-center text-white">
+<div class="bottom-1 left-0 right-0 text-xs text-center text-white">
   <div class="opacity-50">
     Socket URL: <span class="opacity-50">{socketUrl || 'N/A'}</span>
   </div>
