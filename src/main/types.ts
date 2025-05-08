@@ -1,3 +1,5 @@
+import { DefaultNotificationOptions } from 'svelte-notifications';
+
 export interface JwtAuthPayload {
   steamId?: string;
   exp?: number;
@@ -16,4 +18,5 @@ export interface StoreData {
   turnUsername?: string;
   turnPassword?: string;
   socketServer?: string;
+  notification?: DefaultNotificationOptions;
 }

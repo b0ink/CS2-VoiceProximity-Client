@@ -6,8 +6,8 @@ declare global {
     api: Api;
   }
   interface Api {
-    getStoreValue: (key: string, defaultValue?: string) => string | undefined;
-    setStoreValue: (key: string, value: string) => void;
+    getStoreValue: (key: string, defaultValue?: string) => any | undefined;
+    setStoreValue: (key: string, value: any) => void;
     loadMap: (map: string) => string | undefined;
     getSocketUrl: () => string;
     reloadApp: () => void;

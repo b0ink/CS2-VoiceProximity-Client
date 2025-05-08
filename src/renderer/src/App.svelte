@@ -6,7 +6,7 @@
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
-  import { getNotificationsContext } from 'svelte-notifications';
+  import { getNotificationsContext, type DefaultNotificationOptions } from 'svelte-notifications';
   import * as THREE from 'three';
   import { GLTFLoader } from 'three-stdlib';
   import PlayerList from './components/PlayerList.svelte';
@@ -27,6 +27,10 @@
   import { Alert } from 'flowbite-svelte';
 
   const { addNotification } = getNotificationsContext();
+
+  const queueNotification = (options: DefaultNotificationOptions) => {
+    window.api.setStoreValue('notification', options);
+  };
 
   let settingsOpen: boolean;
 
@@ -643,9 +647,13 @@
           ) {
             window.api.setStoreValue('steamId', null);
             window.api.setStoreValue('token', null);
-            setTimeout(() => {
-              window.api.reloadApp();
-            }, 2500);
+            queueNotification({
+              text: 'Authentication expired',
+              position: 'top-center',
+              removeAfter: 5000,
+              type: 'error',
+            });
+            window.api.reloadApp();
           } else {
             addNotification({
               text: response.message,
@@ -808,7 +816,16 @@
       clearInterval(interval);
     });
     getSavedRoomCode();
+    checkNotifications();
   });
+
+  async function checkNotifications() {
+    const notification = await window.api.getStoreValue('notification');
+    if (notification) {
+      addNotification(notification);
+      window.api.setStoreValue('notification', null);
+    }
+  }
 
   async function getSavedRoomCode() {
     roomCodeInput = await window.api.getStoreValue('savedRoomCode');
