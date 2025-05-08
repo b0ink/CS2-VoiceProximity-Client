@@ -72,6 +72,9 @@
       });
       socket_.on('disconnect', () => {
         socket_ = socket_;
+        window.api.reloadApp();
+        // TODO: toast notification
+        console.error(`Lost connection to the socket server`);
       });
 
       // Now you can use roomCode and steamId
