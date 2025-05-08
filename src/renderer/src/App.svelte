@@ -861,7 +861,6 @@
 
       <ButtonGroup class="w-full">
         <Input
-          type="text"
           id="room-code"
           name="room-code"
           disabled={isConnected || !socket_?.connected}
