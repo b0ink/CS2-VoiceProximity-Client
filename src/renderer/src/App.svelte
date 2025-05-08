@@ -278,7 +278,6 @@
         map_ = gltf.scene;
         map_.scale.set(mapScale_, mapScale_, mapScale_);
         map_.rotation.x = -Math.PI / 2;
-        map_.matrixAutoUpdate = false;
 
         if (scene_) {
           scene_.add(map_);
