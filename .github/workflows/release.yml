@@ -1,13 +1,12 @@
-name: Build Windows
+name: Release Windows Build
 
 on:
   push:
-    branches:
-      - main
-  pull_request:
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
 
     steps:
@@ -27,3 +26,8 @@ jobs:
         with:
           name: windows-build
           path: dist/*.exe
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
