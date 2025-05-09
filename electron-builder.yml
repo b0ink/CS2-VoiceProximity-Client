@@ -1,5 +1,5 @@
 appId: com.electron.app
-productName: cs2-voice-proximity
+productName: CS2 Proximity Voice Chat
 directories:
   buildResources: build
 files:
@@ -14,7 +14,7 @@ asarUnpack:
   - resources/**
   - static/**
 win:
-  executableName: cs2-voice-proximity
+  executableName: CS2 Proximity Voice Chat
 nsis:
   artifactName: ${name}-${version}-setup.${ext}
   shortcutName: ${productName}
