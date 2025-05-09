@@ -1,10 +1,12 @@
-import { app, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
 import fs from 'fs/promises';
 import path from 'path';
 import { getApiUrl } from './config';
 import { StoreData } from './types';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+
+let mainWindowRef: BrowserWindow | null = null;
 
 const store = new Store<StoreData>();
 
@@ -14,6 +16,9 @@ ipcMain.handle('get-store-value', async (_event, key: string, defaultValue?: str
 
 ipcMain.handle('set-store-value', async (_event, key: string, value: any) => {
   store.set(key, value);
+  if (key === 'setting_alwaysOnTop' && mainWindowRef) {
+    mainWindowRef.setAlwaysOnTop(value);
+  }
 });
 
 ipcMain.handle('get-turn-credentials', async () => {
@@ -36,3 +41,7 @@ ipcMain.handle('load-map', async (_event, map: string) => {
 ipcMain.handle('get-socket-url', async () => {
   return getApiUrl();
 });
+
+export function setMainWindow(win: BrowserWindow) {
+  mainWindowRef = win;
+}

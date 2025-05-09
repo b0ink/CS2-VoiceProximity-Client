@@ -19,4 +19,5 @@ export interface StoreData {
   turnPassword?: string;
   socketServer?: string;
   notification?: DefaultNotificationOptions;
+  setting_alwaysOnTop?: boolean;
 }

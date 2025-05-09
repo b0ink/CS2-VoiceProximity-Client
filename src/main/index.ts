@@ -6,7 +6,7 @@ import jwt from 'jsonwebtoken';
 import path from 'node:path';
 import { join } from 'path';
 import icon from '../../resources/icon.png?asset';
-import './ipc-handlers';
+import { setMainWindow } from './ipc-handlers';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 import { SteamAuth } from './SteamAuth';
 import { JwtAuthPayload, StoreData } from './types';
@@ -20,7 +20,10 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 const auth = new SteamAuth();
 
-const store = new Store<StoreData>();
+const store = new Store<StoreData>({
+  watch: true,
+});
+
 let mainWindow: BrowserWindow;
 
 async function validateJwtToken() {
@@ -47,9 +50,9 @@ async function validateJwtToken() {
 }
 
 function createWindow(): void {
-  // Reset token and steamid if invalid or expired token
-
   const mainWindowState = windowStateKeeper({});
+
+  const alwaysOnTop = store.get('setting_alwaysOnTop', true);
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -58,7 +61,7 @@ function createWindow(): void {
     show: false,
     resizable: false,
     autoHideMenuBar: false,
-    alwaysOnTop: true,
+    alwaysOnTop: alwaysOnTop,
     // frame: false,
     fullscreenable: false,
     minimizable: false,
@@ -75,6 +78,8 @@ function createWindow(): void {
     },
   });
 
+  setMainWindow(mainWindow);
+
   mainWindow.on('closed', () => {
     try {
       mainWindow?.destroy();
@@ -87,6 +92,7 @@ function createWindow(): void {
   mainWindowState.manage(mainWindow);
 
   mainWindow.on('ready-to-show', () => {
+    // Reset token and steamid if invalid or expired token
     validateJwtToken();
     mainWindow.show();
   });

@@ -2,6 +2,7 @@
   import { Heading, Label, Select, Toggle } from 'flowbite-svelte';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
+  import { onMount } from 'svelte';
   export let open: boolean;
   export let selectedDeviceId: string;
   export let isConnected: boolean;
@@ -10,6 +11,21 @@
   export let clientSteamId: string;
   export let socketUrl: string;
   export let onMapChange: () => void;
+
+  let alwaysOnTop: boolean;
+  const toggleAlwaysOnTop = () => {
+    alwaysOnTop = !alwaysOnTop;
+    window.api.setStoreValue('setting_alwaysOnTop', alwaysOnTop);
+    console.log(alwaysOnTop);
+  };
+
+  onMount(() => {
+    loadSettings();
+  });
+
+  const loadSettings = async () => {
+    alwaysOnTop = await window.api.getStoreValue('setting_alwaysOnTop', true);
+  };
 </script>
 
 {#if open}
@@ -44,7 +60,12 @@
       <ChangeSocketServer open={true} />
       <div>
         <Label class="mb-2">Window preferences:</Label>
-        <Toggle id="always-on-top" checked={true} class="justify-between">
+        <Toggle
+          id="always-on-top"
+          checked={alwaysOnTop}
+          class="justify-between"
+          onclick={toggleAlwaysOnTop}
+        >
           {#snippet offLabel()}
             Always On Top
           {/snippet}</Toggle
