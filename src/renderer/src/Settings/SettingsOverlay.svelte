@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Heading, Label, Select } from 'flowbite-svelte';
+  import { Heading, Label, Select, Toggle } from 'flowbite-svelte';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   export let open: boolean;
@@ -42,7 +42,15 @@
       </div>
 
       <ChangeSocketServer open={true} />
-
+      <div>
+        <Label class="mb-2">Window preferences:</Label>
+        <Toggle id="always-on-top" checked={true} class="justify-between">
+          {#snippet offLabel()}
+            Always On Top
+          {/snippet}</Toggle
+        >
+      </div>
+      <br />
       <!-- 
       <Button
         class="cursor-pointer"
