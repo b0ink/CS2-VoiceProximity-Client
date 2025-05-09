@@ -924,7 +924,7 @@
           class="cursor-pointer"
           type="submit"
           onclick={joinRoom}
-          disabled={isConnected || socketConnected || !turnUsername || !turnPassword}
+          disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
         >
           Join</Button
         >
