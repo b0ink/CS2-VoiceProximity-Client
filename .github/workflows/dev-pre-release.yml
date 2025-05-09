@@ -1,14 +1,14 @@
-name: Build Windows
+name: Release Windows Build
 
 on:
   push:
     branches:
-      - main
       - dev
-  pull_request:
+    tags:
+      - 'v*.*.*'
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
 
     steps:
@@ -24,7 +24,8 @@ jobs:
 
       - run: npm run build:win
 
-      - uses: actions/upload-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: windows-build
-          path: dist/*.exe
+          files: dist/*.exe
+          prerelease: true

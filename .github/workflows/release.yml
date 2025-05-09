@@ -2,6 +2,8 @@ name: Release Windows Build
 
 on:
   push:
+    branches:
+      - main
     tags:
       - 'v*.*.*'
 
@@ -21,11 +23,6 @@ jobs:
       - run: npm run lint
 
       - run: npm run build:win
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: windows-build
-          path: dist/*.exe
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
