@@ -915,7 +915,7 @@
         <Input
           id="room-code"
           name="room-code"
-          disabled={isConnected || !socket_?.connected}
+          disabled={isConnected || socketConnected}
           bind:value={roomCodeInput}
           placeholder="Room code"
         />
@@ -924,7 +924,7 @@
           class="cursor-pointer"
           type="submit"
           onclick={joinRoom}
-          disabled={isConnected || !socket_?.connected || !turnUsername || !turnPassword}
+          disabled={isConnected || socketConnected || !turnUsername || !turnPassword}
         >
           Join</Button
         >
