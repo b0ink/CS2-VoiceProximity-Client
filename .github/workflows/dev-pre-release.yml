@@ -1,4 +1,4 @@
-name: Pre-release Windows Build
+name: Pre-release Windows Dev Build
 
 on:
   push:
