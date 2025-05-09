@@ -841,6 +841,9 @@
     });
     getSavedRoomCode();
     checkNotifications();
+
+    Object.defineProperty(document, 'hidden', { value: false, writable: false });
+    document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
   });
 
   async function checkNotifications() {

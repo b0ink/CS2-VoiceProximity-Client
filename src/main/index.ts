@@ -14,6 +14,9 @@ import { JwtAuthPayload, StoreData } from './types';
 const appProtocolClient = `cs2-proximity-chat`;
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
+app.commandLine.appendSwitch('disable-background-timer-throttling');
+app.commandLine.appendSwitch('disable-renderer-backgrounding');
+app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 const auth = new SteamAuth();
 
@@ -67,6 +70,7 @@ function createWindow(): void {
       nodeIntegration: true,
       contextIsolation: false,
       devTools: true,
+      backgroundThrottling: false,
     },
   });
 
