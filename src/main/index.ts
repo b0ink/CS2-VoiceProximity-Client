@@ -61,6 +61,7 @@ function createWindow(): void {
     alwaysOnTop: true,
     // frame: false,
     fullscreenable: false,
+    minimizable: false,
     x: mainWindowState.x,
     y: mainWindowState.y,
     ...(process.platform === 'linux' ? { icon } : {}),
