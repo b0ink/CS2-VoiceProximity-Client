@@ -68,17 +68,26 @@
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
 
+      console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
+
       socket_ = io(socketUrl);
 
       // Trigger reactive state of socket_
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket_.on('connect', () => {
-        socket_ = socket_;
+        socketConnected = true;
       });
       socket_.on('disconnect', () => {
-        socket_ = socket_;
+        socketConnected = false;
         window.api.reloadApp();
         // TODO: toast notification
+
+        queueNotification({
+          text: 'Lost connection to the socket server. Applicationr restarted.',
+          position: 'top-center',
+          removeAfter: 2500,
+          type: 'warning',
+        });
         console.error(`Lost connection to the socket server`);
       });
 
@@ -334,7 +343,7 @@
 
   let fpsCamera_: FirstPersonCamera;
   let socket_: Socket | undefined;
-  $: socketConnected = socket_?.connected;
+  let socketConnected = false;
 
   let previousRAF_: any;
   let mapScale_: number;
