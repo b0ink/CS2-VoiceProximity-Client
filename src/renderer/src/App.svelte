@@ -223,7 +223,7 @@
               }
 
               if (!player.IsAlive) {
-                positionalSound.Mute();
+                positionalSound.Mute(350); // TODO: a setting like this should be set directly from the cs2 server
                 // positionalSound.soundObjSource_?.position.set(-9000, -9000, -9000);
                 // continue;
               } else {

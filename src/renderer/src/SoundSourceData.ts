@@ -65,12 +65,17 @@ export class SoundSourceData {
     this.sound_.setFilters([gain, highpass, filter]);
   }
 
-  public Mute() {
+  /**
+   * Mutes the positional sound source.
+   *
+   * @param delay How long in ms before setting the mute is applied (Default: 0ms)
+   */
+  public Mute(delay: number = 0) {
     if (!this.isMuted) {
       this.isMuted = true;
       setTimeout(() => {
         this.sound_?.setVolume(0);
-      }, 50);
+      }, delay);
     }
   }
 
