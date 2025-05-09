@@ -915,7 +915,7 @@
         <Input
           id="room-code"
           name="room-code"
-          disabled={isConnected || socketConnected}
+          disabled={isConnected || !socketConnected}
           bind:value={roomCodeInput}
           placeholder="Room code"
         />
