@@ -1,7 +1,8 @@
 <script lang="ts">
   import { Heading, Label, Select } from 'flowbite-svelte';
-  import ClientInfo from './components/ClientInfo.svelte';
-  import ChangeSocketServer from './components/ChangeSocketServer.svelte';
+  import ClientInfo from './ClientInfo.svelte';
+  import ChangeSocketServer from './ChangeSocketServer.svelte';
+  import Versions from './Versions.svelte';
   export let open: boolean;
   export let selectedDeviceId: string;
   export let isConnected: boolean;

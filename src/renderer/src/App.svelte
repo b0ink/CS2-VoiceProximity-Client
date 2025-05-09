@@ -12,7 +12,7 @@
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { FirstPersonCamera } from './FirstPersonCamera';
-  import SettingsOverlay from './SettingsOverlay.svelte';
+  import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { SoundSourceData } from './SoundSourceData';
   import type {
     AudioConnectionStuff,
