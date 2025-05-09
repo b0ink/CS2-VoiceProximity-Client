@@ -1,14 +1,15 @@
 name: Release Windows Build
 
-workflow_dispatch:
-  inputs:
-    version:
-      description: 'Version to tag'
-      required: true
-    prerelease:
-      description: 'Is this a pre-release?'
-      required: true
-      type: boolean
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to tag'
+        required: true
+      prerelease:
+        description: 'Is this a pre-release?'
+        required: true
+        type: boolean
 
 jobs:
   release:
