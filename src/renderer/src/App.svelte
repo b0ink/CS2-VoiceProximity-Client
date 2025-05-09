@@ -389,6 +389,7 @@
     if (code) {
       roomCode = code;
       initUserMedia();
+      window.api.setStoreValue('savedRoomCode', roomCode);
     } else {
       roomCode = null;
       console.log('invalid room code');
@@ -657,6 +658,8 @@
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
+          document.querySelector('#threejs').innerHTML = '';
+          initializeRenderer_();
           initializeMap_(response.mapName);
           joinedRoom = true;
         } else {
@@ -789,11 +792,9 @@
     // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
     const roomCode = roomCodeInput;
     console.log(`Attempting to join room code ${roomCode}`);
-    document.querySelector('#threejs').innerHTML = '';
-    initializeRenderer_();
+
     joinRoom_(roomCode);
 
-    window.api.setStoreValue('savedRoomCode', roomCode);
     // if (isConnected) {
     //   initializeMap_(mapName);
     // }
