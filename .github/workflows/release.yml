@@ -1,9 +1,14 @@
 name: Release Windows Build
 
-on:
-  push:
-    tags:
-      - '*'
+workflow_dispatch:
+  inputs:
+    version:
+      description: 'Version to tag'
+      required: true
+    prerelease:
+      description: 'Is this a pre-release?'
+      required: true
+      type: boolean
 
 jobs:
   release:
@@ -25,5 +30,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ github.event.inputs.version }}
           token: ${{ secrets.GH_TOKEN }}
           files: dist/*.exe
+          prerelease: ${{ github.event.inputs.prerelease }}
