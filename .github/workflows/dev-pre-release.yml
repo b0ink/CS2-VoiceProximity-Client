@@ -1,14 +1,13 @@
-name: Release Windows Build
+name: Pre-release Windows Build
 
 on:
   push:
-    branches:
-      - dev
     tags:
-      - 'v*.*.*'
+      - '*'
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/dev'
     runs-on: windows-latest
 
     steps:

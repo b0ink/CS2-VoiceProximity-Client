@@ -2,13 +2,12 @@ name: Release Windows Build
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v*.*.*'
+      - '*'
 
 jobs:
   release:
+    if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
 
     steps:
