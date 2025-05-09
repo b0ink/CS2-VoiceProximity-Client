@@ -593,7 +593,19 @@
               } else {
                 connection = createPeerConnection(from, false, client);
               }
-              connection.signal(data);
+              if (connection && !connection.destroyed) {
+                connection.signal(data);
+              } else {
+                addNotification({
+                  text: `Failed to crete peer connection with ${client.steamId}`,
+                  position: 'top-center',
+                  removeAfter: 5000,
+                  type: 'warning',
+                });
+                console.error(
+                  `Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
+                );
+              }
             }
           },
         );
