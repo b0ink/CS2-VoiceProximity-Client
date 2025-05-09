@@ -3,11 +3,10 @@ name: Pre-release Windows Dev Build
 on:
   push:
     tags:
-      - '*'
+      - 'dev-*'
 
 jobs:
   release:
-    if: github.ref == 'refs/heads/dev'
     runs-on: windows-latest
 
     steps:
@@ -26,5 +25,6 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          token: ${{ secrets.GH_TOKEN }}
           files: dist/*.exe
           prerelease: true
