@@ -883,8 +883,8 @@
   onclick={() => {
     settingsOpen = !settingsOpen;
   }}
-  color="white"
-  class="cursor-pointer absolute bottom-2 right-2 opacity-50 z-20 select-none"
+  color={settingsOpen ? 'var(--color-primary-800)' : 'grey'}
+  class={`cursor-pointer absolute bottom-2 right-2  z-20 select-none transition-all duration-300 ${settingsOpen ? 'rotate-90' : 'rotate-0'}`}
   size="xl"
 />
 
