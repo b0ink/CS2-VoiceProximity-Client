@@ -33,6 +33,8 @@ jobs:
         with:
           tag_name: ${{ github.event.inputs.version }}
           token: ${{ secrets.GH_TOKEN }}
-          files: dist/*.exe
+          files: |
+            dist/*-setup.exe
+            dist/latest.yml
           prerelease: ${{ github.event.inputs.prerelease }}
           generate_release_notes: true

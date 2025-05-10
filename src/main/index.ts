@@ -10,6 +10,7 @@ import { setMainWindow } from './ipc-handlers';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 import { SteamAuth } from './SteamAuth';
 import { JwtAuthPayload, StoreData } from './types';
+import { autoUpdater } from 'electron-updater';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -47,7 +48,26 @@ async function validateJwtToken() {
   }
 }
 
+async function checkForUpdates() {
+  if (!app.isPackaged) {
+    autoUpdater.forceDevUpdateConfig = true;
+  }
+  autoUpdater.autoDownload = false;
+
+  try {
+    // TODO: auto updates can only work on latest releases (not pre-releases)
+    // const result = await autoUpdater.checkForUpdates();
+    // console.log(result);
+  } catch (error) {
+    console.log('Unable to check for latest update');
+    console.error(error);
+  }
+}
+
 function createWindow(): void {
+  if (!app.isPackaged) {
+    checkForUpdates();
+  }
   const mainWindowState = windowStateKeeper({});
 
   const alwaysOnTop = store.get('setting_alwaysOnTop', true);
