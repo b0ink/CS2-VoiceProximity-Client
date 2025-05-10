@@ -31,7 +31,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ github.event.inputs.version }}
+          tag_name: ${{ github.event.inputs.version }}
           token: ${{ secrets.GH_TOKEN }}
           files: dist/*.exe
           prerelease: ${{ github.event.inputs.prerelease }}
