@@ -35,3 +35,4 @@ jobs:
           token: ${{ secrets.GH_TOKEN }}
           files: dist/*.exe
           prerelease: ${{ github.event.inputs.prerelease }}
+          generate_release_notes: true
