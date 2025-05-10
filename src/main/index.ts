@@ -20,9 +20,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 const auth = new SteamAuth();
 
-const store = new Store<StoreData>({
-  watch: true,
-});
+const store = new Store<StoreData>();
 
 let mainWindow: BrowserWindow;
 
