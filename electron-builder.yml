@@ -41,6 +41,8 @@ appImage:
   artifactName: ${name}-${version}.${ext}
 npmRebuild: false
 publish:
-  - github
+  provider: generic
+  url: https://example.com/auto-updates
+  channel: latest
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
