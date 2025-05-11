@@ -426,9 +426,12 @@
       echoCancellation: echoCancellation,
       // latency: 0,
       noiseSuppression: noiseSuppression,
-      // googNoiseSuppression: noiseSuppression,// @ts-ignore-line eslint-disable-line
-      // googEchoCancellation: echoCancellation,// @ts-ignore-line
-      // googTypingNoiseDetection: noiseSuppression,
+      // @ts-ignore - non-standard constraint used by chrome
+      googNoiseSuppression: noiseSuppression,
+      // @ts-ignore - non-standard constraint used by chrome
+      googEchoCancellation: echoCancellation,
+      // @ts-ignore - non-standard constraint used by chrome
+      googTypingNoiseDetection: noiseSuppression,
       sampleRate: enableSampleDebug ? sampleRate : undefined,
       sampleSize: enableSampleDebug ? sampleSize : undefined,
       deviceId: selectedDeviceId,
