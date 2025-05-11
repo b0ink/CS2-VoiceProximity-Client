@@ -16,6 +16,8 @@ export class SoundSourceData {
   public soundObjSource_?: THREE.Object3D;
   public camera_?: THREE.Camera;
 
+  private unmuteTimeout?: NodeJS.Timeout;
+  private muteTimeout?: NodeJS.Timeout;
   private isMuted: boolean = false;
 
   // private occlusionMesh?: THREE.Group<THREE.Object3DEventMap>;
@@ -72,8 +74,12 @@ export class SoundSourceData {
    */
   public Mute(delay: number = 0) {
     if (!this.isMuted) {
+      clearInterval(this.unmuteTimeout);
+      clearTimeout(this.muteTimeout);
+
       this.isMuted = true;
-      setTimeout(() => {
+
+      this.muteTimeout = setTimeout(() => {
         this.sound_?.setVolume(0);
       }, delay);
     }
@@ -81,6 +87,9 @@ export class SoundSourceData {
 
   public Unmute() {
     if (this.isMuted || this.sound_?.getVolume() == 0) {
+      clearInterval(this.unmuteTimeout);
+      clearTimeout(this.muteTimeout);
+
       this.isMuted = false;
       // sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
 
@@ -90,11 +99,11 @@ export class SoundSourceData {
       const step = (targetVolume - (this.sound_?.getVolume() || 0)) / (fadeDuration / 16);
 
       let currentVolume = this.sound_?.getVolume() || 0;
-      const fadeIn = setInterval(() => {
+      this.unmuteTimeout = setInterval(() => {
         currentVolume += step;
         if (currentVolume >= targetVolume) {
           currentVolume = targetVolume;
-          clearInterval(fadeIn);
+          clearInterval(this.unmuteTimeout);
         }
         this.sound_?.setVolume(currentVolume);
       }, 16);
