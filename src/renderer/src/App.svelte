@@ -495,6 +495,7 @@
             iceRestartEnabled: true,
             config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: DEFAULT_ICE_CONFIG,
+            trickle: false,
           });
 
           // setPeerConnections((connections) => {
