@@ -6,4 +6,8 @@
   <li class="electron-version">Electron <span class="opacity-50">v{versions.electron}</span></li>
   <li class="chrome-version">Chromium <span class="opacity-50">v{versions.chrome}</span></li>
   <li class="node-version">Node <span class="opacity-50">v{versions.node}</span></li>
+  <br />
+  <li class="node-version">
+    Proximity Chat Client <span class="opacity-50">v{window.api.clientVersion()}</span>
+  </li>
 </ul>

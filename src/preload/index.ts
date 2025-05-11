@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+import { version } from '../../package.json';
 
 // Custom APIs for renderer
 const api = {
@@ -11,6 +12,7 @@ const api = {
   reloadApp: () => ipcRenderer.invoke('reload-app'),
   promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
   retrieveTurnCredentials: () => ipcRenderer.invoke('get-turn-credentials'),
+  clientVersion: () => version,
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

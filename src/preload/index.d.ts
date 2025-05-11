@@ -1,5 +1,4 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
-
 declare global {
   interface Window {
     electron: ElectronAPI;
@@ -13,5 +12,6 @@ declare global {
     reloadApp: () => void;
     promptSteamAuthentication: () => void;
     retrieveTurnCredentials: () => void;
+    clientVersion: () => string;
   }
 }

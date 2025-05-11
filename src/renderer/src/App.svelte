@@ -1,7 +1,7 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
-  import { Button, ButtonGroup, Input, Label } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Input, Label } from 'flowbite-svelte';
   import { CogSolid } from 'flowbite-svelte-icons';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
@@ -12,6 +12,7 @@
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { FirstPersonCamera } from './FirstPersonCamera';
+  import maps from './maps';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { SoundSourceData } from './SoundSourceData';
   import type {
@@ -23,8 +24,6 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
-  import maps from './maps';
-  import { Alert } from 'flowbite-svelte';
 
   const { addNotification } = getNotificationsContext();
 
