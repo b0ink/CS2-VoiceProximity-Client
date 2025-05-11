@@ -33,7 +33,7 @@
     class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
-      <Heading tag="h1" class="mb-4 text-4xl font-extrabold  md:text-5xl lg:text-6xl"
+      <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl"
         >Settings</Heading
       >
     </div>
@@ -99,7 +99,30 @@
 <style>
   .scrollbar {
     overflow-y: scroll;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE 10+ */
+
+    /* Firefox */
+    /* scrollbar-width: none; */
+
+    /* IE 10+ */
+    /* -ms-overflow-style: none; */
+    padding-right: 10px;
+  }
+
+  .scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+  .scrollbar::-webkit-scrollbar-corner {
+    background: rgba(0, 0, 0, 0);
+  }
+  .scrollbar::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 6px;
+    border: 4px solid rgba(0, 0, 0, 0);
+    background-clip: content-box;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .scrollbar::-webkit-scrollbar-track {
+    background-color: rgba(0, 0, 0, 0);
   }
 </style>
