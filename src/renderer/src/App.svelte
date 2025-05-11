@@ -198,6 +198,8 @@
         //   return;
         // }
 
+        const me = localPlayerData.find((player) => player.SteamId === getSteamId());
+
         for (const player of localPlayerData) {
           const steamId = player.SteamId;
           const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
@@ -221,12 +223,14 @@
                 continue;
               }
 
-              if (!player.IsAlive) {
-                positionalSound.Mute(1000); // TODO: a setting like this should be set directly from the cs2 server
-                // positionalSound.soundObjSource_?.position.set(-9000, -9000, -9000);
-                // continue;
+              if (
+                !player.IsAlive && // player is dead
+                (me.IsAlive || // mute if im alive (don't want to hear any dead players)
+                  player.Team !== me.Team) // or if the player is an enemy
+              ) {
+                positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
               } else {
-                positionalSound.Unmute();
+                positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
               }
 
               if (positionalSound.soundObjSource_) {
@@ -728,6 +732,7 @@
     const sound1Data = new SoundSourceData(sound1, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
     sounds_.push(sound1Data);
+    sound1Data.Mute(0);
 
     console.log(`Creating remote player: ${client.steamId}`);
   };
