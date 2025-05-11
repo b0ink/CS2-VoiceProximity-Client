@@ -54,8 +54,8 @@ export class SoundSourceData {
     this.highPassFilter_ = highpass;
 
     const gain = this.listener_.context.createGain();
-    gain.gain.value = 1;
-    gain.gain.setValueAtTime(1, this.listener_.context.currentTime);
+    gain.gain.value = 2;
+    gain.gain.setValueAtTime(2, this.listener_.context.currentTime);
     // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
 
     // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
