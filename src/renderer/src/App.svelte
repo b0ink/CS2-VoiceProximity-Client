@@ -82,7 +82,7 @@
         // TODO: toast notification
 
         queueNotification({
-          text: 'Lost connection to the socket server. Applicationr restarted.',
+          text: 'Lost connection to the socket server. Application restarted.',
           position: 'top-center',
           removeAfter: 2500,
           type: 'warning',
