@@ -1,7 +1,7 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
-  import { Alert, Button, ButtonGroup, Input, Label } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import { CogSolid } from 'flowbite-svelte-icons';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
@@ -904,6 +904,11 @@
   {socketUrl}
 />
 <div class="p-5">
+  <div class="text-center">
+    <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl "
+      >CS2 Proximity Chat</Heading
+    >
+  </div>
   {#if clientSteamId}
     {#if !socketConnected}
       <Alert color="yellow" class="text-center mb-4">
