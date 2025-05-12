@@ -239,21 +239,12 @@
           const transformedLookAt = transformVector(playerLookAt);
 
           if (steamId === getSteamId()) {
-            // these vectors are transformed with updatePosition()
-            // fpsCamera_.position_.copy(
-            //   new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z),
-            // );
-            // fpsCamera_.lookAt_.copy(
-            //   new THREE.Vector3(transformedLookAt.x, transformedLookAt.y, transformedLookAt.z),
-            // );
-
             fpsCamera_.camera_.position.set(
               transformedOrigin.x,
               transformedOrigin.y,
               transformedOrigin.z,
             );
             fpsCamera_.camera_.lookAt(transformedLookAt);
-            // console.log(`SAVING our own steam id ${getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
           } else {
             for (const positionalSound of sounds_) {
               if (positionalSound.steamId !== steamId) {
@@ -281,15 +272,12 @@
               }
 
               if (positionalSound.soundObjSource_) {
-                // positionalSound.soundObjSource_?.position.copy(playerOrigin);
                 positionalSound.soundObjSource_?.position.set(
                   transformedOrigin.x,
                   transformedOrigin.y,
                   transformedOrigin.z,
                 );
                 positionalSound.soundObjSource_?.lookAt(transformedLookAt);
-                // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`);
-                // console.log(`Found steam: ${steamId}. Position=${JSON.stringify(transformedOrigin)} LookAt=${JSON.stringify(transformedLookAt)}`);
               } else {
                 console.warn(`No soundObjSource for steam ${steamId}`);
               }

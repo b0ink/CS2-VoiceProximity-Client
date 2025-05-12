@@ -26,10 +26,7 @@ export class SoundSourceData {
   private muteTimeout?: NodeJS.Timeout;
   private isMuted: boolean = false;
 
-  // private occlusionMesh?: THREE.Group<THREE.Object3DEventMap>;
-
   constructor(
-    // occlusionMesh: THREE.Group<THREE.Object3DEventMap> | undefined,
     sound: THREE.PositionalAudio,
     monoSound: THREE.Audio,
     soundObjSource: THREE.Object3D,
@@ -44,55 +41,46 @@ export class SoundSourceData {
     this.soundObjSource_ = soundObjSource;
     this.camera_ = camera;
 
-    // this.occlusionMesh = occlusionMesh;
-    // steamId = null; // ? maybe?
-    // intialise_();
+    this.initStereoFilters();
+    this.initMonoFilters();
+  }
 
+  private initStereoFilters() {
     const filter = this.listener_.context.createBiquadFilter();
     filter.type = 'lowpass';
     filter.Q.value = 0;
-    // filter.frequency.setValueAtTime(25000, listener_.context.currentTime);
-    // filter.gain.setValueAtTime(25, listener_.context.currentTime);
 
     this.lowPassFilter_ = filter;
-    // sound_.setFilter(filter);
 
     const highpass = this.listener_.context.createBiquadFilter();
     highpass.type = 'highpass';
     highpass.Q.value = 0;
     highpass.frequency.value = 100;
-    // highpass.frequency.setValueAtTime(100, listener_.context.currentTime);
-    // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
 
     this.highPassFilter_ = highpass;
 
-    // Used for positional audio
     const gain = this.listener_.context.createGain();
     this.gainAmount = 2; // TODO: to be adjusted by the player
     gain.gain.value = this.gainAmount;
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
 
-    // Used for mono audio
+    this.sound_.setFilters([gain, highpass, filter]);
+  }
+
+  private initMonoFilters() {
+    // Positional audio is replaced by mono audio when spectating a player or hearing dead teammates
     const gain2 = this.listener_.context.createGain();
     gain2.gain.value = this.gainAmount;
     gain2.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.monoGainFilter = gain2;
-    // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
-
-    // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
-    // Used for mono audio
 
     const highpassMono = this.listener_.context.createBiquadFilter();
     highpassMono.type = 'highpass';
     highpassMono.Q.value = 0;
     highpassMono.frequency.value = 750;
     this.monoHighpassFilter = highpassMono;
-
     this.monoSound_.setFilters([gain2, highpassMono]);
-    this.sound_.setFilters([gain, highpass, filter]);
-
-    // TODO: apply the same gain amount to the monoSound
     this.monoSound_.setVolume(0);
   }
 
