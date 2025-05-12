@@ -211,12 +211,19 @@
 
           if (steamId === getSteamId()) {
             // these vectors are transformed with updatePosition()
-            fpsCamera_.position_.copy(
-              new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z),
+            // fpsCamera_.position_.copy(
+            //   new THREE.Vector3(transformedOrigin.x, transformedOrigin.y, transformedOrigin.z),
+            // );
+            // fpsCamera_.lookAt_.copy(
+            //   new THREE.Vector3(transformedLookAt.x, transformedLookAt.y, transformedLookAt.z),
+            // );
+
+            fpsCamera_.camera_.position.set(
+              transformedOrigin.x,
+              transformedOrigin.y,
+              transformedOrigin.z,
             );
-            fpsCamera_.lookAt_.copy(
-              new THREE.Vector3(transformedLookAt.x, transformedLookAt.y, transformedLookAt.z),
-            );
+            fpsCamera_.camera_.lookAt(transformedLookAt);
             // console.log(`SAVING our own steam id ${getSteamId()} Position=${JSON.stringify(playerOrigin)} LookAt=${JSON.stringify(playerLookAt)}`)
           } else {
             for (const positionalSound of sounds_) {
@@ -791,7 +798,7 @@
     // const timeElapsedS = timeElapsed * 0.001;
 
     // camera position is now updated every time player positions are retrieved
-    fpsCamera_.update();
+    // fpsCamera_.update();
     updateSoundFilters();
   };
 
