@@ -88,7 +88,7 @@ export class SoundSourceData {
     const highpassMono = this.listener_.context.createBiquadFilter();
     highpassMono.type = 'highpass';
     highpassMono.Q.value = 0;
-    highpassMono.frequency.value = 1000;
+    highpassMono.frequency.value = 750;
     this.monoHighpassFilter = highpassMono;
 
     this.monoSound_.setFilters([gain2, highpassMono]);

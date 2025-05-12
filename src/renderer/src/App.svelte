@@ -267,7 +267,7 @@
                   if (player.IsAlive) {
                     positionalSound.monoHighpassFilter.frequency.value = 100;
                   } else {
-                    positionalSound.monoHighpassFilter.frequency.value = 1000;
+                    positionalSound.monoHighpassFilter.frequency.value = 750;
                   }
                 } else {
                   positionalSound.SwitchToStereo();
