@@ -24,6 +24,7 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
+  import { cn } from './shared/tailwind';
 
   const { addNotification } = getNotificationsContext();
 
@@ -892,7 +893,10 @@
     settingsOpen = !settingsOpen;
   }}
   color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
-  class={`cursor-pointer absolute bottom-2 right-2 z-20 select-none transition-all duration-300 ${settingsOpen ? 'rotate-90' : 'rotate-0'}`}
+  class={cn(
+    'cursor-pointer absolute bottom-2 right-2 z-20 select-none transition-all duration-300',
+    settingsOpen ? 'rotate-90' : 'rotate-0',
+  )}
   size="xl"
 />
 
