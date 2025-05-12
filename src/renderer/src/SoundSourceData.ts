@@ -96,6 +96,7 @@ export class SoundSourceData {
       const now = this.listener_.context.currentTime;
       this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
       this.monoGainFilter.gain.linearRampToValueAtTime(this.monoGainAmount, now + 0.2);
+      console.log(`Switching ${this.steamId} to mono audio`);
     }
   }
 
@@ -105,6 +106,7 @@ export class SoundSourceData {
       const now = this.listener_.context.currentTime;
       this.gainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2); // smooth over 200ms
       this.monoGainFilter.gain.linearRampToValueAtTime(0, now + 0.2);
+      console.log(`Switching ${this.steamId} to stereo audio`);
     }
   }
 
