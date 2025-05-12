@@ -193,6 +193,8 @@ export class SoundSourceData {
   }
 
   public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
+    // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
+
     const distance = calculateDistance(this.camera_?.position, this.soundObjSource_?.position);
 
     // TODO: increase occlusion for each mesh hit

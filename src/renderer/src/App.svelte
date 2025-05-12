@@ -246,43 +246,39 @@
             );
             fpsCamera_.camera_.lookAt(transformedLookAt);
           } else {
-            for (const positionalSound of sounds_) {
-              if (positionalSound.steamId !== steamId) {
-                continue;
-              }
+            const positionalSound = sounds_.get(steamId);
 
-              if (
-                !player.IsAlive && // player is dead
-                (me.IsAlive || // mute if im alive (don't want to hear any dead players)
-                  player.Team !== me.Team) // or if the player is an enemy
-              ) {
-                positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
-              } else {
-                positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
-              }
-
-              const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
-              const playerIsBeingSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
-
-              if (!me.IsAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
-                positionalSound.SwitchToMono();
-                positionalSound.setMonoHighPassFilterFrequency(player.IsAlive ? 100 : 750);
-              } else {
-                positionalSound.SwitchToStereo();
-              }
-
-              if (positionalSound.soundObjSource_) {
-                positionalSound.soundObjSource_?.position.set(
-                  transformedOrigin.x,
-                  transformedOrigin.y,
-                  transformedOrigin.z,
-                );
-                positionalSound.soundObjSource_?.lookAt(transformedLookAt);
-              } else {
-                console.warn(`No soundObjSource for steam ${steamId}`);
-              }
-              // break;
+            if (
+              !player.IsAlive && // player is dead
+              (me.IsAlive || // mute if im alive (don't want to hear any dead players)
+                player.Team !== me.Team) // or if the player is an enemy
+            ) {
+              positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
+            } else {
+              positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
             }
+
+            const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
+            const playerIsBeingSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
+
+            if (!me.IsAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
+              positionalSound.SwitchToMono();
+              positionalSound.setMonoHighPassFilterFrequency(player.IsAlive ? 100 : 750);
+            } else {
+              positionalSound.SwitchToStereo();
+            }
+
+            if (positionalSound.soundObjSource_) {
+              positionalSound.soundObjSource_?.position.set(
+                transformedOrigin.x,
+                transformedOrigin.y,
+                transformedOrigin.z,
+              );
+              positionalSound.soundObjSource_?.lookAt(transformedLookAt);
+            } else {
+              console.warn(`No soundObjSource for steam ${steamId}`);
+            }
+            // break;
           }
         }
 
@@ -387,7 +383,7 @@
   let mapScale_: number;
   let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
   let scene_: THREE.Scene;
-  let sounds_: SoundSourceData[];
+  let sounds_: Map<string, SoundSourceData | undefined>;
   let camera_: THREE.PerspectiveCamera;
   let threejs_: THREE.WebGLRenderer;
   let listener_: THREE.AudioListener;
@@ -416,7 +412,7 @@
   // const ambient = new THREE.AmbientLight(0xffffff, 1);
   // scene_.add(ambient);
 
-  sounds_ = [];
+  sounds_ = new Map<string, SoundSourceData>();
   // const mapScale = 39.3701;
   // mapScale_ = 5;
   mapScale_ = 39.3701;
@@ -613,15 +609,13 @@
 
         socket_?.on('user-left', async (peer: string, client: Client) => {
           console.log(`user has left! ${peer} ${JSON.stringify(client)}`);
-          sounds_ = sounds_.filter((sound) => {
-            if (sound.steamId === client.steamId) {
-              sound.sound_?.disconnect();
-              sound.soundObjSource_?.parent?.remove(sound.soundObjSource_);
-              console.log('found sound source removing from scene');
-              return false; // remove from array
-            }
-            return true;
-          });
+
+          const positionalSound = sounds_.get(client.steamId);
+          if (positionalSound) {
+            positionalSound.sound_?.disconnect();
+            positionalSound.soundObjSource_?.parent?.remove(positionalSound.soundObjSource_);
+            console.log('found sound source removing from scene');
+          }
 
           peerConnections[peer]?.destroy();
           delete peerConnections[peer];
@@ -736,8 +730,7 @@
   };
 
   const updateSoundFilters = () => {
-    for (const soundData of sounds_) {
-      // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
+    for (const soundData of sounds_.values()) {
       soundData.updateOcclusion(map_);
     }
   };
@@ -778,7 +771,7 @@
 
     const sound1Data = new SoundSourceData(sound1, nonPositional, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
-    sounds_.push(sound1Data);
+    sounds_.set(client.steamId, sound1Data);
     sound1Data.Mute(0);
 
     console.log(`Creating remote player: ${client.steamId}`);
