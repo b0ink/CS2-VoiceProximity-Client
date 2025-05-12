@@ -117,6 +117,7 @@ export class SoundSourceData {
       this.monoGainFilter.gain.linearRampToValueAtTime(0, now + 0.2);
       console.log(`Switching ${this.steamId} to stereo audio`);
       this.monoSound_.setVolume(0);
+      this.monoHighpassFilter.frequency.value = 100;
     }
   }
 

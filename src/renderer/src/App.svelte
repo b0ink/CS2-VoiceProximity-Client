@@ -270,24 +270,14 @@
                 positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
               }
 
-              if (!me.IsAlive) {
-                if (
-                  playerOrigin.distanceTo(spectatedPlayerPosition) <= 10 || // should be 0
-                  (!player.IsAlive && player.Team === me.Team)
-                ) {
-                  positionalSound.SwitchToMono();
-                  if (player.IsAlive) {
-                    positionalSound.monoHighpassFilter.frequency.value = 100;
-                  } else {
-                    positionalSound.monoHighpassFilter.frequency.value = 750;
-                  }
-                } else {
-                  positionalSound.SwitchToStereo();
-                  positionalSound.monoHighpassFilter.frequency.value = 100;
-                }
+              const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
+              const isCloseToSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
+
+              if (!me.IsAlive && (isCloseToSpectated || sameTeamAndDead)) {
+                positionalSound.SwitchToMono();
+                positionalSound.monoHighpassFilter.frequency.value = player.IsAlive ? 100 : 750;
               } else {
                 positionalSound.SwitchToStereo();
-                positionalSound.monoHighpassFilter.frequency.value = 100;
               }
 
               if (positionalSound.soundObjSource_) {
