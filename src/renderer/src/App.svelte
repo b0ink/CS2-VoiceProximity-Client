@@ -213,6 +213,7 @@
                 player.OriginZ,
               );
               spectatedPlayerPosition = playerOrigin;
+              break;
             }
           }
         }
@@ -259,13 +260,15 @@
 
               if (!me.IsAlive) {
                 if (
-                  transformedOrigin.distanceTo(spectatedPlayerPosition) <= 50 ||
+                  playerOrigin.distanceTo(spectatedPlayerPosition) <= 10 || // should be 0
                   (!player.IsAlive && player.Team === me.Team)
                 ) {
                   positionalSound.SwitchToMono();
                 } else {
                   positionalSound.SwitchToStereo();
                 }
+              } else {
+                positionalSound.SwitchToStereo();
               }
 
               if (positionalSound.soundObjSource_) {
@@ -772,8 +775,9 @@
     // TODO: could also be used to hear other dead players
     const nonPositional = new THREE.Audio(listener_);
     nonPositional.setMediaStreamSource(remoteStream);
-    nonPositional.setVolume(0);
+    nonPositional.setVolume(1);
     scene_.add(nonPositional);
+    speaker1.add(nonPositional);
 
     const sound1Data = new SoundSourceData(sound1, nonPositional, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
