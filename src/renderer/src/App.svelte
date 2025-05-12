@@ -201,6 +201,22 @@
 
         const me = localPlayerData.find((player) => player.SteamId === getSteamId());
 
+        let spectatedPlayerPosition: THREE.Vector3;
+
+        // Get the position of the player being spectated
+        for (const player of localPlayerData) {
+          if (player.SteamId === getSteamId()) {
+            if (!me.IsAlive) {
+              const playerOrigin = new THREE.Vector3(
+                player.OriginX,
+                player.OriginY,
+                player.OriginZ,
+              );
+              spectatedPlayerPosition = playerOrigin;
+            }
+          }
+        }
+
         for (const player of localPlayerData) {
           const steamId = player.SteamId;
           const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
@@ -239,6 +255,17 @@
                 positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
               } else {
                 positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
+              }
+
+              if (!me.IsAlive) {
+                if (
+                  transformedOrigin.distanceTo(spectatedPlayerPosition) <= 50 ||
+                  (!player.IsAlive && player.Team === me.Team)
+                ) {
+                  positionalSound.SwitchToMono();
+                } else {
+                  positionalSound.SwitchToStereo();
+                }
               }
 
               if (positionalSound.soundObjSource_) {
@@ -740,7 +767,15 @@
     sound1.setMaxDistance(1000);
     // sound1.play();
     speaker1.add(sound1);
-    const sound1Data = new SoundSourceData(sound1, speaker1, listener_, camera_);
+
+    // non positional audio used when spectating a player
+    // TODO: could also be used to hear other dead players
+    const nonPositional = new THREE.Audio(listener_);
+    nonPositional.setMediaStreamSource(remoteStream);
+    nonPositional.setVolume(0);
+    scene_.add(nonPositional);
+
+    const sound1Data = new SoundSourceData(sound1, nonPositional, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
     sounds_.push(sound1Data);
     sound1Data.Mute(0);

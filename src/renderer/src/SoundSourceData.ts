@@ -10,7 +10,13 @@ export class SoundSourceData {
   private gainFilter?: GainNode;
   private gainAmount?: number;
 
+  private monoGainFilter?: GainNode;
+  private monoGainAmount?: number;
+
+  public monoSound_?: THREE.Audio;
   public sound_?: THREE.PositionalAudio;
+  private useMonoAudio: boolean = false;
+
   private listener_?: THREE.AudioListener;
   public steamId?: string;
   public soundObjSource_?: THREE.Object3D;
@@ -25,14 +31,19 @@ export class SoundSourceData {
   constructor(
     // occlusionMesh: THREE.Group<THREE.Object3DEventMap> | undefined,
     sound: THREE.PositionalAudio,
+    monoSound: THREE.Audio,
     soundObjSource: THREE.Object3D,
     listener: THREE.AudioListener,
     camera: THREE.Camera,
   ) {
     this.sound_ = sound;
+    this.monoSound_ = monoSound;
+    this.useMonoAudio = false;
+
     this.listener_ = listener;
     this.soundObjSource_ = soundObjSource;
     this.camera_ = camera;
+
     // this.occlusionMesh = occlusionMesh;
     // steamId = null; // ? maybe?
     // intialise_();
@@ -55,16 +66,46 @@ export class SoundSourceData {
 
     this.highPassFilter_ = highpass;
 
+    // Used for positional audio
     const gain = this.listener_.context.createGain();
-    gain.gain.value = 2;
-    gain.gain.setValueAtTime(2, this.listener_.context.currentTime);
+    this.gainAmount = 2; // TODO: to be adjusted by the player
+    gain.gain.value = this.gainAmount;
+    gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
+    this.gainFilter = gain;
+
+    // Used for mono audio
+    const gain2 = this.listener_.context.createGain();
+    this.monoGainAmount = 2; // TODO: to be adjusted by the player
+    gain2.gain.value = this.monoGainAmount;
+    gain2.gain.setValueAtTime(this.monoGainAmount, this.listener_.context.currentTime);
+    this.monoGainFilter = gain2;
     // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
 
     // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
 
-    this.gainFilter = gain;
-
+    this.monoSound_.setFilters([gain2]);
     this.sound_.setFilters([gain, highpass, filter]);
+
+    // TODO: apply the same gain amount to the monoSound
+    this.monoSound_.setVolume(0);
+  }
+
+  public SwitchToMono() {
+    if (!this.useMonoAudio) {
+      this.useMonoAudio = true;
+      const now = this.listener_.context.currentTime;
+      this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
+      this.monoGainFilter.gain.linearRampToValueAtTime(this.monoGainAmount, now + 0.2);
+    }
+  }
+
+  public SwitchToStereo() {
+    if (this.useMonoAudio) {
+      this.useMonoAudio = false;
+      const now = this.listener_.context.currentTime;
+      this.gainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2); // smooth over 200ms
+      this.monoGainFilter.gain.linearRampToValueAtTime(0, now + 0.2);
+    }
   }
 
   /**
