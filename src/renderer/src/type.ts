@@ -45,7 +45,7 @@ export interface AudioConnectionStuff {
   // audioListener?: VadNode;
   muted: boolean;
   deafened: boolean;
-  toggleMute: () => void;
+  toggleMute: (muted: boolean) => void;
   toggleDeafen: () => void;
 }
 

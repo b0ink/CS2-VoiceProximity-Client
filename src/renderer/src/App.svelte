@@ -2,7 +2,7 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
-  import { CogSolid } from 'flowbite-svelte-icons';
+  import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
@@ -56,6 +56,18 @@
   let turnPassword: string | undefined;
 
   let roomCodeInput: string = '';
+
+  let microphoneMuted: boolean = false;
+
+  const unmuteMicrophone = () => {
+    microphoneMuted = false;
+    audioConnectionStuff.toggleMute(microphoneMuted);
+  };
+
+  const muteMicrophone = () => {
+    microphoneMuted = true;
+    audioConnectionStuff.toggleMute(microphoneMuted);
+  };
 
   async function intialise() {
     // TODO: move into its own settings store file
@@ -503,8 +515,8 @@
         audioConnectionStuff.instream = inStream;
 
         // TODO: toggleMute handler
-        audioConnectionStuff.toggleMute = () => {
-          audioConnectionStuff.muted = !audioConnectionStuff.muted;
+        audioConnectionStuff.toggleMute = (muted: boolean) => {
+          audioConnectionStuff.muted = muted;
           if (audioConnectionStuff.deafened) {
             audioConnectionStuff.deafened = false;
             audioConnectionStuff.muted = false;
@@ -952,6 +964,32 @@
   )}
   size="xl"
 />
+
+{#if !microphoneMuted}
+  <MicrophoneSolid
+    onclick={() => {
+      muteMicrophone();
+    }}
+    color="grey"
+    class={cn(
+      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
+    )}
+    size="xl"
+  />
+{/if}
+
+{#if microphoneMuted}
+  <MicrophoneSlashSolid
+    onclick={() => {
+      unmuteMicrophone();
+    }}
+    color="red"
+    class={cn(
+      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
+    )}
+    size="xl"
+  />
+{/if}
 
 <SettingsOverlay
   bind:open={settingsOpen}
