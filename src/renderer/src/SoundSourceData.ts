@@ -82,8 +82,14 @@ export class SoundSourceData {
     // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
 
     // highpass.gain.setValueAtTime(25, listener_.context.currentTime);
+    // Used for mono audio
 
-    this.monoSound_.setFilters([gain2]);
+    const highpassMono = this.listener_.context.createBiquadFilter();
+    highpassMono.type = 'highpass';
+    highpassMono.Q.value = 0;
+    highpassMono.frequency.value = 1000;
+
+    this.monoSound_.setFilters([gain2, highpassMono]);
     this.sound_.setFilters([gain, highpass, filter]);
 
     // TODO: apply the same gain amount to the monoSound
@@ -97,7 +103,7 @@ export class SoundSourceData {
       this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
       this.monoGainFilter.gain.linearRampToValueAtTime(this.monoGainAmount, now + 0.2);
       console.log(`Switching ${this.steamId} to mono audio`);
-      this.monoSound_.setVolume(0.35);
+      this.monoSound_.setVolume(0.3);
     }
   }
 
