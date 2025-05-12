@@ -271,11 +271,11 @@
               }
 
               const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
-              const isCloseToSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
+              const playerIsBeingSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
 
-              if (!me.IsAlive && (isCloseToSpectated || sameTeamAndDead)) {
+              if (!me.IsAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
                 positionalSound.SwitchToMono();
-                positionalSound.monoHighpassFilter.frequency.value = player.IsAlive ? 100 : 750;
+                positionalSound.setMonoHighPassFilterFrequency(player.IsAlive ? 100 : 750);
               } else {
                 positionalSound.SwitchToStereo();
               }

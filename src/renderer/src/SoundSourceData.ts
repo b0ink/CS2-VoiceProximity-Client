@@ -11,8 +11,7 @@ export class SoundSourceData {
   private gainAmount?: number;
 
   private monoGainFilter?: GainNode;
-  public monoHighpassFilter?: BiquadFilterNode;
-  private monoGainAmount?: number;
+  private monoHighpassFilter?: BiquadFilterNode;
 
   public monoSound_?: THREE.Audio;
   public sound_?: THREE.PositionalAudio;
@@ -76,9 +75,8 @@ export class SoundSourceData {
 
     // Used for mono audio
     const gain2 = this.listener_.context.createGain();
-    this.monoGainAmount = 2; // TODO: to be adjusted by the player
-    gain2.gain.value = this.monoGainAmount;
-    gain2.gain.setValueAtTime(this.monoGainAmount, this.listener_.context.currentTime);
+    gain2.gain.value = this.gainAmount;
+    gain2.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.monoGainFilter = gain2;
     // filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
 
@@ -103,7 +101,7 @@ export class SoundSourceData {
       this.useMonoAudio = true;
       const now = this.listener_.context.currentTime;
       this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
-      this.monoGainFilter.gain.linearRampToValueAtTime(this.monoGainAmount, now + 0.2);
+      this.monoGainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       console.log(`Switching ${this.steamId} to mono audio`);
       this.monoSound_.setVolume(0.3);
     }
@@ -198,6 +196,12 @@ export class SoundSourceData {
 
   public setHighPassFilterFrequency(amount: number) {
     this.setFilterFrequency(this.highPassFilter_, amount);
+  }
+
+  public setMonoHighPassFilterFrequency(amount: number) {
+    const now = this.listener_.context.currentTime;
+    this.monoHighpassFilter.frequency.cancelScheduledValues(now);
+    this.monoHighpassFilter.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
   public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
