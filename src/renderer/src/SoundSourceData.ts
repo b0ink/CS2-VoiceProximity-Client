@@ -11,6 +11,7 @@ export class SoundSourceData {
   private gainAmount?: number;
 
   private monoGainFilter?: GainNode;
+  public monoHighpassFilter?: BiquadFilterNode;
   private monoGainAmount?: number;
 
   public monoSound_?: THREE.Audio;
@@ -88,6 +89,7 @@ export class SoundSourceData {
     highpassMono.type = 'highpass';
     highpassMono.Q.value = 0;
     highpassMono.frequency.value = 1000;
+    this.monoHighpassFilter = highpassMono;
 
     this.monoSound_.setFilters([gain2, highpassMono]);
     this.sound_.setFilters([gain, highpass, filter]);

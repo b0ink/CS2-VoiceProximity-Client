@@ -264,11 +264,18 @@
                   (!player.IsAlive && player.Team === me.Team)
                 ) {
                   positionalSound.SwitchToMono();
+                  if (player.IsAlive) {
+                    positionalSound.monoHighpassFilter.frequency.value = 100;
+                  } else {
+                    positionalSound.monoHighpassFilter.frequency.value = 1000;
+                  }
                 } else {
                   positionalSound.SwitchToStereo();
+                  positionalSound.monoHighpassFilter.frequency.value = 100;
                 }
               } else {
                 positionalSound.SwitchToStereo();
+                positionalSound.monoHighpassFilter.frequency.value = 100;
               }
 
               if (positionalSound.soundObjSource_) {
