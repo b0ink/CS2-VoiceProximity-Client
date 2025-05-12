@@ -10,10 +10,10 @@ export class FirstPersonCamera {
     this.camera_ = camera;
   }
 
-  update() {
-    this.camera_.position.copy(this.position_);
-    this.camera_.lookAt(this.lookAt_);
-  }
+  // update() {
+  //   this.camera_.position.copy(this.position_);
+  //   this.camera_.lookAt(this.lookAt_);
+  // }
 
   // TODO: will tweening the camera to the next position smooth out the audio glitches?
   // new TWEEN.Tween(camera_.position)
