@@ -585,6 +585,11 @@
           connection.on('error', () => {
             console.log('ONERROR');
             console.log('Attempting to reconnect');
+            peerConnections[peer]?.destroy();
+            delete peerConnections[peer];
+            delete socketClientMap[peer];
+            createPeerConnection(peer, true, client);
+
             //TODO: refetch turn credentials
             //TODO: reconnect into room
             // currentLobby = null;
