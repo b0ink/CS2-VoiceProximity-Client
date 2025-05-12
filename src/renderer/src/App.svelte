@@ -248,6 +248,10 @@
           } else {
             const positionalSound = sounds_.get(steamId);
 
+            if (!positionalSound) {
+              continue;
+            }
+
             if (
               !player.IsAlive && // player is dead
               (me.IsAlive || // mute if im alive (don't want to hear any dead players)
