@@ -891,8 +891,8 @@
   onclick={() => {
     settingsOpen = !settingsOpen;
   }}
-  color={settingsOpen ? 'var(--color-primary-800)' : 'grey'}
-  class={`cursor-pointer absolute bottom-2 right-2  z-20 select-none transition-all duration-300 ${settingsOpen ? 'rotate-90' : 'rotate-0'}`}
+  color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
+  class={`cursor-pointer absolute bottom-2 right-2 z-20 select-none transition-all duration-300 ${settingsOpen ? 'rotate-90' : 'rotate-0'}`}
   size="xl"
 />
 
