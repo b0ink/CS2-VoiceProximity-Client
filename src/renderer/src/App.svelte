@@ -2,7 +2,7 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
-  import { CogSolid } from 'flowbite-svelte-icons';
+  import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
@@ -56,6 +56,18 @@
   let turnPassword: string | undefined;
 
   let roomCodeInput: string = '';
+
+  let microphoneMuted: boolean = false;
+
+  const unmuteMicrophone = () => {
+    microphoneMuted = false;
+    audioConnectionStuff.toggleMute(microphoneMuted);
+  };
+
+  const muteMicrophone = () => {
+    microphoneMuted = true;
+    audioConnectionStuff.toggleMute(microphoneMuted);
+  };
 
   async function intialise() {
     // TODO: move into its own settings store file
@@ -201,6 +213,23 @@
 
         const me = localPlayerData.find((player) => player.SteamId === getSteamId());
 
+        let spectatedPlayerPosition: THREE.Vector3;
+
+        // Get the position of the player being spectated
+        for (const player of localPlayerData) {
+          if (player.SteamId === getSteamId()) {
+            if (!me.IsAlive) {
+              const playerOrigin = new THREE.Vector3(
+                player.OriginX,
+                player.OriginY,
+                player.OriginZ,
+              );
+              spectatedPlayerPosition = playerOrigin;
+              break;
+            }
+          }
+        }
+
         for (const player of localPlayerData) {
           const steamId = player.SteamId;
           const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
@@ -239,6 +268,26 @@
                 positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
               } else {
                 positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
+              }
+
+              if (!me.IsAlive) {
+                if (
+                  playerOrigin.distanceTo(spectatedPlayerPosition) <= 10 || // should be 0
+                  (!player.IsAlive && player.Team === me.Team)
+                ) {
+                  positionalSound.SwitchToMono();
+                  if (player.IsAlive) {
+                    positionalSound.monoHighpassFilter.frequency.value = 100;
+                  } else {
+                    positionalSound.monoHighpassFilter.frequency.value = 750;
+                  }
+                } else {
+                  positionalSound.SwitchToStereo();
+                  positionalSound.monoHighpassFilter.frequency.value = 100;
+                }
+              } else {
+                positionalSound.SwitchToStereo();
+                positionalSound.monoHighpassFilter.frequency.value = 100;
               }
 
               if (positionalSound.soundObjSource_) {
@@ -466,8 +515,8 @@
         audioConnectionStuff.instream = inStream;
 
         // TODO: toggleMute handler
-        audioConnectionStuff.toggleMute = () => {
-          audioConnectionStuff.muted = !audioConnectionStuff.muted;
+        audioConnectionStuff.toggleMute = (muted: boolean) => {
+          audioConnectionStuff.muted = muted;
           if (audioConnectionStuff.deafened) {
             audioConnectionStuff.deafened = false;
             audioConnectionStuff.muted = false;
@@ -740,7 +789,16 @@
     sound1.setMaxDistance(1000);
     // sound1.play();
     speaker1.add(sound1);
-    const sound1Data = new SoundSourceData(sound1, speaker1, listener_, camera_);
+
+    // non positional audio used when spectating a player
+    // TODO: could also be used to hear other dead players
+    const nonPositional = new THREE.Audio(listener_);
+    nonPositional.setMediaStreamSource(remoteStream);
+    nonPositional.setVolume(1);
+    scene_.add(nonPositional);
+    speaker1.add(nonPositional);
+
+    const sound1Data = new SoundSourceData(sound1, nonPositional, speaker1, listener_, camera_);
     sound1Data.steamId = client.steamId;
     sounds_.push(sound1Data);
     sound1Data.Mute(0);
@@ -906,6 +964,32 @@
   )}
   size="xl"
 />
+
+{#if !microphoneMuted}
+  <MicrophoneSolid
+    onclick={() => {
+      muteMicrophone();
+    }}
+    color="grey"
+    class={cn(
+      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
+    )}
+    size="xl"
+  />
+{/if}
+
+{#if microphoneMuted}
+  <MicrophoneSlashSolid
+    onclick={() => {
+      unmuteMicrophone();
+    }}
+    color="red"
+    class={cn(
+      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
+    )}
+    size="xl"
+  />
+{/if}
 
 <SettingsOverlay
   bind:open={settingsOpen}
