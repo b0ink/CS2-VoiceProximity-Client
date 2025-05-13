@@ -12,7 +12,6 @@
   import { GLTFLoader } from 'three-stdlib';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
-  import { FirstPersonCamera } from './FirstPersonCamera';
   import maps from './maps';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { cn } from './shared/tailwind';
@@ -33,6 +32,31 @@
     window.api.setStoreValue('notification', options);
   };
 
+  // eslint-disable-next-line no-undef
+  const DEFAULT_ICE_CONFIG: RTCConfiguration = {
+    iceTransportPolicy: 'all',
+    iceServers: [
+      {
+        urls: 'stun:stun.l.google.com:19302',
+      },
+      {
+        urls: 'stun:stun.relay.metered.ca:80',
+      },
+    ],
+  };
+
+  let clientCamera: THREE.PerspectiveCamera | undefined;
+
+  let socket_: Socket | undefined;
+  let socketConnected = false;
+
+  let mapScale_: number;
+  let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
+  let scene_: THREE.Scene;
+  let sounds_: Map<string, SoundSourceData | undefined>;
+  let threejs_: THREE.WebGLRenderer;
+  let listener_: THREE.AudioListener;
+
   let settingsOpen: boolean;
 
   let playerPositions: PlayerPositionApiData[] = [];
@@ -40,8 +64,6 @@
   let clientSteamId: string | null;
   let clientToken: string | null;
   let socketUrl: string;
-  // let canvas;
-  // let audioCtx, analyser, source;
   let devices = [];
   let selectedDeviceId = '';
 
@@ -59,6 +81,22 @@
   let roomCodeInput: string = '';
 
   let microphoneMuted: boolean = false;
+
+  let currentLobby = '';
+
+  audioConnectionStuff = {
+    deafened: false,
+    muted: false,
+    toggleMute: () => {
+      /*empty*/
+    },
+    toggleDeafen: () => {
+      /*empty*/
+    },
+  };
+
+  sounds_ = new Map<string, SoundSourceData>();
+  mapScale_ = 39.3701;
 
   const unmuteMicrophone = () => {
     microphoneMuted = false;
@@ -111,16 +149,15 @@
       const aspect = 1920 / 1080;
       const near = 1.0;
       const far = 650.0;
-      camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      camera_.position.set(-30, 2, 0);
+      clientCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      clientCamera.position.set(-30, 2, 0);
 
       // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
       // uiScene_ = new THREE.Scene();
 
-      fpsCamera_ = new FirstPersonCamera(camera_);
       const axesHelper = new THREE.AxesHelper(50);
       scene_.add(axesHelper);
-      camera_.add(listener_);
+      clientCamera.add(listener_);
 
       initializeRenderer_();
 
@@ -237,13 +274,19 @@
           const transformedOrigin = transformVector(playerOrigin);
           const transformedLookAt = transformVector(playerLookAt);
 
+          // TODO: will tweening the camera to the next position smooth out the audio glitches?
+          // new TWEEN.Tween(camera_.position)
+          //   .to(position, 1)
+          //   .easing(TWEEN.Easing.Cubic)
+          //   .start();
+
           if (steamId === getSteamId()) {
-            fpsCamera_.camera_.position.set(
+            clientCamera.position.set(
               transformedOrigin.x,
               transformedOrigin.y,
               transformedOrigin.z,
             );
-            fpsCamera_.camera_.lookAt(transformedLookAt);
+            clientCamera.lookAt(transformedLookAt);
           } else {
             const positionalSound = sounds_.get(steamId);
 
@@ -288,7 +331,7 @@
           }
         }
 
-        threejs_.render(scene_, fpsCamera_.camera_);
+        threejs_.render(scene_, clientCamera);
         if (map_) {
           updateSoundFilters();
         }
@@ -371,60 +414,6 @@
   function transformVector(input: THREE.Vector3) {
     return new THREE.Vector3(input.x, input.z, input.y * -1);
   }
-
-  // eslint-disable-next-line no-undef
-  const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-    iceTransportPolicy: 'all',
-    iceServers: [
-      {
-        urls: 'stun:stun.l.google.com:19302',
-      },
-      {
-        urls: 'stun:stun.relay.metered.ca:80',
-      },
-    ],
-  };
-
-  let fpsCamera_: FirstPersonCamera;
-  let socket_: Socket | undefined;
-  let socketConnected = false;
-
-  let mapScale_: number;
-  let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
-  let scene_: THREE.Scene;
-  let sounds_: Map<string, SoundSourceData | undefined>;
-  let camera_: THREE.PerspectiveCamera;
-  let threejs_: THREE.WebGLRenderer;
-  let listener_: THREE.AudioListener;
-
-  // TODO: this will be later used to create new player objects/meshes that we will attach
-  // private soundSourceObjects: any[] = [];
-
-  // private steamId?: string;
-
-  // is this "player incoming audio streams?"
-  // private audioElements: AudioElements = {};
-  let currentLobby = '';
-  // i hate all of this
-
-  audioConnectionStuff = {
-    deafened: false,
-    muted: false,
-    toggleMute: () => {
-      /*empty*/
-    },
-    toggleDeafen: () => {
-      /*empty*/
-    },
-  };
-
-  // const ambient = new THREE.AmbientLight(0xffffff, 1);
-  // scene_.add(ambient);
-
-  sounds_ = new Map<string, SoundSourceData>();
-  // const mapScale = 39.3701;
-  // mapScale_ = 5;
-  mapScale_ = 39.3701;
 
   const joinRoom_ = (code: string) => {
     // TODO: implement UI
@@ -795,7 +784,13 @@
     scene_.add(nonPositional);
     speaker1.add(nonPositional);
 
-    const sound1Data = new SoundSourceData(sound1, nonPositional, speaker1, listener_, camera_);
+    const sound1Data = new SoundSourceData(
+      sound1,
+      nonPositional,
+      speaker1,
+      listener_,
+      clientCamera,
+    );
     sound1Data.steamId = client.steamId;
     sounds_.set(client.steamId, sound1Data);
     sound1Data.Mute(0);
