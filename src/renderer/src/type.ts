@@ -33,8 +33,8 @@ export interface PlayerPositionApiData {
   LookAtX?: number;
   LookAtY?: number;
   LookAtZ?: number;
-  IsAlive?: boolean;
   Team?: CsTeam;
+  IsAlive?: boolean;
   SpectatingC4?: boolean;
 }
 
