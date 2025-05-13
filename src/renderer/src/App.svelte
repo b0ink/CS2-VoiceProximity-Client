@@ -592,8 +592,15 @@
             console.log('ONERROR');
             console.log('Attempting to reconnect');
 
-            cleanupUser(peer, client);
-            createPeerConnection(peer, true, client);
+            // cleanupUser(peer, client);
+            // createPeerConnection(peer, true, client);
+            queueNotification({
+              text: 'Something weird happened',
+              position: 'top-center',
+              removeAfter: 5000,
+              type: 'error',
+            });
+            window.api.reloadApp();
 
             //TODO: refetch turn credentials
             //TODO: reconnect into room
@@ -712,6 +719,7 @@
           joinedRoom = true;
         } else {
           roomCode = null;
+          currentLobby = null;
           // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
 
           if (
