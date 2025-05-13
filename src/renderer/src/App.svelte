@@ -45,7 +45,6 @@
   let selectedDeviceId = '';
 
   let socketClientMap: SocketClientMap = {};
-  let socketClientsRef: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
   let peerConnections: PeerConnections = {};
   let audioConnectionStuff: AudioConnectionStuff;
@@ -640,7 +639,7 @@
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
             console.log(`received on signal: ${client.steamId} ${from} ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
-            if (!socketClientsRef[from]) {
+            if (!socketClientMap[from]) {
               console.warn('SIGNAL FROM UNKOWN SOCKET..');
               return;
             }
@@ -684,7 +683,6 @@
       // });
       // setSocketClients({});
       socketClientMap = {};
-      socketClientsRef = socketClientMap;
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
       console.log('Currentlobby', currentLobby, lobbyCode);
