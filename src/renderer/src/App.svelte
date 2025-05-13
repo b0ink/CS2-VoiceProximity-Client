@@ -14,9 +14,9 @@
   import { FirstPersonCamera } from './FirstPersonCamera';
   import maps from './maps';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
+  import { cn } from './shared/tailwind';
   import { SoundSourceData } from './SoundSourceData';
   import {
-    CsTeam,
     type AudioConnectionStuff,
     type Client,
     type JoinRoomResponse,
@@ -25,7 +25,6 @@
     type SocketClientMap,
     type SteamIdSocketMap,
   } from './type';
-  import { cn } from './shared/tailwind';
 
   const { addNotification } = getNotificationsContext();
 
