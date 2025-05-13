@@ -45,6 +45,7 @@
   let selectedDeviceId = '';
 
   let socketClientMap: SocketClientMap = {};
+  let socketClientsRef: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
   let peerConnections: PeerConnections = {};
   let audioConnectionStuff: AudioConnectionStuff;
@@ -589,9 +590,8 @@
           connection.on('error', () => {
             console.log('ONERROR');
             console.log('Attempting to reconnect');
-            peerConnections[peer]?.destroy();
-            delete peerConnections[peer];
-            delete socketClientMap[peer];
+
+            cleanupUser(peer, client);
             createPeerConnection(peer, true, client);
 
             //TODO: refetch turn credentials
@@ -618,7 +618,11 @@
 
         socket_?.on('user-left', async (peer: string, client: Client) => {
           console.log(`user has left! ${peer} ${JSON.stringify(client)}`);
+          cleanupUser(peer, client);
+        });
 
+        const cleanupUser = (peer: string, client: Client) => {
+          console.log(`Cleaning up user data for ${client.steamId}`);
           const positionalSound = sounds_.get(client.steamId);
           if (positionalSound) {
             positionalSound.sound_?.disconnect();
@@ -629,19 +633,17 @@
           peerConnections[peer]?.destroy();
           delete peerConnections[peer];
           delete socketClientMap[peer];
-        });
+        };
 
         socket_?.on(
           'signal',
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
-            console.log(`received on signal: ${JSON.stringify(data)}`);
-            console.log(`received on signal: ${from}`);
-            console.log(`received on signal: ${JSON.stringify(client)}`);
+            console.log(`received on signal: ${client.steamId} ${from} ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
-            // if (!socketClientsRef.current[from]) {
-            //   console.warn('SIGNAL FROM UNKOWN SOCKET..');
-            //   return;
-            // }
+            if (!socketClientsRef[from]) {
+              console.warn('SIGNAL FROM UNKOWN SOCKET..');
+              return;
+            }
             if (Object.prototype.hasOwnProperty.call(data, 'type')) {
               if (peerConnections[from] && data.type !== 'offer') {
                 connection = peerConnections[from];
@@ -682,10 +684,11 @@
       // });
       // setSocketClients({});
       socketClientMap = {};
+      socketClientsRef = socketClientMap;
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
       console.log('Currentlobby', currentLobby, lobbyCode);
-      socket_?.emit('leave');
+      // socket_?.emit('leave');
       // socket_?.emit('id', playerId, clientId);
       console.log(lobbyCode, playerId, clientId, isHost);
 
