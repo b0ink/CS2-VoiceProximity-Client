@@ -15,14 +15,15 @@
   import maps from './maps';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { SoundSourceData } from './SoundSourceData';
-  import type {
-    AudioConnectionStuff,
-    Client,
-    JoinRoomResponse,
-    PeerConnections,
-    PlayerPositionApiData,
-    SocketClientMap,
-    SteamIdSocketMap,
+  import {
+    CsTeam,
+    type AudioConnectionStuff,
+    type Client,
+    type JoinRoomResponse,
+    type PeerConnections,
+    type PlayerPositionApiData,
+    type SocketClientMap,
+    type SteamIdSocketMap,
   } from './type';
   import { cn } from './shared/tailwind';
 
@@ -170,28 +171,29 @@
       socket_?.on('player-positions', (data) => {
         const decoded = decode(new Uint8Array(data));
         const players = decoded as Array<
-          [string, string, number, number, number, number, number, number, number, boolean]
+          [string, string, number, number, number, number, number, number, number, boolean, boolean]
         >;
 
         let localPlayerData: PlayerPositionApiData[] = [];
 
         for (const player of players) {
-          const [SteamId, Name, ox, oy, oz, lx, ly, lz, Team, IsAlive] = player;
+          const [SteamId, Name, ox, oy, oz, lx, ly, lz, Team, IsAlive, SpectatingC4] = player;
 
           // Cast to PlayerData interface
           const playerData: PlayerPositionApiData = {
             SteamId,
             Name,
+            // The server plugin scales our Origin/LookAt floats to integers so that we're not dealing with decimals
+            // Now we need to scale them down
             OriginX: ox / 10000,
             OriginY: oy / 10000,
             OriginZ: oz / 10000,
             LookAtX: lx / 10000,
             LookAtY: ly / 10000,
             LookAtZ: lz / 10000,
-            // origin: { x: ox / 10000, y: oy / 10000, z: oz / 10000 },
-            // lookAt: { x: lx / 10000, y: ly / 10000, z: lz / 10000 },
             Team,
             IsAlive,
+            SpectatingC4,
           };
           localPlayerData.push(playerData);
         }
@@ -255,7 +257,8 @@
             if (
               !player.IsAlive && // player is dead
               (me.IsAlive || // mute if im alive (don't want to hear any dead players)
-                player.Team !== me.Team) // or if the player is an enemy
+                player.Team !== me.Team) && // or if the player is an enemy
+              !player.SpectatingC4 // and if they're not spectating the c4
             ) {
               positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
             } else {

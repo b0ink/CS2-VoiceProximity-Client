@@ -35,6 +35,7 @@ export interface PlayerPositionApiData {
   LookAtZ?: number;
   IsAlive?: boolean;
   Team?: CsTeam;
+  SpectatingC4?: boolean;
 }
 
 export interface AudioConnectionStuff {
