@@ -12,10 +12,11 @@
   import { GLTFLoader } from 'three-stdlib';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
+  import { transformVector } from './lib/vector';
   import maps from './maps';
+  import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { cn } from './shared/tailwind';
-  import { SoundSourceData } from './SoundSourceData';
   import type {
     AudioConnectionStuff,
     Client,
@@ -53,7 +54,7 @@
   let mapScale_: number;
   let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
   let scene_: THREE.Scene;
-  let sounds_: Map<string, SoundSourceData | undefined>;
+  let sounds_: Map<string, RemotePlayer | undefined>;
   let threejs_: THREE.WebGLRenderer;
   let listener_: THREE.AudioListener;
 
@@ -95,7 +96,7 @@
     },
   };
 
-  sounds_ = new Map<string, SoundSourceData>();
+  sounds_ = new Map<string, RemotePlayer>();
   mapScale_ = 39.3701;
 
   const unmuteMicrophone = () => {
@@ -317,13 +318,13 @@
               positionalSound.SwitchToStereo();
             }
 
-            if (positionalSound.soundObjSource_) {
-              positionalSound.soundObjSource_?.position.set(
+            if (positionalSound.playerObject) {
+              positionalSound.playerObject?.position.set(
                 transformedOrigin.x,
                 transformedOrigin.y,
                 transformedOrigin.z,
               );
-              positionalSound.soundObjSource_?.lookAt(transformedLookAt);
+              positionalSound.playerObject?.lookAt(transformedLookAt);
             } else {
               console.warn(`No soundObjSource for steam ${steamId}`);
             }
@@ -406,13 +407,6 @@
         console.error('Failed to load GLB:', err);
       },
     );
-  }
-
-  // Transform Source2 coordinate to Three.js (Z is up/down)
-  // Keeping in mind that we've also rotated our map on the X axis - but only Y & Z need transforming
-  // NOTE: .glb blender exports must have the "+Y up" option DISABLED
-  function transformVector(input: THREE.Vector3) {
-    return new THREE.Vector3(input.x, input.z, input.y * -1);
   }
 
   const joinRoom_ = (code: string) => {
@@ -626,8 +620,8 @@
           console.log(`Cleaning up user data for ${client.steamId}`);
           const positionalSound = sounds_.get(client.steamId);
           if (positionalSound) {
-            positionalSound.sound_?.disconnect();
-            positionalSound.soundObjSource_?.parent?.remove(positionalSound.soundObjSource_);
+            positionalSound.playerVoice3D?.disconnect();
+            positionalSound.playerObject?.parent?.remove(positionalSound.playerObject);
             console.log('found sound source removing from scene');
           }
 
@@ -751,50 +745,8 @@
   };
 
   const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client) => {
-    const speaker1Material = new THREE.MeshStandardMaterial({ color: 0xffffff });
-    const speaker1 = new THREE.Mesh(new THREE.BoxGeometry(1, 8, 4), speaker1Material);
-    // speaker1.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
-    speaker1.position.copy(transformVector(new THREE.Vector3(457.5018, 1833.5608, 136.03122))); // banana half wall CT side
-    // speaker1.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
-    scene_.add(speaker1);
-    // speakerMesh1_ = speaker1;
-    const sound1 = new THREE.PositionalAudio(listener_);
-
-    // Needed to make threejs positional audio work with remoteStream
-    let audioRef = new Audio();
-    audioRef.srcObject = remoteStream;
-    audioRef.muted = true;
-
-    sound1.setMediaStreamSource(remoteStream);
-    audioRef = null;
-
-    // sound1.setMediaStreamSource(remoteStream);
-    sound1.setVolume(1);
-    sound1.setRefDistance(39);
-    sound1.setRolloffFactor(1);
-    sound1.setMaxDistance(1000);
-    // sound1.play();
-    speaker1.add(sound1);
-
-    // non positional audio used when spectating a player
-    // TODO: could also be used to hear other dead players
-    const nonPositional = new THREE.Audio(listener_);
-    nonPositional.setMediaStreamSource(remoteStream);
-    nonPositional.setVolume(1);
-    scene_.add(nonPositional);
-    speaker1.add(nonPositional);
-
-    const sound1Data = new SoundSourceData(
-      sound1,
-      nonPositional,
-      speaker1,
-      listener_,
-      clientCamera,
-    );
-    sound1Data.steamId = client.steamId;
-    sounds_.set(client.steamId, sound1Data);
-    sound1Data.Mute(0);
-
+    const remotePlayer = new RemotePlayer(remoteStream, client, clientCamera, scene_, listener_);
+    sounds_.set(client.steamId, remotePlayer);
     console.log(`Creating remote player: ${client.steamId}`);
   };
 

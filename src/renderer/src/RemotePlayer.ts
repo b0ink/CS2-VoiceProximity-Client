@@ -1,6 +1,22 @@
 import * as THREE from 'three';
+import type { Client } from './type';
+import { transformVector } from './lib/vector';
 
-export class SoundSourceData {
+export class RemotePlayer {
+  public playerVoice2D?: THREE.Audio;
+  public playerVoice3D?: THREE.PositionalAudio;
+  private useMonoAudio: boolean = false;
+
+  private listener_?: THREE.AudioListener;
+  public steamId?: string;
+  public playerObject?: THREE.Object3D;
+  public clientCamera?: THREE.Camera;
+
+  private unmuteTimeout?: NodeJS.Timeout;
+  private muteTimeout?: NodeJS.Timeout;
+  private isMuted: boolean = false;
+
+  // Filters
   private lowPassFilter_?: BiquadFilterNode;
   private lowPassAmount?: number;
 
@@ -13,33 +29,54 @@ export class SoundSourceData {
   private monoGainFilter?: GainNode;
   private monoHighpassFilter?: BiquadFilterNode;
 
-  public monoSound_?: THREE.Audio;
-  public sound_?: THREE.PositionalAudio;
-  private useMonoAudio: boolean = false;
-
-  private listener_?: THREE.AudioListener;
-  public steamId?: string;
-  public soundObjSource_?: THREE.Object3D;
-  public camera_?: THREE.Camera;
-
-  private unmuteTimeout?: NodeJS.Timeout;
-  private muteTimeout?: NodeJS.Timeout;
-  private isMuted: boolean = false;
-
   constructor(
-    sound: THREE.PositionalAudio,
-    monoSound: THREE.Audio,
-    soundObjSource: THREE.Object3D,
-    listener: THREE.AudioListener,
+    remoteStream: MediaStream,
+    client: Client,
     camera: THREE.Camera,
+    scene: THREE.Scene,
+    listener: THREE.AudioListener,
   ) {
-    this.sound_ = sound;
-    this.monoSound_ = monoSound;
+    const playerObject = new THREE.Mesh(
+      new THREE.BoxGeometry(4, 8, 4),
+      new THREE.MeshStandardMaterial({ color: 0xffffff }),
+    );
+    scene.add(playerObject);
+
     this.useMonoAudio = false;
 
     this.listener_ = listener;
-    this.soundObjSource_ = soundObjSource;
-    this.camera_ = camera;
+    this.playerObject = playerObject;
+    this.clientCamera = camera;
+
+    // Debug positions to set the speaker if it's not attached to any real player positions
+    playerObject.position.copy(transformVector(new THREE.Vector3(457.5018, 1833.5608, 136.03122))); // banana half wall CT side
+    // playerObject.position.set(27.168392, -189.78938 + 64, 664.5947); // mirage top mid
+    // playerObject.position.set(319.3484, -39.96875 + 64, 2278.2021); // mirage palace
+
+    // Needed to make threejs positional audio work with remoteStream
+    const audioRef = new Audio();
+    audioRef.srcObject = remoteStream;
+    audioRef.muted = true;
+
+    const playerVoice3D = new THREE.PositionalAudio(listener);
+    playerVoice3D.setMediaStreamSource(remoteStream);
+    playerVoice3D.setVolume(1);
+    playerVoice3D.setRefDistance(39);
+    playerVoice3D.setRolloffFactor(1);
+    playerVoice3D.setMaxDistance(1000);
+    playerObject.add(playerVoice3D);
+    this.playerVoice3D = playerVoice3D;
+
+    // Used when spectating a player or hearing dead teammates
+    const playerVoice2D = new THREE.Audio(listener);
+    playerVoice2D.setMediaStreamSource(remoteStream);
+    playerVoice2D.setVolume(1);
+    scene.add(playerVoice2D);
+    playerObject.add(playerVoice2D);
+    this.playerVoice2D = playerVoice2D;
+
+    this.steamId = client.steamId;
+    this.Mute(0);
 
     this.initStereoFilters();
     this.initMonoFilters();
@@ -65,7 +102,7 @@ export class SoundSourceData {
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
 
-    this.sound_.setFilters([gain, highpass, filter]);
+    this.playerVoice3D.setFilters([gain, highpass, filter]);
   }
 
   private initMonoFilters() {
@@ -80,8 +117,8 @@ export class SoundSourceData {
     highpassMono.Q.value = 0;
     highpassMono.frequency.value = 750;
     this.monoHighpassFilter = highpassMono;
-    this.monoSound_.setFilters([gain2, highpassMono]);
-    this.monoSound_.setVolume(0);
+    this.playerVoice2D.setFilters([gain2, highpassMono]);
+    this.playerVoice2D.setVolume(0);
   }
 
   public SwitchToMono() {
@@ -91,7 +128,7 @@ export class SoundSourceData {
       this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
       this.monoGainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       console.log(`Switching ${this.steamId} to mono audio`);
-      this.monoSound_.setVolume(0.3);
+      this.playerVoice2D.setVolume(0.3);
     }
   }
 
@@ -102,7 +139,7 @@ export class SoundSourceData {
       this.gainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2); // smooth over 200ms
       this.monoGainFilter.gain.linearRampToValueAtTime(0, now + 0.2);
       console.log(`Switching ${this.steamId} to stereo audio`);
-      this.monoSound_.setVolume(0);
+      this.playerVoice2D.setVolume(0);
       this.monoHighpassFilter.frequency.value = 100;
     }
   }
@@ -120,32 +157,32 @@ export class SoundSourceData {
       this.isMuted = true;
 
       this.muteTimeout = setTimeout(() => {
-        this.sound_?.setVolume(0);
+        this.playerVoice3D?.setVolume(0);
       }, delay);
     }
   }
 
   public Unmute() {
-    if (this.isMuted || this.sound_?.getVolume() == 0) {
+    if (this.isMuted || this.playerVoice3D?.getVolume() == 0) {
       clearInterval(this.unmuteTimeout);
       clearTimeout(this.muteTimeout);
 
       this.isMuted = false;
-      // sound_?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
+      // playerVoice3D?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
 
       // fade the volume back up (attempt to prevent glitches)
       const targetVolume = 1;
       const fadeDuration = 1000;
-      const step = (targetVolume - (this.sound_?.getVolume() || 0)) / (fadeDuration / 16);
+      const step = (targetVolume - (this.playerVoice3D?.getVolume() || 0)) / (fadeDuration / 16);
 
-      let currentVolume = this.sound_?.getVolume() || 0;
+      let currentVolume = this.playerVoice3D?.getVolume() || 0;
       this.unmuteTimeout = setInterval(() => {
         currentVolume += step;
         if (currentVolume >= targetVolume) {
           currentVolume = targetVolume;
           clearInterval(this.unmuteTimeout);
         }
-        this.sound_?.setVolume(currentVolume);
+        this.playerVoice3D?.setVolume(currentVolume);
       }, 16);
     }
   }
@@ -195,13 +232,13 @@ export class SoundSourceData {
   public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
-    const distance = calculateDistance(this.camera_?.position, this.soundObjSource_?.position);
+    const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
 
     // TODO: increase occlusion for each mesh hit
     const { occlusion } = this.calculateOcclusion(
       occlusionMesh,
-      this.camera_?.position,
-      this.soundObjSource_?.position,
+      this.clientCamera?.position,
+      this.playerObject?.position,
     );
     const maxDist = 1000;
     const fadeStart = 1500;
@@ -226,7 +263,7 @@ export class SoundSourceData {
 
     this.setLowPassFilterFrequency(amount);
 
-    // const distance = calculateDistance(soundData.camera_.position, soundData.soundObjSource_.position);
+    // const distance = calculateDistance(soundData.clientCamera.position, soundData.playerObject.position);
     // const normalized = THREE.MathUtils.clamp(distance / 1500, 0, 1); // scale to 0–1
     // const eased2 = Math.pow(normalized, 0.25); // slow start, fast rise
     // const minimumHighpass = 0;
@@ -293,9 +330,9 @@ export class SoundSourceData {
   calculateOcclusion = (
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     Listener_?: THREE.Vector3,
-    Sound_?: THREE.Vector3,
+    playerVoice3D?: THREE.Vector3,
   ) => {
-    if (!Listener_ || !Sound_) {
+    if (!Listener_ || !playerVoice3D) {
       // TODO: interface
       return {
         occlusion: 0,
@@ -311,17 +348,25 @@ export class SoundSourceData {
     // console.log(`listener: ${listener.x} ${listener.y} ${listener.z}`)
     // console.log(`sound: ${sound.x} ${sound.y} ${sound.z}`)
 
-    // const Sound_ = new THREE.Vector3(sound.x, sound.z, (sound.y * -1));
+    // const playerVoice3D = new THREE.Vector3(sound.x, sound.z, (sound.y * -1));
     // const Listener_ = new THREE.Vector3(listener.x, listener.z, (listener.y * -1));
 
-    const SoundLeft = this.calculatePoint(Sound_, Listener_, SndOcclusonWidening, true);
-    const SoundRight = this.calculatePoint(Sound_, Listener_, SndOcclusonWidening, false);
+    const SoundLeft = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, true);
+    const SoundRight = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, false);
 
-    const SoundAbove = new THREE.Vector3(Sound_.x, Sound_.y, Sound_.z + SndOcclusonWidening);
-    const SoundBelow = new THREE.Vector3(Sound_.x, Sound_.y, Sound_.z - SndOcclusonWidening);
+    const SoundAbove = new THREE.Vector3(
+      playerVoice3D.x,
+      playerVoice3D.y,
+      playerVoice3D.z + SndOcclusonWidening,
+    );
+    const SoundBelow = new THREE.Vector3(
+      playerVoice3D.x,
+      playerVoice3D.y,
+      playerVoice3D.z - SndOcclusonWidening,
+    );
 
-    const ListenerLeft = this.calculatePoint(Listener_, Sound_, SndOcclusonWidening, true);
-    const ListenerRight = this.calculatePoint(Listener_, Sound_, SndOcclusonWidening, false);
+    const ListenerLeft = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, true);
+    const ListenerRight = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, false);
 
     const ListenerAbove = new THREE.Vector3(
       Listener_.x,
@@ -337,9 +382,9 @@ export class SoundSourceData {
     const line1 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
     const line2 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
     const line3 = this.didIntersect(occlusionMesh, SoundLeft, ListenerRight);
-    const line4 = this.didIntersect(occlusionMesh, Sound_, ListenerLeft);
-    const line5 = this.didIntersect(occlusionMesh, Sound_, Listener_);
-    const line6 = this.didIntersect(occlusionMesh, Sound_, ListenerRight);
+    const line4 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft);
+    const line5 = this.didIntersect(occlusionMesh, playerVoice3D, Listener_);
+    const line6 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight);
     const line7 = this.didIntersect(occlusionMesh, SoundRight, ListenerLeft);
     const line8 = this.didIntersect(occlusionMesh, SoundRight, Listener_);
     const line9 = this.didIntersect(occlusionMesh, SoundRight, ListenerRight);
