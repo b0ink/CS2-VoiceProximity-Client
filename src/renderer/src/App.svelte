@@ -735,15 +735,17 @@
               removeAfter: 5000,
               type: 'error',
             });
-            window.api.reloadApp();
           } else {
-            addNotification({
+            queueNotification({
               text: response.message,
               position: 'top-center',
               removeAfter: 2500,
               type: 'error',
             });
           }
+          // TODO: so if you try joining a room that doesnt exist, and then join a room that does exist, the receiving peers will receive an error saying that our peer is already destroyed
+          // TODO: reloading the app is a hotfix, but will need to be addressed once we refactor how and when we call getUserMedia
+          window.api.reloadApp();
         }
       });
     }
