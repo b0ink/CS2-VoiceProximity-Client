@@ -12,11 +12,11 @@
   import { GLTFLoader } from 'three-stdlib';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
+  import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
   import maps from './maps';
   import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
-  import { cn } from './shared/tailwind';
   import type {
     AudioConnectionStuff,
     Client,
