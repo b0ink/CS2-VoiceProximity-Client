@@ -594,10 +594,12 @@
 
             // cleanupUser(peer, client);
             // createPeerConnection(peer, true, client);
+
+            // TODO: play a disconnect sound effect so that user is aware mid game
             queueNotification({
-              text: 'Something weird happened',
+              text: 'Something weird happened. Please rejoin the room.',
               position: 'top-center',
-              removeAfter: 5000,
+              removeAfter: 10000,
               type: 'error',
             });
             window.api.reloadApp();
