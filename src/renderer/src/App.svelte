@@ -16,14 +16,14 @@
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import { cn } from './shared/tailwind';
   import { SoundSourceData } from './SoundSourceData';
-  import {
-    type AudioConnectionStuff,
-    type Client,
-    type JoinRoomResponse,
-    type PeerConnections,
-    type PlayerPositionApiData,
-    type SocketClientMap,
-    type SteamIdSocketMap,
+  import type {
+    AudioConnectionStuff,
+    Client,
+    JoinRoomResponse,
+    PeerConnections,
+    PlayerPositionApiData,
+    SocketClientMap,
+    SteamIdSocketMap,
   } from './type';
 
   const { addNotification } = getNotificationsContext();
