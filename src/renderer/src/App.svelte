@@ -3,6 +3,7 @@
   import { decode } from '@msgpack/msgpack';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
+  import 'hacktimer';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
@@ -109,7 +110,7 @@
       const fov = 60;
       const aspect = 1920 / 1080;
       const near = 1.0;
-      const far = 2000.0;
+      const far = 650.0;
       camera_ = new THREE.PerspectiveCamera(fov, aspect, near, far);
       camera_.position.set(-30, 2, 0);
 
@@ -155,7 +156,7 @@
       // initializeMap_();
       // initializeAudio_();
 
-      raf_();
+      // raf_();
       onWindowResize_();
 
       socket_?.on('current-map', (mapName) => {
@@ -287,7 +288,10 @@
           }
         }
 
-        // });
+        threejs_.render(scene_, fpsCamera_.camera_);
+        if (map_) {
+          updateSoundFilters();
+        }
       });
     }
   }
@@ -344,7 +348,8 @@
         const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
           const hue = Math.random() * 360;
           const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-          return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+          // return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+          return new THREE.MeshBasicMaterial({ color: pastel });
         });
 
         map_.traverse((child) => {
@@ -384,7 +389,6 @@
   let socket_: Socket | undefined;
   let socketConnected = false;
 
-  let previousRAF_: any;
   let mapScale_: number;
   let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
   let scene_: THREE.Scene;
@@ -421,7 +425,6 @@
   // const mapScale = 39.3701;
   // mapScale_ = 5;
   mapScale_ = 39.3701;
-  previousRAF_ = null;
 
   const joinRoom_ = (code: string) => {
     // TODO: implement UI
@@ -828,22 +831,44 @@
     // threejs_.setSize(window.innerWidth, window.innerHeight);
   };
 
-  const raf_ = () => {
-    requestAnimationFrame((t) => {
-      if (previousRAF_ === null) {
-        previousRAF_ = t;
-      }
+  // const raf_ = () => {
+  //   requestAnimationFrame((t) => {
+  //     if (previousRAF_ === null) {
+  //       previousRAF_ = t;
+  //     }
 
-      threejs_.render(scene_, fpsCamera_.camera_);
+  //     threejs_.render(scene_, fpsCamera_.camera_);
 
-      if (map_) {
-        updateSoundFilters();
-      }
+  //     if (map_) {
+  //       updateSoundFilters();
+  //     }
+  //     console.log(Math.floor(Date.now() / 1000));
 
-      previousRAF_ = t;
-      raf_();
-    });
-  };
+  //     previousRAF_ = t;
+  //     raf_();
+  //   });
+  // };
+
+  // const raf_ = () => {
+  //   setTimeout(() => {
+  //     const t = performance.now();
+
+  //     if (previousRAF_ === null) {
+  //       previousRAF_ = t;
+  //     }
+
+  //     threejs_.render(scene_, fpsCamera_.camera_);
+
+  //     if (map_) {
+  //       updateSoundFilters();
+  //     }
+
+  //     console.log(Math.floor(Date.now() / 1000));
+
+  //     previousRAF_ = t;
+  //     raf_();
+  //   }, 1000 / 120);
+  // };
 
   let mapName: string = 'de_dust2';
 
