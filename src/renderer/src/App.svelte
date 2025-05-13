@@ -103,9 +103,6 @@
         console.error(`Lost connection to the socket server`);
       });
 
-      // Now you can use roomCode and steamId
-      // initializeRenderer_();
-
       scene_ = new THREE.Scene();
       listener_ = new THREE.AudioListener();
 
@@ -837,24 +834,15 @@
         previousRAF_ = t;
       }
 
-      step_();
-      // composer_.render();
       threejs_.render(scene_, fpsCamera_.camera_);
+
+      if (map_) {
+        updateSoundFilters();
+      }
 
       previousRAF_ = t;
       raf_();
     });
-  };
-
-  const step_ = () => {
-    if (map_ === null) {
-      return;
-    }
-    // const timeElapsedS = timeElapsed * 0.001;
-
-    // camera position is now updated every time player positions are retrieved
-    // fpsCamera_.update();
-    updateSoundFilters();
   };
 
   let mapName: string = 'de_dust2';
