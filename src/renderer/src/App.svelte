@@ -263,7 +263,9 @@
             }
 
             const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
-            const playerIsBeingSpectated = playerOrigin.distanceTo(spectatedPlayerPosition) <= 10;
+            const playerIsBeingSpectated = spectatedPlayerPosition
+              ? playerOrigin.distanceTo(spectatedPlayerPosition) <= 10
+              : false;
 
             if (!me.IsAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
               positionalSound.SwitchToMono();
@@ -639,10 +641,10 @@
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
             console.log(`received on signal: ${client.steamId} ${from} ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
-            if (!socketClientMap[from]) {
-              console.warn('SIGNAL FROM UNKOWN SOCKET..');
-              return;
-            }
+            // if (!socketClientMap[from]) {
+            //   console.warn('SIGNAL FROM UNKOWN SOCKET..');
+            //   return;
+            // }
             if (Object.prototype.hasOwnProperty.call(data, 'type')) {
               if (peerConnections[from] && data.type !== 'offer') {
                 connection = peerConnections[from];
