@@ -8,20 +8,21 @@ const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo']
 
 const mapScale: number = 39.3701;
 
-async function initializeMap(
-  map: THREE.Group<THREE.Object3DEventMap> | undefined,
-  scene: THREE.Scene,
-  mapName: string = 'de_dust2',
-) {
+interface MapData {
+  map: THREE.Group<THREE.Object3DEventMap> | undefined;
+  scene: THREE.Scene;
+  mapName: string;
+}
+async function initializeMap(mapData: MapData) {
   // Destroy any previously loaded maps, including its textures
 
-  if (!mapList.includes(mapName)) {
-    console.log(`Failed to load map: '${mapName}'.glb could not be found.`);
+  if (!mapList.includes(mapData.mapName)) {
+    console.log(`Failed to load map: '${mapData.mapName}'.glb could not be found.`);
     return;
   }
 
-  if (map && scene) {
-    map.traverse((child) => {
+  if (mapData.map && mapData.scene) {
+    mapData.map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.isMesh) {
           // console.log('disposing old mesh');
@@ -34,13 +35,13 @@ async function initializeMap(
         }
       }
     });
-    scene.remove(map);
-    map = null;
+    mapData.scene.remove(mapData.map);
+    mapData.map = null;
   }
 
-  console.log(`[GLTF] Fetching map blob (${mapName})`);
+  console.log(`[GLTF] Fetching map blob (${mapData.mapName})`);
 
-  const buffer = await window.api.loadMap(mapName);
+  const buffer = await window.api.loadMap(mapData.mapName);
   const blob = new Blob([buffer], { type: 'model/gltf-binary' });
   const url = URL.createObjectURL(blob);
 
@@ -51,12 +52,12 @@ async function initializeMap(
     url,
     (gltf) => {
       console.log('[GLTF] Loaded into ThreeJS!');
-      map = gltf.scene;
-      map.scale.set(mapScale, mapScale, mapScale);
-      map.rotation.x = -Math.PI / 2;
+      mapData.map = gltf.scene;
+      mapData.map.scale.set(mapScale, mapScale, mapScale);
+      mapData.map.rotation.x = -Math.PI / 2;
 
-      if (scene) {
-        scene.add(map);
+      if (mapData.scene) {
+        mapData.scene.add(mapData.map);
       }
 
       // We don't care about textures, but to help see the map, we assign each mesh a random color
@@ -68,7 +69,7 @@ async function initializeMap(
         return new THREE.MeshBasicMaterial({ color: pastel });
       });
 
-      map.traverse((child) => {
+      mapData.map.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           child.material = materials[Math.floor(Math.random() * materials.length)];
         }

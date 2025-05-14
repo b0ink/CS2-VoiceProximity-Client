@@ -178,7 +178,11 @@
 
       socket_?.on('current-map', (mapName) => {
         console.log(`Received map change request ${mapName}`);
-        initializeMap(map_, scene_, mapName);
+        initializeMap({
+          map: map_,
+          scene: scene_,
+          mapName,
+        });
       });
 
       // socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
@@ -643,7 +647,11 @@
           currentLobby = lobbyCode;
           document.querySelector('#threejs').innerHTML = '';
           initializeRenderer_();
-          initializeMap(map_, scene_, response.mapName);
+          initializeMap({
+            map: map_,
+            scene: scene_,
+            mapName: response.mapName,
+          });
 
           joinedRoom = true;
         } else {
@@ -719,7 +727,11 @@
       console.log('Waiting for room connection before loading map.');
       return;
     }
-    initializeMap(map_, scene_, mapName);
+    initializeMap({
+      map: map_,
+      scene: scene_,
+      mapName,
+    });
   };
 
   let isConnected = false;
