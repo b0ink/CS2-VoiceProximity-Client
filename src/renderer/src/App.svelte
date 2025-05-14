@@ -925,41 +925,25 @@
 
 <!-- TODO: devices will go on a settings page, requiring an app refresh to get user media again -->
 
-<CogSolid
-  onclick={() => {
-    settingsOpen = !settingsOpen;
-  }}
-  color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
-  class={cn(
-    'cursor-pointer absolute bottom-2 right-2 z-20 select-none transition-all duration-300',
-    settingsOpen ? 'rotate-90' : 'rotate-0',
-  )}
-  size="xl"
-/>
-
-{#if !microphoneMuted}
-  <MicrophoneSolid
+{#if clientSteamId}
+  <CogSolid
     onclick={() => {
-      muteMicrophone();
+      settingsOpen = !settingsOpen;
     }}
-    color="grey"
+    color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
     class={cn(
-      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
+      'cursor-pointer absolute top-2 right-2 z-20 select-none transition-all duration-300',
+      settingsOpen ? 'rotate-90' : 'rotate-0',
     )}
-    size="xl"
+    size="lg"
   />
-{/if}
 
-{#if microphoneMuted}
-  <MicrophoneSlashSolid
-    onclick={() => {
-      unmuteMicrophone();
-    }}
-    color="red"
-    class={cn(
-      'cursor-pointer absolute bottom-2 left-2 z-20 select-none transition-all duration-300',
-    )}
-    size="xl"
+  <svelte:component
+    this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
+    onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
+    color={microphoneMuted ? 'red' : 'grey'}
+    class={cn('cursor-pointer absolute top-2 left-2 z-20 select-none transition-all duration-300')}
+    size="lg"
   />
 {/if}
 
