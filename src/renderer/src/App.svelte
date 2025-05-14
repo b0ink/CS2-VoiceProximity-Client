@@ -176,9 +176,9 @@
         });
       }, 1000);
 
-      socket_?.on('current-map', (mapName) => {
+      socket_?.on('current-map', async (mapName) => {
         console.log(`Received map change request ${mapName}`);
-        initializeMap({
+        map_ = await initializeMap({
           map: map_,
           scene: scene_,
           mapName,
@@ -639,7 +639,7 @@
         isHost: isHost,
       };
 
-      socket_?.emit('join-room', joinRoomPayload, (response: JoinRoomResponse) => {
+      socket_?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
         // TODO: we should validate there are no duplicate steamIds trying to join
 
         console.log(response);
@@ -647,7 +647,7 @@
           currentLobby = lobbyCode;
           document.querySelector('#threejs').innerHTML = '';
           initializeRenderer_();
-          initializeMap({
+          map_ = await initializeMap({
             map: map_,
             scene: scene_,
             mapName: response.mapName,
@@ -721,13 +721,13 @@
     // }
   };
 
-  const onMapChange = () => {
+  const onMapChange = async () => {
     console.log(mapName);
     if (!isConnected) {
       console.log('Waiting for room connection before loading map.');
       return;
     }
-    initializeMap({
+    map_ = await initializeMap({
       map: map_,
       scene: scene_,
       mapName,

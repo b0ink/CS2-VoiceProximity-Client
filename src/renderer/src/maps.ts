@@ -9,18 +9,19 @@ const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo']
 const mapScale: number = 39.3701;
 
 interface MapData {
-  map: THREE.Group<THREE.Object3DEventMap> | undefined;
+  map: THREE.Group<THREE.Object3DEventMap>;
   scene: THREE.Scene;
   mapName: string;
 }
-async function initializeMap(mapData: MapData) {
-  // Destroy any previously loaded maps, including its textures
-
+async function initializeMap(
+  mapData: MapData,
+): Promise<THREE.Group<THREE.Object3DEventMap> | null> {
   if (!mapList.includes(mapData.mapName)) {
     console.log(`Failed to load map: '${mapData.mapName}'.glb could not be found.`);
-    return;
+    return null;
   }
 
+  // Destroy any previously loaded maps, including its textures
   if (mapData.map && mapData.scene) {
     mapData.map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
@@ -48,38 +49,39 @@ async function initializeMap(mapData: MapData) {
   console.log('[GLTF] Fetched map. Loading into ThreeJS...');
 
   const loader = new GLTFLoader();
-  loader.load(
-    url,
-    (gltf) => {
-      console.log('[GLTF] Loaded into ThreeJS!');
-      mapData.map = gltf.scene;
-      mapData.map.scale.set(mapScale, mapScale, mapScale);
-      mapData.map.rotation.x = -Math.PI / 2;
 
-      if (mapData.scene) {
-        mapData.scene.add(mapData.map);
+  try {
+    const gltf = await loader.loadAsync(url);
+    console.log('[GLTF] Loaded into ThreeJS!');
+    mapData.map = gltf.scene;
+    mapData.map.scale.set(mapScale, mapScale, mapScale);
+    mapData.map.rotation.x = -Math.PI / 2;
+
+    if (mapData.scene) {
+      mapData.scene.add(mapData.map);
+    }
+
+    // We don't care about textures, but to help see the map, we assign each mesh a random color
+    // However we want to re-use textures as much as possible to improve performance
+    const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
+      const hue = Math.random() * 360;
+      const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
+      // return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+      return new THREE.MeshBasicMaterial({ color: pastel });
+    });
+
+    mapData.map.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.material = materials[Math.floor(Math.random() * materials.length)];
       }
+    });
 
-      // We don't care about textures, but to help see the map, we assign each mesh a random color
-      // However we want to re-use textures as much as possible to improve performance
-      const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
-        const hue = Math.random() * 360;
-        const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-        // return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
-        return new THREE.MeshBasicMaterial({ color: pastel });
-      });
-
-      mapData.map.traverse((child) => {
-        if (child instanceof THREE.Mesh) {
-          child.material = materials[Math.floor(Math.random() * materials.length)];
-        }
-      });
-    },
-    undefined,
-    (err) => {
-      console.error('Failed to load GLB:', err);
-    },
-  );
+    console.log(`returning`, mapData.map);
+    return mapData.map;
+  } catch (e) {
+    console.error(`Could not load GLB: ${e}`);
+    return null;
+  }
 }
 
 export { initializeMap, mapList };
