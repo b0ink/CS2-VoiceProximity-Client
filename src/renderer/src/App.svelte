@@ -432,13 +432,11 @@
           const DEFAULT_ICE_CONFIG: RTCConfiguration = {
             iceTransportPolicy: 'all',
             iceServers: [
-              {
-                urls: 'stun:stun.l.google.com:19302',
-              },
+              { urls: 'stun:stun.l.google.com:19302' },
+              { urls: 'stun:stun1.l.google.com:19302' },
+              { urls: 'stun:stun2.l.google.com:19302' },
               {
                 urls: 'stun:turn.cs2voiceproximity.chat',
-                username: turnUsername,
-                credential: turnPassword,
               },
               {
                 urls: 'turn:turn.cs2voiceproximity.chat',
