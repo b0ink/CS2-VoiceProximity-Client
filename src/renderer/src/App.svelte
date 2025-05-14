@@ -432,10 +432,11 @@
     // eslint-disable-next-line no-undef
     const audio: MediaTrackConstraintSet = {
       // deviceId: (undefined as unknown) as string,
-      autoGainControl: true,
+      autoGainControl: false,
       channelCount: 2,
       echoCancellation: echoCancellation,
-      // latency: 0,
+      // @ts-ignore - non-standard constraint
+      latency: 0,
       noiseSuppression: noiseSuppression,
       // @ts-ignore - non-standard constraint used by chrome
       googNoiseSuppression: noiseSuppression,
