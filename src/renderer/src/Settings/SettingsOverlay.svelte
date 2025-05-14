@@ -5,7 +5,6 @@
   import { onMount } from 'svelte';
   export let open: boolean;
   export let selectedDeviceId: string;
-  export let isConnected: boolean;
   export let devices;
   export let mapName: string;
   export let clientSteamId: string;
@@ -123,7 +122,6 @@
         <Select
           id="mic"
           bind:value={selectedDeviceId}
-          disabled={isConnected}
           onchange={() => {
             modalConfirmRestartRequired = true;
             console.log(`${selectedDeviceId}`);

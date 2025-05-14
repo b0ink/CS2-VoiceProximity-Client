@@ -979,7 +979,6 @@
 <SettingsOverlay
   bind:open={settingsOpen}
   {selectedDeviceId}
-  {isConnected}
   {devices}
   bind:mapName
   {onMapChange}
