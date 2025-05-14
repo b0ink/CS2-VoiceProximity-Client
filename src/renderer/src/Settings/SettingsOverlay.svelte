@@ -126,10 +126,12 @@
           disabled={isConnected}
           onchange={() => {
             modalConfirmRestartRequired = true;
+            console.log(`${selectedDeviceId}`);
+            window.api.setStoreValue('setting_inputDeviceId', selectedDeviceId);
           }}
         >
-          {#each devices as device (device.deviceId)}
-            <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
+          {#each devices as device (device.id)}
+            <option value={device.id}>{device.label || 'Unnamed Device'}</option>
           {/each}
         </Select>
       </div>

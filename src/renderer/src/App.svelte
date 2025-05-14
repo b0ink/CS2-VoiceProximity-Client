@@ -874,8 +874,30 @@
   async function getDevices() {
     const allDevices = await navigator.mediaDevices.enumerateDevices();
     devices = allDevices.filter((device) => device.kind === 'audioinput');
+    devices = devices.map((d) => {
+      let label = d.label;
+      if (d.deviceId === 'default') {
+        // label = 'Default';
+      } else {
+        const match = /.+?\([^(]+\)/.exec(d.label);
+        if (match && match[0]) label = match[0];
+      }
+      return {
+        id: d.deviceId,
+        kind: d.kind,
+        label,
+      };
+    });
     if (devices.length > 0) {
-      selectedDeviceId = devices[0].deviceId; // Default to the first device
+      // Check if saved device id still exists
+      const storedDeviceId = await window.api.getStoreValue('setting_inputDeviceId', devices[0].id);
+      if (devices.find((device) => device.id === storedDeviceId)) {
+        selectedDeviceId = storedDeviceId;
+      } else {
+        // Store the default device if it no longer exists
+        selectedDeviceId = devices[0].id;
+        window.api.getStoreValue('setting_inputDeviceId', selectedDeviceId);
+      }
     }
   }
 

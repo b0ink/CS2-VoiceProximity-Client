@@ -22,4 +22,5 @@ export interface StoreData {
   setting_alwaysOnTop?: boolean;
   setting_natFixEnabled?: boolean;
   setting_hqVoice?: boolean;
+  setting_inputDeviceId?: string;
 }
