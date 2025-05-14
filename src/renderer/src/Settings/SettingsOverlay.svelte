@@ -120,7 +120,14 @@
     <div class="mb-6 grid gap-4 md:grid-cols-2">
       <div>
         <Label for="mic" class="mb-2">Microphone:</Label>
-        <Select id="mic" bind:value={selectedDeviceId} disabled={isConnected}>
+        <Select
+          id="mic"
+          bind:value={selectedDeviceId}
+          disabled={isConnected}
+          onchange={() => {
+            modalConfirmRestartRequired = true;
+          }}
+        >
           {#each devices as device (device.deviceId)}
             <option value={device.deviceId}>{device.label || 'Unnamed Device'}</option>
           {/each}
