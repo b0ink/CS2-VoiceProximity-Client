@@ -176,15 +176,6 @@
         });
       }, 1000);
 
-      // initializeScene_();
-
-      // initializePostFX_();
-      // initializeMap();
-      // initializeAudio_();
-
-      // raf_();
-      onWindowResize_();
-
       socket_?.on('current-map', (mapName) => {
         console.log(`Received map change request ${mapName}`);
         initializeMap(map_, scene_, mapName);
@@ -702,71 +693,11 @@
   };
 
   const initializeRenderer_ = () => {
-    // threejs_.shadowMap.enabled = true;
-    // threejs_.shadowMap.type = THREE.PCFSoftShadowMap;
-    // threejs_.setPixelRatio(window.devicePixelRatio);
-    // threejs_.setSize(window.innerWidth, window.innerHeight);
-    // threejs_.physicallyCorrectLights = true;
     threejs_.autoClear = false;
 
     const threeJsDom = document.querySelector('#threejs');
     threeJsDom.appendChild(threejs_.domElement);
-    // window.addEventListener(
-    //   'resize',
-    //   () => {
-    //     onWindowResize_();
-    //   },
-    //   false
-    // );
   };
-
-  const onWindowResize_ = () => {
-    // camera_.aspect = window.innerWidth / window.innerHeight;
-    // camera_.updateProjectionMatrix();
-    // uiCamera_.left = -camera_.aspect;
-    // uiCamera_.right = camera_.aspect;
-    // uiCamera_.updateProjectionMatrix();
-    // threejs_.setSize(window.innerWidth, window.innerHeight);
-  };
-
-  // const raf_ = () => {
-  //   requestAnimationFrame((t) => {
-  //     if (previousRAF_ === null) {
-  //       previousRAF_ = t;
-  //     }
-
-  //     threejs_.render(scene_, fpsCamera_.camera_);
-
-  //     if (map_) {
-  //       updateSoundFilters();
-  //     }
-  //     console.log(Math.floor(Date.now() / 1000));
-
-  //     previousRAF_ = t;
-  //     raf_();
-  //   });
-  // };
-
-  // const raf_ = () => {
-  //   setTimeout(() => {
-  //     const t = performance.now();
-
-  //     if (previousRAF_ === null) {
-  //       previousRAF_ = t;
-  //     }
-
-  //     threejs_.render(scene_, fpsCamera_.camera_);
-
-  //     if (map_) {
-  //       updateSoundFilters();
-  //     }
-
-  //     console.log(Math.floor(Date.now() / 1000));
-
-  //     previousRAF_ = t;
-  //     raf_();
-  //   }, 1000 / 120);
-  // };
 
   let mapName: string = 'de_dust2';
 
@@ -970,7 +901,4 @@
   {/if}
 
   <SteamLoginButton {clientSteamId} />
-  <!-- <div style="border: 1px solid lime">
-<canvas bind:this={canvas} width="300" height="25"></canvas>
-</div> -->
 </div>
