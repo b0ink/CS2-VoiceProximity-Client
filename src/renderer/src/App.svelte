@@ -33,20 +33,8 @@
     window.api.setStoreValue('notification', options);
   };
 
-  // eslint-disable-next-line no-undef
-  const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-    iceTransportPolicy: 'all',
-    iceServers: [
-      {
-        urls: 'stun:stun.l.google.com:19302',
-      },
-      {
-        urls: 'stun:stun.relay.metered.ca:80',
-      },
-    ],
-  };
-
   let clientCamera: THREE.PerspectiveCamera | undefined;
+  let useTurnConfig: boolean = true;
 
   let socket_: Socket | undefined;
   let socketConnected = false;
@@ -119,6 +107,7 @@
       await window.api.retrieveTurnCredentials();
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
+      useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
 
       console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
@@ -497,11 +486,37 @@
         // connect(currentLobby, )
         connect(roomCode!, getSteamId()!, getSteamId()!, false);
 
+        useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
+
         const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
           console.log('CreatePeerConnection: ', peer, initiator, stream);
-          console.log(`Using turn config:`, import.meta.env.VITE_USE_TURN_CONFIG);
-          const useTurnConfig = true;
+          console.log(`Using turn config?:`, useTurnConfig);
+          if (!useTurnConfig) {
+            console.warn(
+              'NAT fix is disabled — your IP address may be visible to other users with direct connection enabled.',
+            );
+          }
           // disconnectClient(client); // TODO:
+
+          // eslint-disable-next-line no-undef
+          const DEFAULT_ICE_CONFIG: RTCConfiguration = {
+            iceTransportPolicy: 'all',
+            iceServers: [
+              {
+                urls: 'stun:stun.l.google.com:19302',
+              },
+              {
+                urls: 'stun:turn.cs2voiceproximity.chat',
+                username: turnUsername,
+                credential: turnPassword,
+              },
+              {
+                urls: 'turn:turn.cs2voiceproximity.chat',
+                username: turnUsername,
+                credential: turnPassword,
+              },
+            ],
+          };
 
           // eslint-disable-next-line no-undef
           const ICE_CONFIG_TURN: RTCConfiguration = {

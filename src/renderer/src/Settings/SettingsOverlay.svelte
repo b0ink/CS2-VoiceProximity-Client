@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Heading, Label, Select, Toggle } from 'flowbite-svelte';
+  import { Button, Heading, Label, Modal, Select, Toggle } from 'flowbite-svelte';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import { onMount } from 'svelte';
@@ -16,8 +16,28 @@
   const toggleAlwaysOnTop = () => {
     alwaysOnTop = !alwaysOnTop;
     window.api.setStoreValue('setting_alwaysOnTop', alwaysOnTop);
-    console.log(alwaysOnTop);
   };
+
+  let natFixEnabled: boolean;
+  let confirmDisableNatFix: boolean = false;
+  let modalNatFixOffButtonDisabled: boolean = true;
+  const toggleNatFix = (e: any) => {
+    if (natFixEnabled) {
+      confirmDisableNatFix = true;
+      modalNatFixOffButtonDisabled = true;
+      setTimeout(() => {
+        modalNatFixOffButtonDisabled = false;
+      }, 2500);
+      e.preventDefault();
+      return;
+    } else {
+      window.api.setStoreValue('setting_natFixEnabled', true);
+      loadSettings();
+      modalConfirmRestartRequired = true;
+    }
+  };
+
+  let modalConfirmRestartRequired: boolean = false;
 
   onMount(() => {
     loadSettings();
@@ -25,8 +45,59 @@
 
   const loadSettings = async () => {
     alwaysOnTop = await window.api.getStoreValue('setting_alwaysOnTop', true);
+    natFixEnabled = await window.api.getStoreValue('setting_natFixEnabled', true);
   };
 </script>
+
+<Modal title="Confirm" bind:open={confirmDisableNatFix} autoclose>
+  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+    Disabling the NAT fix can improve voice latency by allowing direct connections between users
+    (P2P).
+  </p>
+
+  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+    However, this will <span class="font-bold">expose your IP address</span> to other users who also
+    have the NAT fix disabled. Only disable this if you're on a private server with people you trust.
+  </p>
+
+  {#snippet footer()}
+    <Button
+      onclick={() => {
+        window.api.setStoreValue('setting_natFixEnabled', false);
+        loadSettings();
+        modalConfirmRestartRequired = true;
+      }}
+      disabled={modalNatFixOffButtonDisabled}>Turn it off</Button
+    >
+    <Button
+      color="alternative"
+      onclick={() => {
+        window.api.setStoreValue('setting_natFixEnabled', true);
+        loadSettings();
+      }}>Cancel</Button
+    >
+  {/snippet}
+</Modal>
+
+<Modal title="Confirm" bind:open={modalConfirmRestartRequired} autoclose>
+  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+    You must restart the app to apply these changes.
+  </p>
+
+  {#snippet footer()}
+    <Button
+      onclick={() => {
+        window.api.reloadApp();
+      }}>Restart now</Button
+    >
+    <Button
+      color="alternative"
+      onclick={() => {
+        modalConfirmRestartRequired = false;
+      }}>Restart later</Button
+    >
+  {/snippet}
+</Modal>
 
 {#if open}
   <div
@@ -63,11 +134,21 @@
         <Toggle
           id="always-on-top"
           checked={alwaysOnTop}
-          class="justify-between"
+          class="justify-between mb-2"
           onclick={toggleAlwaysOnTop}
         >
           {#snippet offLabel()}
             Always On Top
+          {/snippet}</Toggle
+        >
+        <Toggle
+          id="always-on-top"
+          checked={natFixEnabled}
+          class="justify-between"
+          onclick={toggleNatFix}
+        >
+          {#snippet offLabel()}
+            NAT Fix
           {/snippet}</Toggle
         >
       </div>

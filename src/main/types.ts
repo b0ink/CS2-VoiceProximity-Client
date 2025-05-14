@@ -20,4 +20,5 @@ export interface StoreData {
   socketServer?: string;
   notification?: DefaultNotificationOptions;
   setting_alwaysOnTop?: boolean;
+  setting_natFixEnabled?: boolean;
 }
