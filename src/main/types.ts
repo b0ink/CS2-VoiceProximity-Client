@@ -21,4 +21,5 @@ export interface StoreData {
   notification?: DefaultNotificationOptions;
   setting_alwaysOnTop?: boolean;
   setting_natFixEnabled?: boolean;
+  setting_hqVoice?: boolean;
 }

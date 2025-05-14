@@ -39,6 +39,13 @@
 
   let modalConfirmRestartRequired: boolean = false;
 
+  let hqVoice: boolean;
+  const toggleHqVoice = () => {
+    hqVoice = !hqVoice;
+    window.api.setStoreValue('setting_hqVoice', hqVoice);
+    modalConfirmRestartRequired = true;
+  };
+
   onMount(() => {
     loadSettings();
   });
@@ -46,6 +53,7 @@
   const loadSettings = async () => {
     alwaysOnTop = await window.api.getStoreValue('setting_alwaysOnTop', true);
     natFixEnabled = await window.api.getStoreValue('setting_natFixEnabled', true);
+    hqVoice = await window.api.getStoreValue('setting_hqVoice', true);
   };
 </script>
 
@@ -141,14 +149,27 @@
             Always On Top
           {/snippet}</Toggle
         >
+      </div>
+      <div>
+        <Label class="mb-2">Voice preferences:</Label>
         <Toggle
-          id="always-on-top"
+          id="nat-fix"
           checked={natFixEnabled}
-          class="justify-between"
+          class="justify-between mb-2"
           onclick={toggleNatFix}
         >
           {#snippet offLabel()}
             NAT Fix
+          {/snippet}</Toggle
+        >
+        <Toggle
+          id="hq-voice"
+          checked={hqVoice}
+          class="justify-between mb-2"
+          onclick={toggleHqVoice}
+        >
+          {#snippet offLabel()}
+            High-Quality Mic
           {/snippet}</Toggle
         >
       </div>

@@ -35,6 +35,7 @@
 
   let clientCamera: THREE.PerspectiveCamera | undefined;
   let useTurnConfig: boolean = true;
+  let broadcastHqVoice: boolean = false;
 
   let socket_: Socket | undefined;
   let socketConnected = false;
@@ -108,6 +109,7 @@
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
       useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
+      broadcastHqVoice = await window.api.getStoreValue('setting_hqVoice', true);
 
       console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
@@ -423,8 +425,8 @@
   const initUserMedia = () => {
     const noiseSuppression = true; // TODO: replace as a user setting
     const echoCancellation = true; // TODO: replace as a user setting
-    const sampleRate = import.meta.env.VITE_MEDIA_SAMPLERATE || 48000;
-    const sampleSize = import.meta.env.VITE_MEDIA_SAMPLESIZE || 16;
+    const sampleRate = broadcastHqVoice ? 48000 : 16000;
+    const sampleSize = 16;
     console.log(`sampleRate: ${sampleRate} | sampleSize: ${sampleSize}`);
 
     const enableSampleDebug = true;
