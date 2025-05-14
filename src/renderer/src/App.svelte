@@ -468,18 +468,22 @@
         audioConnectionStuff.stream = stream;
         audioConnectionStuff.instream = inStream;
 
-        // TODO: toggleMute handler
         audioConnectionStuff.toggleMute = (muted: boolean) => {
           audioConnectionStuff.muted = muted;
-          if (audioConnectionStuff.deafened) {
-            audioConnectionStuff.deafened = false;
-            audioConnectionStuff.muted = false;
-          }
+          // TODO: implement deafen
+          // if (audioConnectionStuff.deafened) {
+          //   audioConnectionStuff.deafened = false;
+          //   audioConnectionStuff.muted = false;
+          // }
           inStream.getAudioTracks()[0].enabled =
             !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
           // setMuted(audioConnectionStuff.current.muted);
           // setDeafened(audioConnectionStuff.current.deafened);
         };
+
+        if (microphoneMuted) {
+          inStream.getAudioTracks()[0].enabled = true;
+        }
 
         // audioElements = {};
         // TODO: call connect() when our lobby room code has been provided
