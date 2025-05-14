@@ -32,28 +32,32 @@
     window.api.setStoreValue('notification', options);
   };
 
-  let clientCamera: THREE.PerspectiveCamera | undefined;
+  // SETTINGS / STORE
   let useTurnConfig: boolean = true;
   let broadcastHqVoice: boolean = false;
+  let settingsOpen: boolean;
+  let selectedDeviceId = '';
+  let turnUsername: string | undefined;
+  let turnPassword: string | undefined;
 
   let socket_: Socket | undefined;
   let socketConnected = false;
 
-  let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
-  let scene_: THREE.Scene;
-  let sounds_: Map<string, RemotePlayer | undefined>;
-  let threejs_: THREE.WebGLRenderer;
-  let listener_: THREE.AudioListener;
-
-  let settingsOpen: boolean;
-
-  let playerPositions: PlayerPositionApiData[] = [];
-
   let clientSteamId: string | null;
   let clientToken: string | null;
   let socketUrl: string;
+
+  // THREE
+  let clientCamera: THREE.PerspectiveCamera | undefined;
+  let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
+  let scene_: THREE.Scene;
+  let threejs_: THREE.WebGLRenderer;
+  let listener_: THREE.AudioListener;
+  let sounds_: Map<string, RemotePlayer | undefined>;
+
+  let playerPositions: PlayerPositionApiData[] = [];
+
   let devices = [];
-  let selectedDeviceId = '';
 
   let socketClientMap: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
@@ -62,9 +66,6 @@
 
   let roomCode: string | undefined;
   let joinedRoom: boolean = false;
-
-  let turnUsername: string | undefined;
-  let turnPassword: string | undefined;
 
   let roomCodeInput: string = '';
 
@@ -371,8 +372,11 @@
       googTypingNoiseDetection: noiseSuppression,
       sampleRate: enableSampleDebug ? sampleRate : undefined,
       sampleSize: enableSampleDebug ? sampleSize : undefined,
-      deviceId: selectedDeviceId,
     };
+
+    if (selectedDeviceId) {
+      audio.deviceId = selectedDeviceId;
+    }
 
     navigator.mediaDevices.getUserMedia({ video: false, audio }).then(
       async (inStream) => {
@@ -741,42 +745,11 @@
 
   setInterval(checkConnection, 500);
 
-  async function getDevices() {
-    const allDevices = await navigator.mediaDevices.enumerateDevices();
-    devices = allDevices.filter((device) => device.kind === 'audioinput');
-    devices = devices.map((d) => {
-      let label = d.label;
-      if (d.deviceId === 'default') {
-        // label = 'Default';
-      } else {
-        const match = /.+?\([^(]+\)/.exec(d.label);
-        if (match && match[0]) label = match[0];
-      }
-      return {
-        id: d.deviceId,
-        kind: d.kind,
-        label,
-      };
-    });
-    if (devices.length > 0) {
-      // Check if saved device id still exists
-      const storedDeviceId = await window.api.getStoreValue('setting_inputDeviceId', devices[0].id);
-      if (devices.find((device) => device.id === storedDeviceId)) {
-        selectedDeviceId = storedDeviceId;
-      } else {
-        // Store the default device if it no longer exists
-        selectedDeviceId = devices[0].id;
-        window.api.getStoreValue('setting_inputDeviceId', selectedDeviceId);
-      }
-    }
-  }
-
   onMount(() => {
     threejs_ = new THREE.WebGLRenderer({
       antialias: false,
     });
     intialise();
-    getDevices();
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
     const interval = setInterval(intialise, 1000);
 
@@ -848,7 +821,7 @@
 
 <SettingsOverlay
   bind:open={settingsOpen}
-  {selectedDeviceId}
+  bind:selectedDeviceId
   {devices}
   bind:mapName
   {onMapChange}
