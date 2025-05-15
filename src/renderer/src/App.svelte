@@ -204,6 +204,8 @@
         }
         playerPositions = localPlayerData;
 
+        console.log(playerPositions);
+
         // TODO: if (not connected... || is not in a room...)
         // console.log(players);
         // if (!joinedRoom) {
@@ -443,7 +445,7 @@
             iceRestartEnabled: true,
             config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
             // config: DEFAULT_ICE_CONFIG,
-            trickle: false,
+            trickle: true,
           });
 
           // setPeerConnections((connections) => {
@@ -492,7 +494,8 @@
             initialiseRemotePlayer(stream, client);
           });
 
-          connection.on('error', () => {
+          connection.on('error', (error) => {
+            console.log(`on error: ${error}`);
             console.log('ONERROR');
             console.log('Attempting to reconnect');
 
@@ -506,7 +509,7 @@
               removeAfter: 10000,
               type: 'error',
             });
-            window.api.reloadApp();
+            // window.api.reloadApp();
           });
           return connection;
         };
