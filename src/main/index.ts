@@ -9,7 +9,7 @@ import icon from '../../resources/icon.png?asset';
 import { setMainWindow } from './ipc-handlers';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 import { SteamAuth } from './SteamAuth';
-import { JwtAuthPayload, StoreData } from './types';
+import { JwtAuthPayload, SettingsData, StoreData } from './types';
 import { autoUpdater } from 'electron-updater';
 
 const appProtocolClient = `cs2-proximity-chat`;
@@ -22,6 +22,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 const auth = new SteamAuth();
 
 const store = new Store<StoreData>();
+const settings = new Store<SettingsData>();
 
 let mainWindow: BrowserWindow;
 
@@ -70,7 +71,7 @@ function createWindow(): void {
   }
   const mainWindowState = windowStateKeeper({});
 
-  const alwaysOnTop = store.get('setting_alwaysOnTop', true);
+  const alwaysOnTop = settings.get('alwaysOnTop', true);
 
   // Create the browser window.
   mainWindow = new BrowserWindow({

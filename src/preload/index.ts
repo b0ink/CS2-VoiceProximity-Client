@@ -7,6 +7,10 @@ const api = {
   getStoreValue: (key: string, defaultValue?: string) =>
     ipcRenderer.invoke('get-store-value', key, defaultValue),
   setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
+  getSettingsValue: (key: string, defaultValue?: string) =>
+    ipcRenderer.invoke('get-settings-value', key, defaultValue),
+  setSettingsValue: (key: string, value: any) =>
+    ipcRenderer.invoke('set-settings-value', key, value),
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
   getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),
   reloadApp: () => ipcRenderer.invoke('reload-app'),

@@ -15,7 +15,7 @@
   let alwaysOnTop: boolean;
   const toggleAlwaysOnTop = (): void => {
     alwaysOnTop = !alwaysOnTop;
-    window.api.setStoreValue('setting_alwaysOnTop', alwaysOnTop);
+    window.api.setSettingsValue('setting_alwaysOnTop', alwaysOnTop);
   };
 
   let natFixEnabled: boolean;
@@ -31,7 +31,7 @@
       e.preventDefault();
       return;
     } else {
-      window.api.setStoreValue('setting_natFixEnabled', true);
+      window.api.setSettingsValue('setting_natFixEnabled', true);
       loadSettings();
       modalConfirmRestartRequired = true;
     }
@@ -42,7 +42,7 @@
   let hqVoice: boolean;
   const toggleHqVoice = (): void => {
     hqVoice = !hqVoice;
-    window.api.setStoreValue('setting_hqVoice', hqVoice);
+    window.api.setSettingsValue('setting_hqVoice', hqVoice);
     modalConfirmRestartRequired = true;
   };
 
@@ -80,15 +80,15 @@
       } else {
         // Store the default device if it no longer exists
         selectedDeviceId = inputMediaDevices[0].id;
-        window.api.getStoreValue('setting_inputDeviceId', selectedDeviceId);
+        window.api.getSettingsValue('inputDeviceId', selectedDeviceId);
       }
     }
   }
 
   const loadSettings = async (): Promise<void> => {
-    alwaysOnTop = await window.api.getStoreValue('setting_alwaysOnTop', true);
-    natFixEnabled = await window.api.getStoreValue('setting_natFixEnabled', true);
-    hqVoice = await window.api.getStoreValue('setting_hqVoice', true);
+    alwaysOnTop = await window.api.getSettingsValue('alwaysOnTop', true);
+    natFixEnabled = await window.api.getSettingsValue('natFixEnabled', true);
+    hqVoice = await window.api.getSettingsValue('hqVoice', true);
   };
 </script>
 
@@ -106,7 +106,7 @@
   {#snippet footer()}
     <Button
       onclick={() => {
-        window.api.setStoreValue('setting_natFixEnabled', false);
+        window.api.setSettingsValue('setting_natFixEnabled', false);
         loadSettings();
         modalConfirmRestartRequired = true;
       }}
@@ -115,7 +115,7 @@
     <Button
       color="alternative"
       onclick={() => {
-        window.api.setStoreValue('setting_natFixEnabled', true);
+        window.api.setSettingsValue('setting_natFixEnabled', true);
         loadSettings();
       }}>Cancel</Button
     >
@@ -161,7 +161,7 @@
           onchange={() => {
             modalConfirmRestartRequired = true;
             console.log(`${selectedDeviceId}`);
-            window.api.setStoreValue('setting_inputDeviceId', selectedDeviceId);
+            window.api.setSettingsValue('setting_inputDeviceId', selectedDeviceId);
           }}
         >
           {#each inputMediaDevices as device (device.id)}

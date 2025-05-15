@@ -13,10 +13,10 @@ export class SteamAuth {
 
   async openSteamAuthenticationWindow(): Promise<void> {
     const realm = await getApiUrl();
-    const return_url = `${realm}/verify-steam`;
+    const returnUrl = `${realm}/verify-steam`;
 
     const rely = new openid.RelyingParty(
-      return_url,
+      returnUrl,
       realm,
       //   'http://localhost:3000/verify-steam',
       //   'http://localhost:3000/', // Realm (specifies realm for OpenID authentication)

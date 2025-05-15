@@ -40,7 +40,7 @@
   let turnUsername: string | undefined;
   let turnPassword: string | undefined;
 
-  let socket_: Socket | undefined;
+  let socket: Socket | undefined;
   let socketConnected = false;
 
   let clientSteamId: string | null;
@@ -49,11 +49,11 @@
 
   // THREE
   let clientCamera: THREE.PerspectiveCamera | undefined;
-  let map_: THREE.Group<THREE.Object3DEventMap> | undefined;
-  let scene_: THREE.Scene;
-  let threejs_: THREE.WebGLRenderer;
-  let listener_: THREE.AudioListener;
-  let sounds_: Map<string, RemotePlayer | undefined>;
+  let map: THREE.Group<THREE.Object3DEventMap> | undefined;
+  let scene: THREE.Scene;
+  let threejs: THREE.WebGLRenderer;
+  let clientListener: THREE.AudioListener;
+  let remotePlayers: Map<string, RemotePlayer | undefined>;
 
   let playerPositions: PlayerPositionApiData[] = [];
 
@@ -82,7 +82,7 @@
     },
   };
 
-  sounds_ = new Map<string, RemotePlayer>();
+  remotePlayers = new Map<string, RemotePlayer>();
 
   const unmuteMicrophone = (): void => {
     microphoneMuted = false;
@@ -100,23 +100,23 @@
     clientToken = await window.api.getStoreValue('token');
     socketUrl = await window.api.getSocketUrl();
 
-    if (clientSteamId && socketUrl && !scene_) {
+    if (clientSteamId && socketUrl && !scene) {
       await window.api.retrieveTurnCredentials();
       turnUsername = await window.api.getStoreValue('turnUsername');
       turnPassword = await window.api.getStoreValue('turnPassword');
-      useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
-      broadcastHqVoice = await window.api.getStoreValue('setting_hqVoice', true);
+      useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
+      broadcastHqVoice = await window.api.getSettingsValue('hqVoice', true);
 
       console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
-      socket_ = io(socketUrl);
+      socket = io(socketUrl);
 
-      // Trigger reactive state of socket_
+      // Trigger reactive state of socket
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
-      socket_.on('connect', () => {
+      socket.on('connect', () => {
         socketConnected = true;
       });
-      socket_.on('disconnect', () => {
+      socket.on('disconnect', () => {
         socketConnected = false;
         window.api.reloadApp();
         // TODO: toast notification
@@ -130,8 +130,8 @@
         console.error(`Lost connection to the socket server`);
       });
 
-      scene_ = new THREE.Scene();
-      listener_ = new THREE.AudioListener();
+      scene = new THREE.Scene();
+      clientListener = new THREE.AudioListener();
 
       const fov = 60;
       const aspect = 1920 / 1080;
@@ -144,10 +144,10 @@
       // uiScene_ = new THREE.Scene();
 
       const axesHelper = new THREE.AxesHelper(50);
-      scene_.add(axesHelper);
-      clientCamera.add(listener_);
+      scene.add(axesHelper);
+      clientCamera.add(clientListener);
 
-      initializeRenderer_();
+      initializeRenderer();
 
       // TODO: one time notification when logging in for the first time
       // addNotification({
@@ -175,17 +175,17 @@
         });
       }, 1000);
 
-      socket_?.on('current-map', async (mapName) => {
+      socket?.on('current-map', async (mapName) => {
         console.log(`Received map change request ${mapName}`);
-        map_ = await initializeMap({
-          map: map_,
-          scene: scene_,
+        map = await initializeMap({
+          map: map,
+          scene: scene,
           mapName,
         });
       });
 
-      // socket_?.on('player-positions', (players: PlayerPositionApiData[]) => {
-      socket_?.on('player-positions', (data) => {
+      // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
+      socket?.on('player-positions', (data) => {
         const decoded = decode(new Uint8Array(data));
         const players = decoded as Array<
           [string, string, number, number, number, number, number, number, number, boolean, boolean]
@@ -194,23 +194,23 @@
         let localPlayerData: PlayerPositionApiData[] = [];
 
         for (const player of players) {
-          const [SteamId, Name, ox, oy, oz, lx, ly, lz, Team, IsAlive, SpectatingC4] = player;
+          const [steamId, name, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4] = player;
 
           // Cast to PlayerData interface
           const playerData: PlayerPositionApiData = {
-            SteamId,
-            Name,
+            steamId,
+            name,
             // The server plugin scales our Origin/LookAt floats to integers so that we're not dealing with decimals
             // Now we need to scale them down
-            OriginX: ox / 10000,
-            OriginY: oy / 10000,
-            OriginZ: oz / 10000,
-            LookAtX: lx / 10000,
-            LookAtY: ly / 10000,
-            LookAtZ: lz / 10000,
-            Team,
-            IsAlive,
-            SpectatingC4,
+            originX: ox / 10000,
+            originY: oy / 10000,
+            originZ: oz / 10000,
+            lookAtX: lx / 10000,
+            lookAtY: ly / 10000,
+            lookAtZ: lz / 10000,
+            team,
+            isAlive,
+            spectatingC4,
           };
           localPlayerData.push(playerData);
         }
@@ -222,7 +222,7 @@
         //   return;
         // }
 
-        // const mySocketId = socket_?.id;
+        // const mySocketId = socket?.id;
         // if (!mySocketId) {
         //   return;
         // }
@@ -230,18 +230,18 @@
         //   return;
         // }
 
-        const me = localPlayerData.find((player) => player.SteamId === getSteamId());
+        const me = localPlayerData.find((player) => player.steamId === getSteamId());
 
         let spectatedPlayerPosition: THREE.Vector3;
 
         // Get the position of the player being spectated
         for (const player of localPlayerData) {
-          if (player.SteamId === getSteamId()) {
-            if (!me.IsAlive) {
+          if (player.steamId === getSteamId()) {
+            if (!me.isAlive) {
               const playerOrigin = new THREE.Vector3(
-                player.OriginX,
-                player.OriginY,
-                player.OriginZ,
+                player.originX,
+                player.originY,
+                player.originZ,
               );
               spectatedPlayerPosition = playerOrigin;
               break;
@@ -250,9 +250,9 @@
         }
 
         for (const player of localPlayerData) {
-          const steamId = player.SteamId;
-          const playerOrigin = new THREE.Vector3(player.OriginX, player.OriginY, player.OriginZ);
-          const playerLookAt = new THREE.Vector3(player.LookAtX, player.LookAtY, player.LookAtZ);
+          const steamId = player.steamId;
+          const playerOrigin = new THREE.Vector3(player.originX, player.originY, player.originZ);
+          const playerLookAt = new THREE.Vector3(player.lookAtX, player.lookAtY, player.lookAtZ);
 
           const transformedOrigin = transformVector(playerOrigin);
           const transformedLookAt = transformVector(playerLookAt);
@@ -271,31 +271,31 @@
             );
             clientCamera.lookAt(transformedLookAt);
           } else {
-            const positionalSound = sounds_.get(steamId);
+            const positionalSound = remotePlayers.get(steamId);
 
             if (!positionalSound) {
               continue;
             }
 
             if (
-              !player.IsAlive && // player is dead
-              (me.IsAlive || // mute if im alive (don't want to hear any dead players)
-                player.Team !== me.Team) && // or if the player is an enemy
-              !player.SpectatingC4 // and if they're not spectating the c4
+              !player.isAlive && // player is dead
+              (me.isAlive || // mute if im alive (don't want to hear any dead players)
+                player.team !== me.team) && // or if the player is an enemy
+              !player.spectatingC4 // and if they're not spectating the c4
             ) {
               positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
             } else {
               positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
             }
 
-            const sameTeamAndDead = !player.IsAlive && player.Team === me.Team;
+            const sameTeamAndDead = !player.isAlive && player.team === me.team;
             const playerIsBeingSpectated = spectatedPlayerPosition
               ? playerOrigin.distanceTo(spectatedPlayerPosition) <= 10
               : false;
 
-            if (!me.IsAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
+            if (!me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
               positionalSound.SwitchToMono();
-              positionalSound.setMonoHighPassFilterFrequency(player.IsAlive ? 100 : 750);
+              positionalSound.setMonoHighPassFilterFrequency(player.isAlive ? 100 : 750);
             } else {
               positionalSound.SwitchToStereo();
             }
@@ -314,31 +314,13 @@
           }
         }
 
-        threejs_.render(scene_, clientCamera);
-        if (map_) {
+        threejs.render(scene, clientCamera);
+        if (map) {
           updateSoundFilters();
         }
       });
     }
   }
-
-  const joinRoom_ = (code: string): void => {
-    // TODO: implement UI
-    if (code) {
-      roomCode = code;
-      initUserMedia();
-      window.api.setStoreValue('savedRoomCode', roomCode);
-    } else {
-      roomCode = null;
-      console.log('invalid room code');
-      addNotification({
-        text: 'Invalid room code',
-        position: 'top-center',
-        removeAfter: 2500,
-        type: 'error',
-      });
-    }
-  };
 
   const getSteamId = (): string | null => {
     return clientSteamId;
@@ -418,7 +400,7 @@
         // connect(currentLobby, )
         connect(roomCode!, getSteamId()!, getSteamId()!, false);
 
-        useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
+        useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
 
         const createPeerConnection = (
           peer: string,
@@ -503,7 +485,7 @@
 
           connection.on('signal', (data) => {
             console.log('receiving connection signal');
-            socket_?.emit('signal', {
+            socket?.emit('signal', {
               data,
               to: peer,
             });
@@ -513,13 +495,13 @@
             console.log(
               `ONSTREAM: my steamid is: ${getSteamId()} incoming steamid: ${client.steamId}`,
             );
-            console.log(`ONSTREAM: my socker id is: ${socket_?.id} incoming socketId: ${peer}`);
+            console.log(`ONSTREAM: my socker id is: ${socket?.id} incoming socketId: ${peer}`);
             // Map incoming steamid to socket
             steamIdSocketMap[client.steamId] = peer;
             // Map incoming socket to client (steamid)
             socketClientMap[peer] = client;
             console.log(`on stream: Assigning ${peer} to ${client.steamId}`);
-            initialiseRemotePlayer_(stream, client);
+            initialiseRemotePlayer(stream, client);
           });
 
           connection.on('error', () => {
@@ -547,7 +529,7 @@
           return connection;
         };
 
-        socket_?.on('user-joined', async (peer: string, client: Client) => {
+        socket?.on('user-joined', async (peer: string, client: Client) => {
           console.log(`user has joined! ${JSON.stringify(client)}`);
 
           console.log(`before: ${turnPassword}`);
@@ -560,14 +542,14 @@
           // setSocketClients((old) => ({ ...old, [peer]: client }));
         });
 
-        socket_?.on('user-left', async (peer: string, client: Client) => {
+        socket?.on('user-left', async (peer: string, client: Client) => {
           console.log(`user has left! ${peer} ${JSON.stringify(client)}`);
           cleanupUser(peer, client);
         });
 
         const cleanupUser = (peer: string, client: Client): void => {
           console.log(`Cleaning up user data for ${client.steamId}`);
-          const positionalSound = sounds_.get(client.steamId);
+          const positionalSound = remotePlayers.get(client.steamId);
           if (positionalSound) {
             positionalSound.playerVoice3D?.disconnect();
             positionalSound.playerObject?.parent?.remove(positionalSound.playerObject);
@@ -579,7 +561,7 @@
           delete socketClientMap[peer];
         };
 
-        socket_?.on(
+        socket?.on(
           'signal',
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
             console.log(`received on signal: ${client.steamId} ${from} ${JSON.stringify(data)}`);
@@ -636,8 +618,8 @@
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
       console.log('Currentlobby', currentLobby, lobbyCode);
-      // socket_?.emit('leave');
-      // socket_?.emit('id', playerId, clientId);
+      // socket?.emit('leave');
+      // socket?.emit('id', playerId, clientId);
       console.log(lobbyCode, playerId, clientId, isHost);
 
       const joinRoomPayload = {
@@ -648,17 +630,17 @@
         isHost: isHost,
       };
 
-      socket_?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
+      socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
         // TODO: we should validate there are no duplicate steamIds trying to join
 
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
           document.querySelector('#threejs').innerHTML = '';
-          initializeRenderer_();
-          map_ = await initializeMap({
-            map: map_,
-            scene: scene_,
+          initializeRenderer();
+          map = await initializeMap({
+            map: map,
+            scene: scene,
             mapName: response.mapName,
           });
 
@@ -698,36 +680,51 @@
   };
 
   const updateSoundFilters = (): void => {
-    for (const soundData of sounds_.values()) {
-      soundData.updateOcclusion(map_);
+    for (const soundData of remotePlayers.values()) {
+      soundData.updateOcclusion(map);
     }
   };
 
-  const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client): void => {
-    const remotePlayer = new RemotePlayer(remoteStream, client, clientCamera, scene_, listener_);
-    sounds_.set(client.steamId, remotePlayer);
+  const initialiseRemotePlayer = (remoteStream: MediaStream, client: Client): void => {
+    const remotePlayer = new RemotePlayer(
+      remoteStream,
+      client,
+      clientCamera,
+      scene,
+      clientListener,
+    );
+    remotePlayers.set(client.steamId, remotePlayer);
     console.log(`Creating remote player: ${client.steamId}`);
   };
 
-  const initializeRenderer_ = (): void => {
-    threejs_.autoClear = false;
+  const initializeRenderer = (): void => {
+    threejs.autoClear = false;
 
     const threeJsDom = document.querySelector('#threejs');
-    threeJsDom.appendChild(threejs_.domElement);
+    threeJsDom.appendChild(threejs.domElement);
   };
 
   let mapName: string = 'de_dust2';
 
   const joinRoom = (): void => {
     // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
-    const roomCode = roomCodeInput;
-    console.log(`Attempting to join room code ${roomCode}`);
+    const code = roomCodeInput;
+    console.log(`Attempting to join room code ${code}`);
 
-    joinRoom_(roomCode);
-
-    // if (isConnected) {
-    //   initializeMap(mapName);
-    // }
+    if (code) {
+      roomCode = code;
+      initUserMedia();
+      window.api.setStoreValue('savedRoomCode', roomCode);
+    } else {
+      roomCode = null;
+      console.log('invalid room code');
+      addNotification({
+        text: 'Invalid room code',
+        position: 'top-center',
+        removeAfter: 2500,
+        type: 'error',
+      });
+    }
   };
 
   const onMapChange = async (): Promise<void> => {
@@ -736,9 +733,9 @@
       console.log('Waiting for room connection before loading map.');
       return;
     }
-    map_ = await initializeMap({
-      map: map_,
-      scene: scene_,
+    map = await initializeMap({
+      map: map,
+      scene: scene,
       mapName,
     });
   };
@@ -753,7 +750,7 @@
   setInterval(checkConnection, 500);
 
   onMount(() => {
-    threejs_ = new THREE.WebGLRenderer({
+    threejs = new THREE.WebGLRenderer({
       antialias: false,
     });
     intialise();
@@ -790,11 +787,11 @@
   };
 
   (window as any).debugRenderer = function () {
-    console.log(threejs_.info);
+    console.log(threejs.info);
   };
 
   // (window as any).debugSocket = function () {
-  //   console.log(socket_);
+  //   console.log(socket);
   // };
 
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');

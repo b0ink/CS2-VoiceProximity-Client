@@ -33,7 +33,7 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
     const response = await fetch(`${apiUrl}/get-turn-credential`, {
       method: 'GET',
       headers: {
-        Authorization: `Bearer ${token}`,
+        authorization: `Bearer ${token}`,
       },
     });
     const data: { message: string; data: TurnCredential } = await response.json();

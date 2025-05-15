@@ -6,8 +6,8 @@
   export let joinedSocketConnections: SocketClientMap;
 
   interface PlayerData {
-    SteamId: string;
-    Name: string;
+    steamId: string;
+    name: string;
   }
 
   let joinedPlayers: PlayerData[] = [];
@@ -20,27 +20,27 @@
 
     // Retrieve names from the cs2 server, and only display players that have joined the voice chat
     for (const player of players) {
-      const SteamId = player.SteamId;
-      if (!SteamId) continue;
+      const steamId = player.steamId;
+      if (!steamId) continue;
 
       if (
-        SteamId === mySteamId ||
-        Object.values(joinedSocketConnections).some((c) => c.steamId === SteamId)
+        steamId === mySteamId ||
+        Object.values(joinedSocketConnections).some((c) => c.steamId === steamId)
       ) {
-        if (SteamId == mySteamId) {
+        if (steamId == mySteamId) {
           clientIsOnServer = true;
         }
-        joinedPlayers.push({ SteamId, Name: player.Name });
+        joinedPlayers.push({ steamId, name: player.name });
       }
     }
 
     // Some players could be in the call, but not on the server yet, let's display their steamID instead
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_peer, client] of Object.entries(joinedSocketConnections)) {
-      const SteamId = client.steamId;
-      const player = joinedPlayers.find((p) => p.SteamId === SteamId);
+      const steamId = client.steamId;
+      const player = joinedPlayers.find((p) => p.steamId === steamId);
       if (!player) {
-        joinedPlayers.push({ SteamId, Name: SteamId });
+        joinedPlayers.push({ steamId, name: steamId });
       }
     }
 
@@ -63,8 +63,8 @@
         class="columns-1 sm:columns-2 md:columns-3 text-white space-y-1 h-28 overflow-auto-y w-fit text-center"
       >
         {#each joinedPlayers as player (player)}
-          {#if player.SteamId !== '0'}
-            <div class="w-fit">{player.Name}{player.SteamId === mySteamId ? ' (You)' : ''}</div>
+          {#if player.steamId !== '0'}
+            <div class="w-fit">{player.name}{player.steamId === mySteamId ? ' (You)' : ''}</div>
           {/if}
         {/each}
       </div>

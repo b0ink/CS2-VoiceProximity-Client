@@ -25,17 +25,17 @@ export interface PeerConnections {
 }
 
 export interface PlayerPositionApiData {
-  SteamId?: string;
-  Name?: string;
-  OriginX?: number;
-  OriginY?: number;
-  OriginZ?: number;
-  LookAtX?: number;
-  LookAtY?: number;
-  LookAtZ?: number;
-  Team?: CsTeam;
-  IsAlive?: boolean;
-  SpectatingC4?: boolean;
+  steamId?: string;
+  name?: string;
+  originX?: number;
+  originY?: number;
+  originZ?: number;
+  lookAtX?: number;
+  lookAtY?: number;
+  lookAtZ?: number;
+  team?: CsTeam;
+  isAlive?: boolean;
+  spectatingC4?: boolean;
 }
 
 export interface AudioConnectionStuff {

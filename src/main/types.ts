@@ -17,10 +17,13 @@ export interface StoreData {
   token?: string;
   turnUsername?: string;
   turnPassword?: string;
-  socketServer?: string;
   notification?: DefaultNotificationOptions;
-  setting_alwaysOnTop?: boolean;
-  setting_natFixEnabled?: boolean;
-  setting_hqVoice?: boolean;
-  setting_inputDeviceId?: string;
+}
+
+export interface SettingsData {
+  alwaysOnTop?: boolean;
+  natFixEnabled?: boolean;
+  hqVoice?: boolean;
+  inputDeviceId?: string;
+  socketServer?: string;
 }

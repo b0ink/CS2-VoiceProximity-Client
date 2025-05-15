@@ -3,7 +3,7 @@ import Store from 'electron-store';
 import fs from 'fs/promises';
 import path from 'path';
 import { getApiUrl } from './config';
-import { StoreData } from './types';
+import { SettingsData, StoreData } from './types';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 
 let mainWindowRef: BrowserWindow | null = null;
@@ -16,7 +16,21 @@ ipcMain.handle('get-store-value', async (_event, key: string, defaultValue?: str
 
 ipcMain.handle('set-store-value', async (_event, key: string, value: any) => {
   store.set(key, value);
-  if (key === 'setting_alwaysOnTop' && mainWindowRef) {
+  if (key === 'alwaysOnTop' && mainWindowRef) {
+    mainWindowRef.setAlwaysOnTop(value);
+  }
+});
+
+const settings = new Store<SettingsData>();
+
+// TODO: move to isolated store file
+ipcMain.handle('get-settings-value', async (_event, key: string, defaultValue?: string) => {
+  return settings.get(key, defaultValue);
+});
+
+ipcMain.handle('set-settings-value', async (_event, key: string, value: any) => {
+  settings.set(key, value);
+  if (key === 'alwaysOnTop' && mainWindowRef) {
     mainWindowRef.setAlwaysOnTop(value);
   }
 });
