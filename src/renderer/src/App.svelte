@@ -57,8 +57,6 @@
 
   let playerPositions: PlayerPositionApiData[] = [];
 
-  let devices = [];
-
   let socketClientMap: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
   let peerConnections: PeerConnections = {};
@@ -795,8 +793,6 @@
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 
-<!-- TODO: devices will go on a settings page, requiring an app refresh to get user media again -->
-
 {#if clientSteamId}
   <CogSolid
     onclick={() => {
@@ -822,7 +818,6 @@
 <SettingsOverlay
   bind:open={settingsOpen}
   bind:selectedDeviceId
-  {devices}
   bind:mapName
   {onMapChange}
   {clientSteamId}
