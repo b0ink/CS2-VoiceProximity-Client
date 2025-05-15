@@ -13,7 +13,7 @@
   let inputMediaDevices;
 
   let alwaysOnTop: boolean;
-  const toggleAlwaysOnTop = () => {
+  const toggleAlwaysOnTop = (): void => {
     alwaysOnTop = !alwaysOnTop;
     window.api.setStoreValue('setting_alwaysOnTop', alwaysOnTop);
   };
@@ -21,7 +21,7 @@
   let natFixEnabled: boolean;
   let confirmDisableNatFix: boolean = false;
   let modalNatFixOffButtonDisabled: boolean = true;
-  const toggleNatFix = (e: any) => {
+  const toggleNatFix = (e: any): void => {
     if (natFixEnabled) {
       confirmDisableNatFix = true;
       modalNatFixOffButtonDisabled = true;
@@ -40,7 +40,7 @@
   let modalConfirmRestartRequired: boolean = false;
 
   let hqVoice: boolean;
-  const toggleHqVoice = () => {
+  const toggleHqVoice = (): void => {
     hqVoice = !hqVoice;
     window.api.setStoreValue('setting_hqVoice', hqVoice);
     modalConfirmRestartRequired = true;
@@ -51,7 +51,7 @@
     getDevices();
   });
 
-  async function getDevices() {
+  async function getDevices(): Promise<void> {
     const allDevices = await navigator.mediaDevices.enumerateDevices();
     inputMediaDevices = allDevices
       .filter((device) => device.kind === 'audioinput')
@@ -85,7 +85,7 @@
     }
   }
 
-  const loadSettings = async () => {
+  const loadSettings = async (): Promise<void> => {
     alwaysOnTop = await window.api.getStoreValue('setting_alwaysOnTop', true);
     natFixEnabled = await window.api.getStoreValue('setting_natFixEnabled', true);
     hqVoice = await window.api.getStoreValue('setting_hqVoice', true);

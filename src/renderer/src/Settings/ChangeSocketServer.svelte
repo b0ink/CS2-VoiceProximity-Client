@@ -12,16 +12,16 @@
     getSocketServer();
   });
 
-  async function getSocketServer() {
+  async function getSocketServer(): Promise<void> {
     storedSocketServer = await window.api.getSocketUrl();
     socketServer = storedSocketServer;
   }
 
-  const onChange = () => {
+  const onChange = (): void => {
     socketInputHasChanged = socketServer !== storedSocketServer;
   };
 
-  const saveSocketServer = () => {
+  const saveSocketServer = (): void => {
     if (!socketInputHasChanged) {
       return;
     }
@@ -31,7 +31,7 @@
     window.api.reloadApp();
   };
 
-  const promptConfirmation = () => {
+  const promptConfirmation = (): void => {
     confirmModalOpen = true;
   };
 </script>

@@ -17,8 +17,6 @@ export default tseslint.config(
   {
     files: ['**/*.{tsx,svelte,ts}'],
     rules: {
-      'svelte/no-unused-svelte-ignore': 'off',
-      '@typescript-eslint/explicit-function-return-type': 'off', // TODO: re-enable
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },

@@ -2,6 +2,11 @@ import * as THREE from 'three';
 import type { Client } from './type';
 import { transformVector } from './lib/vector';
 
+interface OcclusionData {
+  occlusion: number; // between 0 - 1.0
+  totalExtraHits: number;
+}
+
 export class RemotePlayer {
   public playerVoice2D?: THREE.Audio;
   public playerVoice3D?: THREE.PositionalAudio;
@@ -82,7 +87,7 @@ export class RemotePlayer {
     this.initMonoFilters();
   }
 
-  private initStereoFilters() {
+  private initStereoFilters(): void {
     const filter = this.listener_.context.createBiquadFilter();
     filter.type = 'lowpass';
     filter.Q.value = 0;
@@ -105,7 +110,7 @@ export class RemotePlayer {
     this.playerVoice3D.setFilters([gain, highpass, filter]);
   }
 
-  private initMonoFilters() {
+  private initMonoFilters(): void {
     // Positional audio is replaced by mono audio when spectating a player or hearing dead teammates
     const gain2 = this.listener_.context.createGain();
     gain2.gain.value = this.gainAmount;
@@ -121,7 +126,7 @@ export class RemotePlayer {
     this.playerVoice2D.setVolume(0);
   }
 
-  public SwitchToMono() {
+  public SwitchToMono(): void {
     if (!this.useMonoAudio) {
       this.useMonoAudio = true;
       const now = this.listener_.context.currentTime;
@@ -132,7 +137,7 @@ export class RemotePlayer {
     }
   }
 
-  public SwitchToStereo() {
+  public SwitchToStereo(): void {
     if (this.useMonoAudio) {
       this.useMonoAudio = false;
       const now = this.listener_.context.currentTime;
@@ -149,7 +154,7 @@ export class RemotePlayer {
    *
    * @param delay How long in ms before setting the mute is applied (Default: 0ms)
    */
-  public Mute(delay: number = 0) {
+  public Mute(delay: number = 0): void {
     if (!this.isMuted) {
       clearInterval(this.unmuteTimeout);
       clearTimeout(this.muteTimeout);
@@ -162,7 +167,7 @@ export class RemotePlayer {
     }
   }
 
-  public Unmute() {
+  public Unmute(): void {
     if (this.isMuted || this.playerVoice3D?.getVolume() == 0) {
       clearInterval(this.unmuteTimeout);
       clearTimeout(this.muteTimeout);
@@ -187,7 +192,7 @@ export class RemotePlayer {
     }
   }
 
-  private setFilterFrequency(filter: BiquadFilterNode | undefined, amount: number) {
+  private setFilterFrequency(filter: BiquadFilterNode | undefined, amount: number): void {
     if (!filter || !Number.isFinite(amount) || !this.listener_) {
       return;
     }
@@ -215,21 +220,21 @@ export class RemotePlayer {
     filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
   }
 
-  public setLowPassFilterFrequency(amount: number) {
+  public setLowPassFilterFrequency(amount: number): void {
     this.setFilterFrequency(this.lowPassFilter_, amount);
   }
 
-  public setHighPassFilterFrequency(amount: number) {
+  public setHighPassFilterFrequency(amount: number): void {
     this.setFilterFrequency(this.highPassFilter_, amount);
   }
 
-  public setMonoHighPassFilterFrequency(amount: number) {
+  public setMonoHighPassFilterFrequency(amount: number): void {
     const now = this.listener_.context.currentTime;
     this.monoHighpassFilter.frequency.cancelScheduledValues(now);
     this.monoHighpassFilter.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
-  public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>) {
+  public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>): void {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
@@ -327,11 +332,11 @@ export class RemotePlayer {
     // console.log(`setting highpass to ${targetHighpass} (${distance} units away)`)
   }
 
-  calculateOcclusion = (
+  private calculateOcclusion = (
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     Listener_?: THREE.Vector3,
     playerVoice3D?: THREE.Vector3,
-  ) => {
+  ): OcclusionData => {
     if (!Listener_ || !playerVoice3D) {
       // TODO: interface
       return {
@@ -422,11 +427,11 @@ export class RemotePlayer {
     // return hits / 11;
   };
 
-  didIntersect = (
+  private didIntersect = (
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     v1: THREE.Vector3,
     v2: THREE.Vector3,
-  ) => {
+  ): number => {
     const raycaster = new THREE.Raycaster();
     const dir = v2.clone().sub(v1).normalize();
     raycaster.set(v1, dir);
@@ -461,7 +466,12 @@ export class RemotePlayer {
     return filteredHits.length;
   };
 
-  calculatePoint = (a: THREE.Vector3, b: THREE.Vector3, m: number, posOrneg: boolean) => {
+  private calculatePoint = (
+    a: THREE.Vector3,
+    b: THREE.Vector3,
+    m: number,
+    posOrneg: boolean,
+  ): THREE.Vector3 => {
     const n = new THREE.Vector3(a.x, 0, a.z).distanceTo(new THREE.Vector3(b.x, 0, b.z));
     const mn = m / n;
     let x, z;
@@ -478,7 +488,7 @@ export class RemotePlayer {
   };
 }
 
-const calculateDistance = (a?: THREE.Vector3, b?: THREE.Vector3) => {
+const calculateDistance = (a?: THREE.Vector3, b?: THREE.Vector3): number | null => {
   if (a && b) {
     return a.distanceTo(b);
   }

@@ -5,13 +5,13 @@ import { getApiUrl } from './config';
 const USE_EXTERNAL_BROWSER = true;
 
 export class SteamAuth {
-  parseOpenIdResponse(openIdResponse: string) {
+  parseOpenIdResponse(openIdResponse: string): string | undefined {
     const url = new URL(openIdResponse);
     const token = url.searchParams.get('token') || undefined;
     return token;
   }
 
-  async openSteamAuthenticationWindow() {
+  async openSteamAuthenticationWindow(): Promise<void> {
     const realm = await getApiUrl();
     const return_url = `${realm}/verify-steam`;
 
@@ -38,7 +38,7 @@ export class SteamAuth {
           return;
         }
 
-        resolve('');
+        resolve();
       });
     });
   }

@@ -25,7 +25,7 @@ const store = new Store<StoreData>();
 
 let mainWindow: BrowserWindow;
 
-async function validateJwtToken() {
+async function validateJwtToken(): Promise<void> {
   const steamId = store.get('steamId');
   const token = store.get('token');
   if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
@@ -48,7 +48,7 @@ async function validateJwtToken() {
   }
 }
 
-async function checkForUpdates() {
+async function checkForUpdates(): Promise<void> {
   if (!app.isPackaged) {
     autoUpdater.forceDevUpdateConfig = true;
   }
@@ -212,7 +212,7 @@ if (!gotTheLock) {
   });
 }
 
-const Authenticate = (launchUrl) => {
+const Authenticate = (launchUrl): void => {
   console.log(`Verifying steam authentication...`);
   const token = auth.parseOpenIdResponse(launchUrl);
   // console.log(token);
@@ -239,7 +239,7 @@ const Authenticate = (launchUrl) => {
   validateJwtToken();
 };
 
-const checkSteamAuthentication = () => {
+const checkSteamAuthentication = (): void => {
   const steamId = store.get('steamId');
   console.log(`Checking steam authentication: ${steamId}`);
 
@@ -257,7 +257,7 @@ ipcMain.handle('prompt-steam-authentication', async () => {
   checkSteamAuthentication();
 });
 
-async function getSteamId() {
+async function getSteamId(): Promise<void> {
   auth.openSteamAuthenticationWindow().then().catch(console.log);
 }
 

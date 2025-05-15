@@ -42,6 +42,6 @@ ipcMain.handle('get-socket-url', async () => {
   return getApiUrl();
 });
 
-export function setMainWindow(win: BrowserWindow) {
+export function setMainWindow(win: BrowserWindow): void {
   mainWindowRef = win;
 }

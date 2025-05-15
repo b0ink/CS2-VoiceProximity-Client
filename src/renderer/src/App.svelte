@@ -28,7 +28,7 @@
 
   const { addNotification } = getNotificationsContext();
 
-  const queueNotification = (options: DefaultNotificationOptions) => {
+  const queueNotification = (options: DefaultNotificationOptions): void => {
     window.api.setStoreValue('notification', options);
   };
 
@@ -84,17 +84,17 @@
 
   sounds_ = new Map<string, RemotePlayer>();
 
-  const unmuteMicrophone = () => {
+  const unmuteMicrophone = (): void => {
     microphoneMuted = false;
     audioConnectionStuff.toggleMute(microphoneMuted);
   };
 
-  const muteMicrophone = () => {
+  const muteMicrophone = (): void => {
     microphoneMuted = true;
     audioConnectionStuff.toggleMute(microphoneMuted);
   };
 
-  async function intialise() {
+  async function intialise(): Promise<void> {
     // TODO: move into its own settings store file
     clientSteamId = await window.api.getStoreValue('steamId');
     clientToken = await window.api.getStoreValue('token');
@@ -322,7 +322,7 @@
     }
   }
 
-  const joinRoom_ = (code: string) => {
+  const joinRoom_ = (code: string): void => {
     // TODO: implement UI
     if (code) {
       roomCode = code;
@@ -340,11 +340,11 @@
     }
   };
 
-  const getSteamId = () => {
+  const getSteamId = (): string | null => {
     return clientSteamId;
   };
 
-  const initUserMedia = () => {
+  const initUserMedia = (): void => {
     const noiseSuppression = true; // TODO: replace as a user setting
     const echoCancellation = true; // TODO: replace as a user setting
     const sampleRate = broadcastHqVoice ? 48000 : 16000;
@@ -420,7 +420,11 @@
 
         useTurnConfig = await window.api.getStoreValue('setting_natFixEnabled', true);
 
-        const createPeerConnection = (peer: string, initiator: boolean, client: Client) => {
+        const createPeerConnection = (
+          peer: string,
+          initiator: boolean,
+          client: Client,
+        ): Peer.Instance => {
           console.log('CreatePeerConnection: ', peer, initiator, stream);
           console.log(`Using turn config?:`, useTurnConfig);
           if (!useTurnConfig) {
@@ -561,7 +565,7 @@
           cleanupUser(peer, client);
         });
 
-        const cleanupUser = (peer: string, client: Client) => {
+        const cleanupUser = (peer: string, client: Client): void => {
           console.log(`Cleaning up user data for ${client.steamId}`);
           const positionalSound = sounds_.get(client.steamId);
           if (positionalSound) {
@@ -614,7 +618,12 @@
     );
   };
 
-  const connect = (lobbyCode: string, playerId: string, clientId: string, isHost: boolean) => {
+  const connect = (
+    lobbyCode: string,
+    playerId: string,
+    clientId: string,
+    isHost: boolean,
+  ): void => {
     console.log('connect called..', lobbyCode);
     // setOtherVAD({});
     // setOtherTalking({}); // probably used for talking indicators?
@@ -688,19 +697,19 @@
     }
   };
 
-  const updateSoundFilters = () => {
+  const updateSoundFilters = (): void => {
     for (const soundData of sounds_.values()) {
       soundData.updateOcclusion(map_);
     }
   };
 
-  const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client) => {
+  const initialiseRemotePlayer_ = (remoteStream: MediaStream, client: Client): void => {
     const remotePlayer = new RemotePlayer(remoteStream, client, clientCamera, scene_, listener_);
     sounds_.set(client.steamId, remotePlayer);
     console.log(`Creating remote player: ${client.steamId}`);
   };
 
-  const initializeRenderer_ = () => {
+  const initializeRenderer_ = (): void => {
     threejs_.autoClear = false;
 
     const threeJsDom = document.querySelector('#threejs');
@@ -721,7 +730,7 @@
     // }
   };
 
-  const onMapChange = async () => {
+  const onMapChange = async (): Promise<void> => {
     console.log(mapName);
     if (!isConnected) {
       console.log('Waiting for room connection before loading map.');
@@ -737,7 +746,7 @@
   let isConnected = false;
 
   // example: poll connection
-  const checkConnection = () => {
+  const checkConnection = (): void => {
     isConnected = joinedRoom;
   };
 
@@ -762,7 +771,7 @@
     document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
   });
 
-  async function checkNotifications() {
+  async function checkNotifications(): Promise<void> {
     const notification = await window.api.getStoreValue('notification');
     if (notification) {
       addNotification(notification);
@@ -770,7 +779,7 @@
     }
   }
 
-  async function getSavedRoomCode() {
+  async function getSavedRoomCode(): Promise<void> {
     roomCodeInput = await window.api.getStoreValue('savedRoomCode');
   }
 
