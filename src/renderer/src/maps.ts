@@ -9,7 +9,7 @@ const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo']
 const mapScale: number = 39.3701;
 
 interface MapData {
-  map: THREE.Group<THREE.Object3DEventMap>;
+  map: THREE.Group<THREE.Object3DEventMap> | null;
   scene: THREE.Scene;
   mapName: string;
 }
@@ -43,6 +43,9 @@ async function initializeMap(
   console.log(`[GLTF] Fetching map blob (${mapData.mapName})`);
 
   const buffer = await window.api.loadMap(mapData.mapName);
+  if (!buffer) {
+    return null;
+  }
   const blob = new Blob([buffer], { type: 'model/gltf-binary' });
   const url = URL.createObjectURL(blob);
 

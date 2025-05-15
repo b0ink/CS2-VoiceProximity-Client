@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let clientSteamId: string;
+  export let clientSteamId: string | null;
 </script>
 
 {#if !clientSteamId}

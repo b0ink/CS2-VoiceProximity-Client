@@ -51,7 +51,7 @@
 
   // THREE
   let clientCamera: THREE.PerspectiveCamera | undefined;
-  let map: THREE.Group<THREE.Object3DEventMap> | undefined;
+  let map: THREE.Group<THREE.Object3DEventMap> | null;
   let scene: THREE.Scene;
   let threejs: THREE.WebGLRenderer;
   let clientListener: THREE.AudioListener;
@@ -68,7 +68,7 @@
   let roomCodeInput: string = '';
   let roomCode: string | undefined;
   let joinedRoom: boolean = false;
-  let currentLobby = '';
+  let currentLobby: string | undefined = '';
 
   let microphoneMuted: boolean = false;
   let audioConnectionStuff: AudioConnectionStuff = {
@@ -222,25 +222,32 @@
 
         const me = localPlayerData.find((player) => player.steamId === getSteamId());
 
-        let spectatedPlayerPosition: THREE.Vector3;
+        let spectatedPlayerPosition: THREE.Vector3 | null;
+        let hasSpectatedPosition = false;
 
         // Get the position of the player being spectated
-        for (const player of localPlayerData) {
-          if (player.steamId === getSteamId()) {
-            if (!me.isAlive) {
-              const playerOrigin = new THREE.Vector3(
-                player.originX,
-                player.originY,
-                player.originZ,
-              );
-              spectatedPlayerPosition = playerOrigin;
-              break;
+        if (me) {
+          for (const player of localPlayerData) {
+            if (player.steamId === getSteamId()) {
+              if (!me.isAlive) {
+                const playerOrigin = new THREE.Vector3(
+                  player.originX,
+                  player.originY,
+                  player.originZ,
+                );
+                spectatedPlayerPosition = playerOrigin;
+                hasSpectatedPosition = true;
+                break;
+              }
             }
           }
         }
 
         for (const player of localPlayerData) {
           const steamId = player.steamId;
+          if (!steamId) {
+            continue;
+          }
           const playerOrigin = new THREE.Vector3(player.originX, player.originY, player.originZ);
           const playerLookAt = new THREE.Vector3(player.lookAtX, player.lookAtY, player.lookAtZ);
 
@@ -254,12 +261,12 @@
           //   .start();
 
           if (steamId === getSteamId()) {
-            clientCamera.position.set(
+            clientCamera?.position.set(
               transformedOrigin.x,
               transformedOrigin.y,
               transformedOrigin.z,
             );
-            clientCamera.lookAt(transformedLookAt);
+            clientCamera?.lookAt(transformedLookAt);
           } else {
             const positionalSound = remotePlayers.get(steamId);
 
@@ -268,6 +275,7 @@
             }
 
             if (
+              me &&
               !player.isAlive && // player is dead
               (me.isAlive || // mute if im alive (don't want to hear any dead players)
                 player.team !== me.team) && // or if the player is an enemy
@@ -278,12 +286,12 @@
               positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
             }
 
-            const sameTeamAndDead = !player.isAlive && player.team === me.team;
-            const playerIsBeingSpectated = spectatedPlayerPosition
-              ? playerOrigin.distanceTo(spectatedPlayerPosition) <= 10
-              : false;
+            const sameTeamAndDead = !player.isAlive && player.team === me?.team;
 
-            if (!me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
+            const playerIsBeingSpectated =
+              hasSpectatedPosition && playerOrigin.distanceTo(spectatedPlayerPosition!) <= 10;
+
+            if (me && !me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
               positionalSound.SwitchToMono();
               positionalSound.setMonoHighPassFilterFrequency(player.isAlive ? 100 : 750);
             } else {
@@ -304,7 +312,7 @@
           }
         }
 
-        threejs.render(scene, clientCamera);
+        threejs.render(scene, clientCamera!);
         if (map) {
           updateSoundFilters();
         }
@@ -404,6 +412,10 @@
               'NAT fix is disabled — your IP address may be visible to other users with direct connection enabled.',
             );
           }
+
+          if (!turnUsername || !turnPassword) {
+            window.api.reloadApp();
+          }
           // disconnectClient(client); // TODO:
 
           // eslint-disable-next-line no-undef
@@ -418,8 +430,8 @@
               },
               {
                 urls: 'turn:turn.cs2voiceproximity.chat',
-                username: turnUsername,
-                credential: turnPassword,
+                username: turnUsername!,
+                credential: turnPassword!,
               },
             ],
           };
@@ -430,8 +442,8 @@
             iceServers: [
               {
                 urls: 'turn:turn.cs2voiceproximity.chat',
-                username: turnUsername,
-                credential: turnPassword,
+                username: turnUsername!,
+                credential: turnPassword!,
               },
             ],
           };
@@ -621,18 +633,18 @@
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
-          document.querySelector('#threejs').innerHTML = '';
+          document.querySelector('#threejs')!.innerHTML = '';
           initializeRenderer();
           map = await initializeMap({
             map: map,
             scene: scene,
-            mapName: response.mapName,
+            mapName: response.mapName ?? 'de_dust2',
           });
 
           joinedRoom = true;
         } else {
-          roomCode = null;
-          currentLobby = null;
+          roomCode = undefined;
+          currentLobby = undefined;
           // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
 
           if (
@@ -665,8 +677,10 @@
   };
 
   const updateSoundFilters = (): void => {
-    for (const soundData of remotePlayers.values()) {
-      soundData.updateOcclusion(map);
+    if (map) {
+      for (const soundData of remotePlayers.values()) {
+        soundData?.updateOcclusion(map);
+      }
     }
   };
 
@@ -674,7 +688,7 @@
     const remotePlayer = new RemotePlayer(
       remoteStream,
       client,
-      clientCamera,
+      clientCamera!,
       scene,
       clientListener,
     );
@@ -686,7 +700,7 @@
     threejs.autoClear = false;
 
     const threeJsDom = document.querySelector('#threejs');
-    threeJsDom.appendChild(threejs.domElement);
+    threeJsDom!.appendChild(threejs.domElement);
   };
 
   let mapName: string = 'de_dust2';
@@ -701,7 +715,7 @@
       initUserMedia();
       window.api.setStoreValue('savedRoomCode', roomCode);
     } else {
-      roomCode = null;
+      roomCode = undefined;
       console.log('invalid room code');
       addNotification({
         text: 'Invalid room code',
