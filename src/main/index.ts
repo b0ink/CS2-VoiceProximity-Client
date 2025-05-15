@@ -1,16 +1,13 @@
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
-import Store from 'electron-store';
+import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
-import jwt from 'jsonwebtoken';
 import path from 'node:path';
 import { join } from 'path';
 import icon from '../../resources/icon.png?asset';
-import { setMainWindow } from './ipc-handlers';
-import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import './ipc-handlers';
 import { SteamAuth } from './SteamAuth';
-import { JwtAuthPayload, SettingsData, StoreData } from './types';
-import { autoUpdater } from 'electron-updater';
+import { setMainWindow, settingsStore, store } from './store';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -21,33 +18,7 @@ app.commandLine.appendSwitch('disable-backgrounding-occluded-windows');
 
 const auth = new SteamAuth();
 
-const store = new Store<StoreData>();
-const settings = new Store<SettingsData>();
-
 let mainWindow: BrowserWindow;
-
-async function validateJwtToken(): Promise<void> {
-  const steamId = store.get('steamId');
-  const token = store.get('token');
-  if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
-    store.set('steamId', null);
-    store.set('token', null);
-  } else {
-    try {
-      const payload = jwt.decode(token) as JwtAuthPayload | null;
-      if (!payload || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
-        throw new Error('Token is invalid, expired, or missing expiration');
-      }
-      // Token is valid
-      await retrieveTurnCredentials();
-    } catch (e) {
-      console.log(e);
-      // Reset token
-      store.set('steamId', null);
-      store.set('token', null);
-    }
-  }
-}
 
 async function checkForUpdates(): Promise<void> {
   if (!app.isPackaged) {
@@ -71,7 +42,7 @@ function createWindow(): void {
   }
   const mainWindowState = windowStateKeeper({});
 
-  const alwaysOnTop = settings.get('alwaysOnTop', true);
+  const alwaysOnTop = settingsStore.get('alwaysOnTop', true);
 
   // Create the browser window.
   mainWindow = new BrowserWindow({
@@ -112,7 +83,7 @@ function createWindow(): void {
 
   mainWindow.on('ready-to-show', () => {
     // Reset token and steamid if invalid or expired token
-    validateJwtToken();
+    auth.validateJwtToken();
     mainWindow.show();
   });
 
@@ -163,8 +134,7 @@ if (!gotTheLock) {
       return;
     }
 
-    Authenticate(launchUrl);
-    // TODO: everything should be done in the SteamAuth class (when we have our shareable store modules)
+    auth.authenticate(launchUrl);
   });
 
   // This method will be called when Electron has finished
@@ -208,37 +178,10 @@ if (!gotTheLock) {
     });
 
     app.on('open-url', (_, url) => {
-      Authenticate(url);
+      auth.authenticate(url);
     });
   });
 }
-
-const Authenticate = (launchUrl): void => {
-  console.log(`Verifying steam authentication...`);
-  const token = auth.parseOpenIdResponse(launchUrl);
-  // console.log(token);
-  if (!token) {
-    return console.log('Invalid or no token returned.');
-  }
-
-  const decoded = jwt.decode(token);
-  if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
-    return console.log('Invalid token');
-  }
-  const payload = decoded as JwtAuthPayload;
-  const steamId64 = payload.steamId;
-  if (!steamId64) {
-    return console.log('Invalid steamid64');
-  }
-
-  store.set('token', token);
-  store.set('steamId', steamId64);
-  console.log(`Setting token ${token}`);
-  console.log(`Setting steamid ${steamId64}`);
-
-  // validate again and fetch turn credentials
-  validateJwtToken();
-};
 
 const checkSteamAuthentication = (): void => {
   const steamId = store.get('steamId');

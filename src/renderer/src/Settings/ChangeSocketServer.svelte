@@ -1,33 +1,23 @@
 <script lang="ts">
   import { Button, ButtonGroup, Input, Label, Modal } from 'flowbite-svelte';
+  import settings from '../store/settings';
   import { onMount } from 'svelte';
 
   export let open: boolean;
-  let socketServer: string;
-  let storedSocketServer: string;
-  let socketInputHasChanged: boolean;
 
+  $: storedSocketServer = $settings.socketServer;
+  let socketServerInput: string;
   let confirmModalOpen = false;
+
   onMount(() => {
-    getSocketServer();
+    socketServerInput = storedSocketServer;
   });
 
-  async function getSocketServer(): Promise<void> {
-    storedSocketServer = await window.api.getSocketUrl();
-    socketServer = storedSocketServer;
-  }
-
-  const onChange = (): void => {
-    socketInputHasChanged = socketServer !== storedSocketServer;
-  };
-
   const saveSocketServer = (): void => {
-    if (!socketInputHasChanged) {
+    if (socketServerInput === storedSocketServer) {
       return;
     }
-    window.api.setStoreValue('socketServer', socketServer);
-    storedSocketServer = socketServer;
-    socketInputHasChanged = false;
+    window.api.setSettingsValue('socketServer', socketServerInput);
     window.api.reloadApp();
   };
 
@@ -39,8 +29,9 @@
 {#if open}
   <Modal title="Confirm" bind:open={confirmModalOpen} autoclose>
     <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-      Changing the socket server to <span class="text-primary-600 font-bold">{socketServer}</span> will
-      reload the app. If you're in a room, you'll need to reconnect afterward.
+      Changing the socket server to <span class="text-primary-600 font-bold"
+        >{socketServerInput}</span
+      > will reload the app. If you're in a room, you'll need to reconnect afterward.
     </p>
 
     <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
@@ -61,10 +52,9 @@
         <Input
           id="socket-server"
           name="socket-server"
-          bind:value={socketServer}
-          oninput={onChange}
+          bind:value={socketServerInput}
           placeholder="Socket Server"
-          color={socketInputHasChanged ? 'amber' : 'default'}
+          color={socketServerInput !== storedSocketServer ? 'amber' : 'default'}
           required
         />
 
@@ -72,7 +62,7 @@
           color="primary"
           class="cursor-pointer"
           type="submit"
-          disabled={!socketInputHasChanged}
+          disabled={socketServerInput === storedSocketServer}
           onclick={promptConfirmation}>Save</Button
         >
       </ButtonGroup>

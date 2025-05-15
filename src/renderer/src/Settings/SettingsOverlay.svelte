@@ -4,21 +4,33 @@
   import ClientInfo from './ClientInfo.svelte';
   import { onMount } from 'svelte';
   export let open: boolean;
-  export let selectedDeviceId: string;
   export let mapName: string;
-  export let clientSteamId: string;
-  export let socketUrl: string;
   export let onMapChange: () => void;
 
-  let inputMediaDevices;
+  import settings from '../store/settings';
+  import store from '../store/client';
 
-  let alwaysOnTop: boolean;
+  $: socketUrl = $settings.socketServer;
+  $: clientSteamId = $store.steamId;
+  $: storedDeviceId = $settings.inputDeviceId;
+  $: natFixEnabled = $settings.natFixEnabled;
+  $: hqVoice = $settings.hqVoice;
+  $: alwaysOnTop = $settings.alwaysOnTop;
+
+  let selectedDeviceId: string;
+
+  interface MediaDevice {
+    id: string;
+    kind: string;
+    label: string;
+  }
+
+  let inputMediaDevices: MediaDevice[];
+
   const toggleAlwaysOnTop = (): void => {
-    alwaysOnTop = !alwaysOnTop;
-    window.api.setSettingsValue('setting_alwaysOnTop', alwaysOnTop);
+    window.api.setSettingsValue('alwaysOnTop', !alwaysOnTop);
   };
 
-  let natFixEnabled: boolean;
   let confirmDisableNatFix: boolean = false;
   let modalNatFixOffButtonDisabled: boolean = true;
   const toggleNatFix = (e: any): void => {
@@ -31,23 +43,19 @@
       e.preventDefault();
       return;
     } else {
-      window.api.setSettingsValue('setting_natFixEnabled', true);
-      loadSettings();
+      window.api.setSettingsValue('natFixEnabled', true);
       modalConfirmRestartRequired = true;
     }
   };
 
   let modalConfirmRestartRequired: boolean = false;
 
-  let hqVoice: boolean;
   const toggleHqVoice = (): void => {
-    hqVoice = !hqVoice;
-    window.api.setSettingsValue('setting_hqVoice', hqVoice);
+    window.api.setSettingsValue('hqVoice', !hqVoice);
     modalConfirmRestartRequired = true;
   };
 
   onMount(() => {
-    loadSettings();
     getDevices();
   });
 
@@ -71,25 +79,18 @@
       });
     if (inputMediaDevices.length > 0) {
       // Check if saved device id still exists
-      const storedDeviceId = await window.api.getStoreValue(
-        'setting_inputDeviceId',
-        inputMediaDevices[0].id,
-      );
+      console.log(`stored device id: ${storedDeviceId}`);
       if (inputMediaDevices.find((device) => device.id === storedDeviceId)) {
         selectedDeviceId = storedDeviceId;
+        console.log('using stored device id');
       } else {
         // Store the default device if it no longer exists
+        console.log('stored device id no longer exists');
         selectedDeviceId = inputMediaDevices[0].id;
-        window.api.getSettingsValue('inputDeviceId', selectedDeviceId);
+        window.api.setSettingsValue('inputDeviceId', selectedDeviceId);
       }
     }
   }
-
-  const loadSettings = async (): Promise<void> => {
-    alwaysOnTop = await window.api.getSettingsValue('alwaysOnTop', true);
-    natFixEnabled = await window.api.getSettingsValue('natFixEnabled', true);
-    hqVoice = await window.api.getSettingsValue('hqVoice', true);
-  };
 </script>
 
 <Modal title="Confirm" bind:open={confirmDisableNatFix} autoclose>
@@ -106,8 +107,7 @@
   {#snippet footer()}
     <Button
       onclick={() => {
-        window.api.setSettingsValue('setting_natFixEnabled', false);
-        loadSettings();
+        window.api.setSettingsValue('natFixEnabled', false);
         modalConfirmRestartRequired = true;
       }}
       disabled={modalNatFixOffButtonDisabled}>Turn it off</Button
@@ -115,8 +115,7 @@
     <Button
       color="alternative"
       onclick={() => {
-        window.api.setSettingsValue('setting_natFixEnabled', true);
-        loadSettings();
+        window.api.setSettingsValue('natFixEnabled', true);
       }}>Cancel</Button
     >
   {/snippet}
@@ -161,7 +160,7 @@
           onchange={() => {
             modalConfirmRestartRequired = true;
             console.log(`${selectedDeviceId}`);
-            window.api.setSettingsValue('setting_inputDeviceId', selectedDeviceId);
+            window.api.setSettingsValue('inputDeviceId', selectedDeviceId);
           }}
         >
           {#each inputMediaDevices as device (device.id)}

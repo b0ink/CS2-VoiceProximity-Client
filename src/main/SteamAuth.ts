@@ -1,10 +1,69 @@
 import { shell } from 'electron';
 import openid from 'openid';
-import { getApiUrl } from './config';
+import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import { store, settingsStore } from './store';
+import jwt from 'jsonwebtoken';
 
 const USE_EXTERNAL_BROWSER = true;
 
+interface JwtAuthPayload {
+  steamId?: string;
+  exp?: number;
+  iat?: number;
+  aud?: string;
+}
+
 export class SteamAuth {
+  async validateJwtToken(): Promise<void> {
+    const steamId = store.get('steamId');
+    const token = store.get('token');
+    if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
+      store.set('steamId', null);
+      store.set('token', null);
+    } else {
+      try {
+        const payload = jwt.decode(token) as JwtAuthPayload | null;
+        if (!payload || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+          throw new Error('Token is invalid, expired, or missing expiration');
+        }
+        // Token is valid
+        await retrieveTurnCredentials();
+      } catch (e) {
+        console.log(e);
+        // Reset token
+        store.set('steamId', null);
+        store.set('token', null);
+      }
+    }
+  }
+
+  authenticate = (launchUrl): void => {
+    console.log(`Verifying steam authentication...`);
+    const token = this.parseOpenIdResponse(launchUrl);
+    // console.log(token);
+    if (!token) {
+      return console.log('Invalid or no token returned.');
+    }
+
+    const decoded = jwt.decode(token);
+    if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
+      return console.log('Invalid token');
+    }
+    const payload = decoded as JwtAuthPayload;
+    const steamId64 = payload.steamId;
+    if (!steamId64) {
+      return console.log('Invalid steamid64');
+    }
+
+    store.set('token', token);
+    store.set('steamId', steamId64);
+    console.log(`Setting token ${token}`);
+    console.log(`Setting steamid ${steamId64}`);
+
+    // validate again and fetch turn credentials
+    this.validateJwtToken();
+  };
+
   parseOpenIdResponse(openIdResponse: string): string | undefined {
     const url = new URL(openIdResponse);
     const token = url.searchParams.get('token') || undefined;
@@ -12,7 +71,7 @@ export class SteamAuth {
   }
 
   async openSteamAuthenticationWindow(): Promise<void> {
-    const realm = await getApiUrl();
+    const realm = settingsStore.get('socketServer');
     const returnUrl = `${realm}/verify-steam`;
 
     const rely = new openid.RelyingParty(

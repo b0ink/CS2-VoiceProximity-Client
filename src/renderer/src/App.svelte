@@ -16,6 +16,8 @@
   import { initializeMap } from './maps';
   import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
+  import store from './store/client';
+  import settings from './store/settings';
   import type {
     AudioConnectionStuff,
     Client,
@@ -32,20 +34,20 @@
     window.api.setStoreValue('notification', options);
   };
 
-  // SETTINGS / STORE
-  let useTurnConfig: boolean = true;
-  let broadcastHqVoice: boolean = false;
   let settingsOpen: boolean;
-  let selectedDeviceId = '';
-  let turnUsername: string | undefined;
-  let turnPassword: string | undefined;
 
-  let socket: Socket | undefined;
-  let socketConnected = false;
+  // Settings Store
+  $: socketUrl = $settings.socketServer;
+  $: selectedDeviceId = $settings.inputDeviceId;
+  $: useTurnConfig = $settings.natFixEnabled;
+  $: broadcastHqVoice = $settings.hqVoice;
 
-  let clientSteamId: string | null;
-  let clientToken: string | null;
-  let socketUrl: string;
+  // ClientStore
+  $: clientSteamId = $store.steamId;
+  $: clientToken = $store.token;
+  $: turnUsername = $store.turnUsername;
+  $: turnPassword = $store.turnPassword;
+  $: savedRoomCode = $store.savedRoomCode;
 
   // THREE
   let clientCamera: THREE.PerspectiveCamera | undefined;
@@ -53,25 +55,23 @@
   let scene: THREE.Scene;
   let threejs: THREE.WebGLRenderer;
   let clientListener: THREE.AudioListener;
-  let remotePlayers: Map<string, RemotePlayer | undefined>;
+  let remotePlayers: Map<string, RemotePlayer | undefined> = new Map<string, RemotePlayer>();
 
   let playerPositions: PlayerPositionApiData[] = [];
 
+  let socket: Socket | undefined;
+  let socketConnected = false;
   let socketClientMap: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
   let peerConnections: PeerConnections = {};
-  let audioConnectionStuff: AudioConnectionStuff;
-
-  let roomCode: string | undefined;
-  let joinedRoom: boolean = false;
 
   let roomCodeInput: string = '';
-
-  let microphoneMuted: boolean = false;
-
+  let roomCode: string | undefined;
+  let joinedRoom: boolean = false;
   let currentLobby = '';
 
-  audioConnectionStuff = {
+  let microphoneMuted: boolean = false;
+  let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
     muted: false,
     toggleMute: () => {
@@ -81,8 +81,6 @@
       /*empty*/
     },
   };
-
-  remotePlayers = new Map<string, RemotePlayer>();
 
   const unmuteMicrophone = (): void => {
     microphoneMuted = false;
@@ -95,23 +93,13 @@
   };
 
   async function intialise(): Promise<void> {
-    // TODO: move into its own settings store file
-    clientSteamId = await window.api.getStoreValue('steamId');
-    clientToken = await window.api.getStoreValue('token');
-    socketUrl = await window.api.getSocketUrl();
-
     if (clientSteamId && socketUrl && !scene) {
       await window.api.retrieveTurnCredentials();
-      turnUsername = await window.api.getStoreValue('turnUsername');
-      turnPassword = await window.api.getStoreValue('turnPassword');
-      useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
-      broadcastHqVoice = await window.api.getSettingsValue('hqVoice', true);
-
+      console.log(broadcastHqVoice, socketUrl, useTurnConfig);
       console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
       socket = io(socketUrl);
 
-      // Trigger reactive state of socket
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket.on('connect', () => {
         socketConnected = true;
@@ -400,7 +388,7 @@
         // connect(currentLobby, )
         connect(roomCode!, getSteamId()!, getSteamId()!, false);
 
-        useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
+        // useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
 
         const createPeerConnection = (
           peer: string,
@@ -519,12 +507,6 @@
               type: 'error',
             });
             window.api.reloadApp();
-
-            //TODO: refetch turn credentials
-            //TODO: reconnect into room
-            // currentLobby = null;
-            // connect(roomCode, clientSteamId, clientSteamId, false);
-            /*empty*/
           });
           return connection;
         };
@@ -534,8 +516,8 @@
 
           console.log(`before: ${turnPassword}`);
           await window.api.retrieveTurnCredentials();
-          turnUsername = await window.api.getStoreValue('turnUsername');
-          turnPassword = await window.api.getStoreValue('turnPassword');
+          // turnUsername = await window.api.getStoreValue('turnUsername');
+          // turnPassword = await window.api.getStoreValue('turnPassword');
           console.log(`after: ${turnPassword}`);
 
           createPeerConnection(peer, true, client);
@@ -755,29 +737,30 @@
     });
     intialise();
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
-    const interval = setInterval(intialise, 1000);
+    const interval = setInterval(intialise, 10);
 
     // Cleanup the interval when the component is destroyed
     onDestroy(() => {
       clearInterval(interval);
     });
-    getSavedRoomCode();
+
     checkNotifications();
 
     Object.defineProperty(document, 'hidden', { value: false, writable: false });
     document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
   });
 
-  async function checkNotifications(): Promise<void> {
-    const notification = await window.api.getStoreValue('notification');
-    if (notification) {
-      addNotification(notification);
-      window.api.setStoreValue('notification', null);
-    }
+  $: if (savedRoomCode) {
+    roomCodeInput = savedRoomCode;
   }
 
-  async function getSavedRoomCode(): Promise<void> {
-    roomCodeInput = await window.api.getStoreValue('savedRoomCode');
+  async function checkNotifications(): Promise<void> {
+    const notification = (await window.api.getStore()).notification;
+
+    if (notification) {
+      addNotification(notification);
+      await window.api.setStoreValue('notification', null); // clear after showing
+    }
   }
 
   // Allows debugging of steam auth, still requires a valid jwt
@@ -821,14 +804,7 @@
   />
 {/if}
 
-<SettingsOverlay
-  bind:open={settingsOpen}
-  bind:selectedDeviceId
-  bind:mapName
-  {onMapChange}
-  {clientSteamId}
-  {socketUrl}
-/>
+<SettingsOverlay bind:open={settingsOpen} bind:mapName {onMapChange} />
 <div class="p-5">
   <div class="text-center">
     <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl "

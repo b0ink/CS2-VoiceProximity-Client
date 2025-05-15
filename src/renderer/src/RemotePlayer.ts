@@ -8,11 +8,11 @@ interface OcclusionData {
 }
 
 export class RemotePlayer {
-  public playerVoice2D?: THREE.Audio;
-  public playerVoice3D?: THREE.PositionalAudio;
+  public playerVoice2D: THREE.Audio;
+  public playerVoice3D: THREE.PositionalAudio;
   private useMonoAudio: boolean = false;
 
-  private listener_?: THREE.AudioListener;
+  private listener_: THREE.AudioListener;
   public steamId?: string;
   public playerObject?: THREE.Object3D;
   public clientCamera?: THREE.Camera;
@@ -29,7 +29,7 @@ export class RemotePlayer {
   private highPassAmount?: number;
 
   private gainFilter?: GainNode;
-  private gainAmount?: number;
+  private gainAmount: number;
 
   private monoGainFilter?: GainNode;
   private monoHighpassFilter?: BiquadFilterNode;
@@ -83,6 +83,7 @@ export class RemotePlayer {
     this.steamId = client.steamId;
     this.Mute(0);
 
+    this.gainAmount = 2; // TODO: to be adjusted by the player
     this.initStereoFilters();
     this.initMonoFilters();
   }
@@ -102,7 +103,6 @@ export class RemotePlayer {
     this.highPassFilter_ = highpass;
 
     const gain = this.listener_.context.createGain();
-    this.gainAmount = 2; // TODO: to be adjusted by the player
     gain.gain.value = this.gainAmount;
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
@@ -130,8 +130,8 @@ export class RemotePlayer {
     if (!this.useMonoAudio) {
       this.useMonoAudio = true;
       const now = this.listener_.context.currentTime;
-      this.gainFilter.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
-      this.monoGainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+      this.gainFilter?.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
+      this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       console.log(`Switching ${this.steamId} to mono audio`);
       this.playerVoice2D.setVolume(0.3);
     }
@@ -141,11 +141,11 @@ export class RemotePlayer {
     if (this.useMonoAudio) {
       this.useMonoAudio = false;
       const now = this.listener_.context.currentTime;
-      this.gainFilter.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2); // smooth over 200ms
-      this.monoGainFilter.gain.linearRampToValueAtTime(0, now + 0.2);
+      this.gainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2); // smooth over 200ms
+      this.monoGainFilter?.gain.linearRampToValueAtTime(0, now + 0.2);
       console.log(`Switching ${this.steamId} to stereo audio`);
       this.playerVoice2D.setVolume(0);
-      this.monoHighpassFilter.frequency.value = 100;
+      this.monoHighpassFilter!.frequency.value = 100;
     }
   }
 
@@ -230,15 +230,17 @@ export class RemotePlayer {
 
   public setMonoHighPassFilterFrequency(amount: number): void {
     const now = this.listener_.context.currentTime;
-    this.monoHighpassFilter.frequency.cancelScheduledValues(now);
-    this.monoHighpassFilter.frequency.linearRampToValueAtTime(amount, now + 0.05);
+    this.monoHighpassFilter!.frequency.cancelScheduledValues(now);
+    this.monoHighpassFilter!.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
   public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>): void {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
-
+    if (distance === null) {
+      return;
+    }
     // TODO: increase occlusion for each mesh hit
     const { occlusion } = this.calculateOcclusion(
       occlusionMesh,
@@ -338,7 +340,6 @@ export class RemotePlayer {
     playerVoice3D?: THREE.Vector3,
   ): OcclusionData => {
     if (!Listener_ || !playerVoice3D) {
-      // TODO: interface
       return {
         occlusion: 0,
         totalExtraHits: 0,

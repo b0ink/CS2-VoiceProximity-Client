@@ -1,8 +1,8 @@
-import { getApiUrl } from './config';
-import { StoreData, TurnCredential } from './types';
-import Store from 'electron-store';
-
-const store = new Store<StoreData>();
+import { store, settingsStore } from './store';
+interface TurnCredential {
+  username: string;
+  password: string;
+}
 
 export async function retrieveTurnCredentials(): Promise<TurnCredential | null> {
   const token = store.get('token');
@@ -28,7 +28,7 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
 
   store.delete('turnUsername');
   store.delete('turnPassword');
-  const apiUrl = await getApiUrl();
+  const apiUrl = settingsStore.get('socketServer');
   try {
     const response = await fetch(`${apiUrl}/get-turn-credential`, {
       method: 'GET',

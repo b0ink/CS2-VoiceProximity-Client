@@ -1,22 +1,32 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
 import { version } from '../../package.json';
+import { SettingsData, StoreData } from '../shared/types/store';
 
+console.log('HELLo');
 // Custom APIs for renderer
 const api = {
-  getStoreValue: (key: string, defaultValue?: string) =>
-    ipcRenderer.invoke('get-store-value', key, defaultValue),
-  setStoreValue: (key: string, value: any) => ipcRenderer.invoke('set-store-value', key, value),
-  getSettingsValue: (key: string, defaultValue?: string) =>
-    ipcRenderer.invoke('get-settings-value', key, defaultValue),
-  setSettingsValue: (key: string, value: any) =>
+  setStoreValue: <K extends keyof StoreData>(key: K, value: StoreData[K]) =>
+    ipcRenderer.invoke('set-store-value', key, value),
+
+  setSettingsValue: <K extends keyof SettingsData>(key: K, value: SettingsData[K]) =>
     ipcRenderer.invoke('set-settings-value', key, value),
+
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
-  getSocketUrl: () => ipcRenderer.invoke('get-socket-url'),
   reloadApp: () => ipcRenderer.invoke('reload-app'),
   promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
   retrieveTurnCredentials: () => ipcRenderer.invoke('get-turn-credentials'),
   clientVersion: () => version,
+
+  getSettings: () => ipcRenderer.invoke('settings:get'),
+  onSettingsUpdate: (callback: (data: { key: string; newValue: any }) => void) => {
+    ipcRenderer.on('settings:update', (_event, data) => callback(data));
+  },
+
+  getStore: () => ipcRenderer.invoke('store:get'),
+  onStoreUpdate: (callback: (data: { key: string; newValue: any }) => void) => {
+    ipcRenderer.on('store:update', (_event, data) => callback(data));
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
