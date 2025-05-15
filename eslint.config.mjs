@@ -19,7 +19,6 @@ export default tseslint.config(
     rules: {
       'svelte/no-unused-svelte-ignore': 'off',
       '@typescript-eslint/explicit-function-return-type': 'off', // TODO: re-enable
-      '@typescript-eslint/no-unused-vars': ['warn'], // TODO: re-enable
       '@typescript-eslint/no-explicit-any': 'off',
     },
   },
