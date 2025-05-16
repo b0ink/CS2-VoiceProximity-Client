@@ -143,12 +143,10 @@
 
 {#if open}
   <div
-    class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 overflow-y-scroll scrollbar"
+    class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
-      <Heading tag="h1" class="mb-4 text-xl font-extrabold md:text-5xl lg:text-6xl"
-        >Settings</Heading
-      >
+      <Heading tag="h1" class="mb-4 text-xl font-extrabold">Settings</Heading>
     </div>
 
     <div class="mb-6 grid gap-4 md:grid-cols-2">

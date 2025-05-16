@@ -846,7 +846,7 @@
     }}
     color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
     class={cn(
-      'cursor-pointer absolute top-2 right-2 z-20 select-none transition-all duration-300',
+      'cursor-pointer absolute top-5.5 right-4 z-20 select-none transition-all duration-300',
       settingsOpen ? 'rotate-90' : 'rotate-0',
     )}
     size="lg"
@@ -856,7 +856,9 @@
     this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
     onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
     color={microphoneMuted ? 'red' : 'grey'}
-    class={cn('cursor-pointer absolute top-2 left-2 z-20 select-none transition-all duration-300')}
+    class={cn(
+      'cursor-pointer absolute top-5.5 left-4 z-20 select-none transition-all duration-300',
+    )}
     size="lg"
   />
 {/if}
