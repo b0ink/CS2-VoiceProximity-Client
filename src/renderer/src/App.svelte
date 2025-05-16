@@ -862,12 +862,19 @@
 {/if}
 
 <SettingsOverlay bind:open={settingsOpen} />
-<div class="p-5">
+<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center h-dvh w-full')}>
   <div class="text-center">
-    <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl "
-      >CS2 Proximity Chat</Heading
-    >
+    <Heading tag="h1" class="mb-4 text-xl font-extrabold z-10">CS2 Proximity Chat</Heading>
   </div>
+  {#if !clientSteamId}
+    <div class="relative w-[270px] h-[50px] mx-auto pb-10">
+      <SteamLoginButton />
+    </div>
+    <div class="m-2">
+      <span class="text-white opacity-50 text-xs">v{window.api.clientVersion()}</span>
+    </div>
+  {/if}
+
   {#if clientSteamId}
     {#if !socketConnected}
       <Alert color="yellow" class="text-center mb-4">
@@ -937,6 +944,4 @@
       ></PlayerList>
     {/if}
   {/if}
-
-  <SteamLoginButton {clientSteamId} />
 </div>

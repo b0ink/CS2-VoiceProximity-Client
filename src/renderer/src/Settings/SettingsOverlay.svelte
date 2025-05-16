@@ -146,7 +146,7 @@
     class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
-      <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl"
+      <Heading tag="h1" class="mb-4 text-xl font-extrabold md:text-5xl lg:text-6xl"
         >Settings</Heading
       >
     </div>
