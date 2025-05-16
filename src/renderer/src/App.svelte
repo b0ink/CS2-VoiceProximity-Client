@@ -22,6 +22,7 @@
     AudioConnectionStuff,
     Client,
     JoinRoomResponse,
+    PeerConnectionBandwidth,
     PeerConnections,
     PlayerPositionApiData,
     SocketClientMap,
@@ -64,6 +65,7 @@
   let socketClientMap: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
   let peerConnections: PeerConnections = {};
+  let peerConnectingBandwidth: PeerConnectionBandwidth = {};
 
   let roomCodeInput: string = '';
   let roomCode: string | undefined;
@@ -94,17 +96,34 @@
 
   async function intialise(): Promise<void> {
     if (clientSteamId && socketUrl && !scene) {
+      scene = new THREE.Scene();
+      clientListener = new THREE.AudioListener();
+
+      const fov = 60;
+      const aspect = 1920 / 1080;
+      const near = 1.0;
+      const far = 650.0;
+      clientCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+      clientCamera.position.set(-30, 2, 0);
+
+      clientCamera.add(clientListener);
+
+      initializeRenderer();
+
       await window.api.retrieveTurnCredentials();
-      console.log(broadcastHqVoice, socketUrl, useTurnConfig);
-      console.log(`Received turn credentials: ${turnUsername}, ${turnPassword}`);
+      console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
       socket = io(socketUrl);
 
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket.on('connect', () => {
         socketConnected = true;
+        console.log(`socket.on('connect')`);
       });
+
       socket.on('disconnect', () => {
+        console.log(`socket.on('disconnect')`);
+
         socketConnected = false;
         window.api.reloadApp();
         // TODO: toast notification
@@ -118,24 +137,11 @@
         console.error(`Lost connection to the socket server`);
       });
 
-      scene = new THREE.Scene();
-      clientListener = new THREE.AudioListener();
-
-      const fov = 60;
-      const aspect = 1920 / 1080;
-      const near = 1.0;
-      const far = 650.0;
-      clientCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      clientCamera.position.set(-30, 2, 0);
-
       // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
       // uiScene_ = new THREE.Scene();
 
-      const axesHelper = new THREE.AxesHelper(50);
-      scene.add(axesHelper);
-      clientCamera.add(clientListener);
-
-      initializeRenderer();
+      // const axesHelper = new THREE.AxesHelper(50);
+      // scene.add(axesHelper);
 
       // TODO: one time notification when logging in for the first time
       // addNotification({
@@ -154,17 +160,22 @@
           rtcPeer.getStats().then((stats) => {
             stats.forEach((report) => {
               if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-                console.log(
-                  `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
-                );
+                // console.log(
+                //   `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
+                // );
+                if (!peerConnectingBandwidth[id]) {
+                  peerConnectingBandwidth[id] = 0;
+                }
+                peerConnectingBandwidth[id] += report.bytesReceived;
               }
             });
           });
         });
+        peerConnectingBandwidth = { ...peerConnectingBandwidth };
       }, 1000);
 
       socket?.on('current-map', async (mapName) => {
-        console.log(`Received map change request ${mapName}`);
+        console.log(`socket.on('current-map'): ${mapName}`);
         map = await initializeMap({
           map: map,
           scene: scene,
@@ -204,7 +215,7 @@
         }
         playerPositions = localPlayerData;
 
-        console.log(playerPositions);
+        // console.log(playerPositions);
 
         // TODO: if (not connected... || is not in a room...)
         // console.log(players);
@@ -406,7 +417,7 @@
           client: Client,
         ): Peer.Instance => {
           console.log('CreatePeerConnection: ', peer, initiator, stream);
-          console.log(`Using turn config?:`, useTurnConfig);
+          // console.log(`Using turn config?:`, useTurnConfig);
           if (!useTurnConfig) {
             console.warn(
               'NAT fix is disabled — your IP address may be visible to other users with direct connection enabled.',
@@ -415,6 +426,13 @@
 
           if (!turnUsername || !turnPassword) {
             window.api.reloadApp();
+          }
+
+          // Cleanup any leftover data from this steamid first before initialising it again
+          const incomingClient = client;
+          if (incomingClient.steamId && steamIdSocketMap[incomingClient.steamId]) {
+            const oldSocketId = steamIdSocketMap[incomingClient.steamId];
+            cleanupUser(oldSocketId, incomingClient);
           }
           // disconnectClient(client); // TODO:
 
@@ -464,8 +482,16 @@
           //   connections[peer] = connection;
           //   return connections;
           // });
-          peerConnections[peer] = connection;
+
           socketClientMap[peer] = client;
+          peerConnections[peer] = connection;
+          steamIdSocketMap[client.steamId] = peer;
+
+          // Trigger reactive state
+          peerConnections = { ...peerConnections };
+          socketClientMap = { ...socketClientMap };
+          steamIdSocketMap = { ...steamIdSocketMap };
+
           console.log(`Assigning ${peer} to ${client.steamId}`);
 
           connection.on('connect', () => {
@@ -486,7 +512,7 @@
           });
 
           connection.on('signal', (data) => {
-            console.log('receiving connection signal');
+            console.log(`connection.on('signal'): ${JSON.stringify(data)}`);
             socket?.emit('signal', {
               data,
               to: peer,
@@ -495,24 +521,13 @@
 
           connection.on('stream', async (stream: MediaStream) => {
             console.log(
-              `ONSTREAM: my steamid is: ${getSteamId()} incoming steamid: ${client.steamId}`,
+              `connection.on('stream'): stream from steamId:${client.steamId}; peer: ${peer}`,
             );
-            console.log(`ONSTREAM: my socker id is: ${socket?.id} incoming socketId: ${peer}`);
-            // Map incoming steamid to socket
-            steamIdSocketMap[client.steamId] = peer;
-            // Map incoming socket to client (steamid)
-            socketClientMap[peer] = client;
-            console.log(`on stream: Assigning ${peer} to ${client.steamId}`);
             initialiseRemotePlayer(stream, client);
           });
 
           connection.on('error', (error) => {
-            console.log(`on error: ${error}`);
-            console.log('ONERROR');
-            console.log('Attempting to reconnect');
-
-            // cleanupUser(peer, client);
-            // createPeerConnection(peer, true, client);
+            console.log(`connection.on('error'): ${error}`);
 
             // TODO: play a disconnect sound effect so that user is aware mid game
             queueNotification({
@@ -527,20 +542,17 @@
         };
 
         socket?.on('user-joined', async (peer: string, client: Client) => {
-          console.log(`user has joined! ${JSON.stringify(client)}`);
+          console.log(`socket.on('user-joined') ${peer} ${client.steamId}`);
 
-          console.log(`before: ${turnPassword}`);
-          await window.api.retrieveTurnCredentials();
-          // turnUsername = await window.api.getStoreValue('turnUsername');
-          // turnPassword = await window.api.getStoreValue('turnPassword');
-          console.log(`after: ${turnPassword}`);
+          // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
+          // await window.api.retrieveTurnCredentials();
 
           createPeerConnection(peer, true, client);
-          // setSocketClients((old) => ({ ...old, [peer]: client }));
+          socketClientMap[peer] = client;
         });
 
         socket?.on('user-left', async (peer: string, client: Client) => {
-          console.log(`user has left! ${peer} ${JSON.stringify(client)}`);
+          console.log(`socket.on('user-left') ${peer} ${client.steamId}`);
           cleanupUser(peer, client);
         });
 
@@ -556,17 +568,22 @@
           peerConnections[peer]?.destroy();
           delete peerConnections[peer];
           delete socketClientMap[peer];
+          peerConnections = { ...peerConnections };
+          socketClientMap = { ...socketClientMap };
         };
 
         socket?.on(
           'signal',
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
-            console.log(`received on signal: ${client.steamId} ${from} ${JSON.stringify(data)}`);
+            console.log(`1. socket.on('signal') ${client.steamId} ${from} ${JSON.stringify(data)}`);
+            console.log(`2. socket.on('signal') ${JSON.stringify(data)}`);
             let connection: Peer.Instance;
-            // if (!socketClientMap[from]) {
-            //   console.warn('SIGNAL FROM UNKOWN SOCKET..');
-            //   return;
-            // }
+            if (!socketClientMap[from]) {
+              console.error(
+                `socket.on('signal'): (unknown socket) peer: ${from} - ${socketClientMap[from]}`,
+              );
+              return;
+            }
             if (Object.prototype.hasOwnProperty.call(data, 'type')) {
               if (peerConnections[from] && data.type !== 'offer') {
                 connection = peerConnections[from];
@@ -583,7 +600,7 @@
                   type: 'warning',
                 });
                 console.error(
-                  `Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
+                  `socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
                 );
               }
             }
@@ -603,10 +620,10 @@
     clientId: string,
     isHost: boolean,
   ): void => {
-    console.log('connect called..', lobbyCode);
     // setOtherVAD({});
     // setOtherTalking({}); // probably used for talking indicators?
     if (lobbyCode === 'MENU') {
+      console.log('lobby code is menu?');
       // Object.keys(peerConnections).forEach((k) => {
       //   disconnectPeer(k);
       // });
@@ -614,10 +631,10 @@
       socketClientMap = {};
       currentLobby = lobbyCode;
     } else if (currentLobby !== lobbyCode) {
-      console.log('Currentlobby', currentLobby, lobbyCode);
+      console.log(`Connecting to ${lobbyCode} as ${clientId}`);
+
       // socket?.emit('leave');
       // socket?.emit('id', playerId, clientId);
-      console.log(lobbyCode, playerId, clientId, isHost);
 
       const joinRoomPayload = {
         token: clientToken,
@@ -629,7 +646,7 @@
 
       socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
         // TODO: we should validate there are no duplicate steamIds trying to join
-
+        console.log(`socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
         console.log(response);
         if (response.success) {
           currentLobby = lobbyCode;
@@ -873,6 +890,7 @@
         mySteamId={clientSteamId}
         players={playerPositions}
         joinedSocketConnections={socketClientMap}
+        {peerConnectingBandwidth}
       ></PlayerList>
     {/if}
   {/if}

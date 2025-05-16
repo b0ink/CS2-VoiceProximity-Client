@@ -1,20 +1,30 @@
 <script lang="ts">
-  import type { PlayerPositionApiData, SocketClientMap } from '../type';
+  import { cn } from '../lib/tailwind';
+  import type { PeerConnectionBandwidth, PlayerPositionApiData, SocketClientMap } from '../type';
 
   export let mySteamId: string;
   export let players: PlayerPositionApiData[];
   export let joinedSocketConnections: SocketClientMap;
+  export let peerConnectingBandwidth: PeerConnectionBandwidth;
 
   interface PlayerData {
     steamId: string;
     name: string;
+    peerConnectionExists: boolean;
+    peer: string | undefined;
   }
 
   let joinedPlayers: PlayerData[] = [];
 
   let clientIsOnServer: boolean = false;
 
-  $: if (players && players.length) {
+  $: if (
+    players &&
+    players.length &&
+    joinedSocketConnections &&
+    peerConnectingBandwidth &&
+    mySteamId
+  ) {
     clientIsOnServer = false;
     joinedPlayers = [];
 
@@ -23,26 +33,31 @@
       const steamId = player.steamId;
       if (!steamId) continue;
 
-      if (
-        steamId === mySteamId ||
-        Object.values(joinedSocketConnections).some((c) => c.steamId === steamId)
-      ) {
+      const [playerPeer, playerFromPeerConnection] =
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        Object.entries(joinedSocketConnections).find(([_, c]) => c.steamId === steamId) || [];
+
+      if (steamId === mySteamId || playerFromPeerConnection) {
         if (steamId == mySteamId) {
           clientIsOnServer = true;
         }
-        if (player.name) {
-          joinedPlayers.push({ steamId, name: player.name });
+        if (player.name !== undefined) {
+          joinedPlayers.push({
+            steamId,
+            name: player.name,
+            peerConnectionExists: playerFromPeerConnection !== undefined,
+            peer: playerFromPeerConnection !== undefined && playerPeer ? playerPeer : undefined,
+          });
         }
       }
     }
 
     // Some players could be in the call, but not on the server yet, let's display their steamID instead
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     for (const [_peer, client] of Object.entries(joinedSocketConnections)) {
       const steamId = client.steamId;
       const player = joinedPlayers.find((p) => p.steamId === steamId);
       if (!player) {
-        joinedPlayers.push({ steamId, name: steamId });
+        joinedPlayers.push({ steamId, name: steamId, peerConnectionExists: true, peer: _peer });
       }
     }
 
@@ -66,7 +81,12 @@
       >
         {#each joinedPlayers as player (player)}
           {#if player.steamId !== '0'}
-            <div class="w-fit">{player.name}{player.steamId === mySteamId ? ' (You)' : ''}</div>
+            <div class={cn('w-fit', player.peerConnectionExists ? 'text-white' : 'text-red-600')}>
+              {player.name}{player.steamId === mySteamId ? ' (You)' : ''}
+              {#if player.peer && peerConnectingBandwidth[player.peer]}
+                ({peerConnectingBandwidth[player.peer] / 125})Kb
+              {/if}
+            </div>
           {/if}
         {/each}
       </div>

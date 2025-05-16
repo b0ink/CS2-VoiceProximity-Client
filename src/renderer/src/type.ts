@@ -24,6 +24,10 @@ export interface PeerConnections {
   [peer: string]: Peer.Instance;
 }
 
+export interface PeerConnectionBandwidth {
+  [peer: string]: number;
+}
+
 export interface PlayerPositionApiData {
   steamId?: string;
   name?: string;
