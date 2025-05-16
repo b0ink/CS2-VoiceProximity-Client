@@ -893,7 +893,6 @@
                 window.api.reloadApp();
               }, 250);
             }}
-            disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
           >
             Leave<PhoneHangupSolid
               color="white"
