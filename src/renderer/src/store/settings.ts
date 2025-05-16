@@ -1,18 +1,18 @@
 import { writable } from 'svelte/store';
+import { DEFAULT_SOCKET_SERVER } from '../../../shared/constants';
 import type { SettingsData } from '../../../shared/types/store';
 
-const defaultSocketServer = 'https://cs2voiceproximity.chat';
 const settings = writable<SettingsData>({
   alwaysOnTop: true,
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
-  socketServer: defaultSocketServer,
+  socketServer: DEFAULT_SOCKET_SERVER,
 });
 
 window.api.getSettings().then((data) => {
   if (!data.socketServer) {
-    data.socketServer = defaultSocketServer;
+    data.socketServer = DEFAULT_SOCKET_SERVER;
   }
   console.log(`Renderer: getSettings() => ${JSON.stringify(data)}`);
   settings.set(data);

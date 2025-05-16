@@ -1,8 +1,9 @@
 import { shell } from 'electron';
-import openid from 'openid';
-import { retrieveTurnCredentials } from './retrieveTurnCredentials';
-import { store, settingsStore } from './store';
 import jwt from 'jsonwebtoken';
+import openid from 'openid';
+import { DEFAULT_SOCKET_SERVER } from '../shared/constants';
+import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import { settingsStore, store } from './store';
 
 const USE_EXTERNAL_BROWSER = true;
 
@@ -71,7 +72,7 @@ export class SteamAuth {
   }
 
   async openSteamAuthenticationWindow(): Promise<void> {
-    const defaultRealm = 'https://cs2voiceproximity.chat';
+    const defaultRealm = DEFAULT_SOCKET_SERVER;
 
     if (!(await settingsStore.get('socketServer'))) {
       settingsStore.set('socketServer', defaultRealm);
