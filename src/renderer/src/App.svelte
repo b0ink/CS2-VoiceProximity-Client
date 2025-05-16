@@ -123,7 +123,7 @@
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket.on('connect', () => {
         socketConnected = true;
-        console.log(`socket.on('connect')`);
+        console.log(`socket.on('connect'): my socket id is ${socket?.id}`);
       });
 
       socket.on('disconnect', () => {
@@ -656,6 +656,10 @@
         console.log(`socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
         console.log(response);
         if (response.success) {
+          socketClientMap = {
+            ...socketClientMap,
+            ...Object.fromEntries(response.joinedClients ?? []),
+          };
           currentLobby = lobbyCode;
           document.querySelector('#threejs')!.innerHTML = '';
           initializeRenderer();

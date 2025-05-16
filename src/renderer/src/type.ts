@@ -58,6 +58,7 @@ export interface JoinRoomResponse {
   success: boolean;
   message: string;
   mapName?: string;
+  joinedClients?: Map<string, Client>;
 }
 
 // interface AudioNodes {
