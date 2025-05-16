@@ -51,7 +51,7 @@ function createWindow(): void {
     height: 500,
     show: false,
     resizable: false,
-    autoHideMenuBar: false,
+    autoHideMenuBar: true,
     alwaysOnTop: alwaysOnTop,
     // frame: false,
     fullscreenable: false,
