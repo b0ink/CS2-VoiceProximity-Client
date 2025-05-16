@@ -5,7 +5,7 @@ const defaultSocketServer = 'https://cs2voiceproximity.chat';
 const settings = writable<SettingsData>({
   alwaysOnTop: true,
   natFixEnabled: true,
-  hqVoice: true,
+  hqVoice: false,
   inputDeviceId: null,
   socketServer: defaultSocketServer,
 });

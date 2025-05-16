@@ -21,7 +21,7 @@ const settingsStore = new Store<SettingsData>({
     socketServer: 'https://cs2voiceproximity.chat',
     alwaysOnTop: true,
     natFixEnabled: true,
-    hqVoice: true,
+    hqVoice: false,
     inputDeviceId: null,
   },
 });
