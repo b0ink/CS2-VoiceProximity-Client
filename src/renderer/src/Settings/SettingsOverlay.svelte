@@ -17,7 +17,7 @@
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
 
-  let selectedDeviceId: string;
+  let selectedDeviceId: string | null;
 
   interface MediaDevice {
     id: string;

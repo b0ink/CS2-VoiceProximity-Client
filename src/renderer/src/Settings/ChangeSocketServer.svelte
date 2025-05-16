@@ -10,7 +10,7 @@
   let confirmModalOpen = false;
 
   onMount(() => {
-    socketServerInput = storedSocketServer;
+    socketServerInput = storedSocketServer || '';
   });
 
   const saveSocketServer = (): void => {

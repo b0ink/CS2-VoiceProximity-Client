@@ -30,7 +30,9 @@
         if (steamId == mySteamId) {
           clientIsOnServer = true;
         }
-        joinedPlayers.push({ steamId, name: player.name });
+        if (player.name) {
+          joinedPlayers.push({ steamId, name: player.name });
+        }
       }
     }
 
