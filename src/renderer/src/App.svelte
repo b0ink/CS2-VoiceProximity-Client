@@ -658,7 +658,7 @@
         if (response.success) {
           socketClientMap = {
             ...socketClientMap,
-            ...Object.fromEntries(response.joinedClients ?? []),
+            ...response.joinedClients,
           };
           currentLobby = lobbyCode;
           document.querySelector('#threejs')!.innerHTML = '';
