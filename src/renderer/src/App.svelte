@@ -335,7 +335,9 @@
           }
         }
 
-        threejs.render(scene, clientCamera!);
+        if (clientCamera) {
+          threejs.render(scene, clientCamera);
+        }
         if (getMap()) {
           updateSoundFilters();
         }
@@ -736,7 +738,7 @@
       console.error(`threeJs is not available yet.`);
       return;
     }
-    threejs.autoClear = false;
+    threejs.autoClear = true;
 
     const threeJsDom = document.querySelector('#threejs');
     if (!threeJsDom) {
