@@ -2,7 +2,12 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
-  import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
+  import {
+    CogSolid,
+    MicrophoneSlashSolid,
+    MicrophoneSolid,
+    PhoneHangupSolid,
+  } from 'flowbite-svelte-icons';
   import 'hacktimer';
   import Peer from 'simple-peer';
   import { io, Socket } from 'socket.io-client';
@@ -556,22 +561,6 @@
           cleanupUser(peer, client);
         });
 
-        const cleanupUser = (peer: string, client: Client): void => {
-          console.log(`Cleaning up user data for ${client.steamId}`);
-          const positionalSound = remotePlayers.get(client.steamId);
-          if (positionalSound) {
-            positionalSound.playerVoice3D?.disconnect();
-            positionalSound.playerObject?.parent?.remove(positionalSound.playerObject);
-            console.log('found sound source removing from scene');
-          }
-
-          peerConnections[peer]?.destroy();
-          delete peerConnections[peer];
-          delete socketClientMap[peer];
-          peerConnections = { ...peerConnections };
-          socketClientMap = { ...socketClientMap };
-        };
-
         socket?.on(
           'signal',
           ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
@@ -612,6 +601,24 @@
         console.error(error);
       },
     );
+  };
+
+  const cleanupUser = (peer: string, client: Client): void => {
+    console.log(`Cleaning up user data for ${client.steamId}`);
+    const positionalSound = remotePlayers.get(client.steamId);
+    if (positionalSound) {
+      positionalSound.playerVoice3D?.disconnect();
+      positionalSound.playerVoice2D?.disconnect();
+      positionalSound.playerObject?.parent?.remove(positionalSound.playerObject);
+      console.log('found sound source removing from scene');
+      remotePlayers.delete(client.steamId);
+    }
+
+    peerConnections[peer]?.destroy();
+    delete peerConnections[peer];
+    delete socketClientMap[peer];
+    peerConnections = { ...peerConnections };
+    socketClientMap = { ...socketClientMap };
   };
 
   const connect = (
@@ -876,10 +883,6 @@
             type="submit"
             onclick={() => {
               Object.keys(peerConnections).forEach((k) => {
-                const connection = peerConnections[k];
-                if (connection) {
-                  connection.destroy();
-                }
                 cleanupUser(k, socketClientMap[k]);
               });
               setTimeout(() => {
