@@ -84,7 +84,7 @@
             <div class={cn('w-fit', player.peerConnectionExists ? 'text-white' : 'text-red-600')}>
               {player.name}{player.steamId === mySteamId ? ' (You)' : ''}
               {#if player.peer && peerConnectingBandwidth[player.peer]}
-                ({peerConnectingBandwidth[player.peer] / 125})Kb
+                ({(peerConnectingBandwidth[player.peer] / 125000).toFixed(2)}) MB
               {/if}
             </div>
           {/if}

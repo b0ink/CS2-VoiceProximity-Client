@@ -171,7 +171,7 @@
                 if (!peerConnectingBandwidth[id]) {
                   peerConnectingBandwidth[id] = 0;
                 }
-                peerConnectingBandwidth[id] += report.bytesReceived;
+                peerConnectingBandwidth[id] = report.bytesReceived;
               }
             });
           });
