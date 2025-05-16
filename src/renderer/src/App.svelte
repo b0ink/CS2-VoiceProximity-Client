@@ -339,7 +339,7 @@
     const noiseSuppression = true; // TODO: replace as a user setting
     const echoCancellation = true; // TODO: replace as a user setting
     const sampleRate = broadcastHqVoice ? 48000 : 16000;
-    const sampleSize = 16;
+    const sampleSize = broadcastHqVoice ? 16 : 8;
     console.log(`sampleRate: ${sampleRate} | sampleSize: ${sampleSize}`);
 
     const enableSampleDebug = true;
