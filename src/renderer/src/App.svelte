@@ -869,15 +869,40 @@
           bind:value={roomCodeInput}
           placeholder="Room code"
         />
-        <Button
-          color="primary"
-          class="cursor-pointer"
-          type="submit"
-          onclick={joinRoom}
-          disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
-        >
-          Join</Button
-        >
+        {#if isConnected && socketConnected}
+          <Button
+            color="red"
+            class="cursor-pointer"
+            type="submit"
+            onclick={() => {
+              Object.keys(peerConnections).forEach((k) => {
+                const connection = peerConnections[k];
+                if (connection) {
+                  connection.destroy();
+                }
+                cleanupUser(k, socketClientMap[k]);
+              });
+              setTimeout(() => {
+                window.api.reloadApp();
+              }, 250);
+            }}
+            disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
+          >
+            Leave<PhoneHangupSolid
+              color="white"
+              class={cn('cursor-pointer select-none ml-1 transition-all duration-300')}
+            /></Button
+          >
+        {:else}
+          <Button
+            color="primary"
+            class="cursor-pointer"
+            type="submit"
+            onclick={joinRoom}
+            disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
+          >
+            Join</Button
+          >{/if}
       </ButtonGroup>
     </div>
 
