@@ -18,7 +18,7 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { initializeMap } from './maps';
+  import { getMap, initializeMap } from './maps';
   import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
@@ -57,7 +57,6 @@
 
   // THREE
   let clientCamera: THREE.PerspectiveCamera | undefined;
-  let map: THREE.Group<THREE.Object3DEventMap> | null;
   let scene: THREE.Scene;
   let threejs: THREE.WebGLRenderer;
   let clientListener: THREE.AudioListener;
@@ -101,6 +100,15 @@
 
   async function intialise(): Promise<void> {
     if (clientSteamId && socketUrl && !scene) {
+      const threeJsDom = document.querySelector('#threejs');
+      // Ensure dom is available
+      if (!threeJsDom) {
+        return;
+      }
+
+      threejs = new THREE.WebGLRenderer({
+        antialias: false,
+      });
       scene = new THREE.Scene();
       clientListener = new THREE.AudioListener();
 
@@ -181,8 +189,7 @@
 
       socket?.on('current-map', async (mapName) => {
         console.log(`socket.on('current-map'): ${mapName}`);
-        map = await initializeMap({
-          map: map,
+        await initializeMap({
           scene: scene,
           mapName,
         });
@@ -329,7 +336,7 @@
         }
 
         threejs.render(scene, clientCamera!);
-        if (map) {
+        if (getMap()) {
           updateSoundFilters();
         }
       });
@@ -663,8 +670,7 @@
           currentLobby = lobbyCode;
           document.querySelector('#threejs')!.innerHTML = '';
           initializeRenderer();
-          map = await initializeMap({
-            map: map,
+          await initializeMap({
             scene: scene,
             mapName: response.mapName ?? 'de_dust2',
           });
@@ -705,6 +711,7 @@
   };
 
   const updateSoundFilters = (): void => {
+    const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
         soundData?.updateOcclusion(map);
@@ -725,13 +732,19 @@
   };
 
   const initializeRenderer = (): void => {
+    if (!threejs) {
+      console.error(`threeJs is not available yet.`);
+      return;
+    }
     threejs.autoClear = false;
 
     const threeJsDom = document.querySelector('#threejs');
-    threeJsDom!.appendChild(threejs.domElement);
+    if (!threeJsDom) {
+      console.error(`initializeRenderer(): threeJsDom is null`);
+      return;
+    }
+    threeJsDom.appendChild(threejs.domElement);
   };
-
-  let mapName: string = 'de_dust2';
 
   const joinRoom = (): void => {
     // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
@@ -754,22 +767,22 @@
     }
   };
 
-  const onMapChange = async (): Promise<void> => {
-    console.log(mapName);
-    if (!isConnected) {
-      console.log('Waiting for room connection before loading map.');
-      return;
-    }
-    map = await initializeMap({
-      map: map,
-      scene: scene,
-      mapName,
-    });
-  };
+  // let mapName: string = 'de_dust2';
+  // const onMapChange = async (): Promise<void> => {
+  //   console.log(mapName);
+  //   if (!isConnected) {
+  //     console.log('Waiting for room connection before loading map.');
+  //     return;
+  //   }
+  //   map = await initializeMap({
+  //     map: map,
+  //     scene: scene,
+  //     mapName,
+  //   });
+  // };
 
   let isConnected = false;
 
-  // example: poll connection
   const checkConnection = (): void => {
     isConnected = joinedRoom;
   };
@@ -777,10 +790,7 @@
   setInterval(checkConnection, 500);
 
   onMount(() => {
-    threejs = new THREE.WebGLRenderer({
-      antialias: false,
-    });
-    intialise();
+    // intialise();
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
     const interval = setInterval(intialise, 10);
 
@@ -849,7 +859,7 @@
   />
 {/if}
 
-<SettingsOverlay bind:open={settingsOpen} bind:mapName {onMapChange} />
+<SettingsOverlay bind:open={settingsOpen} />
 <div class="p-5">
   <div class="text-center">
     <Heading tag="h1" class="mb-4 text-2xl font-extrabold md:text-5xl lg:text-6xl "

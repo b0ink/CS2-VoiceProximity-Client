@@ -4,8 +4,8 @@
   import ClientInfo from './ClientInfo.svelte';
   import { onMount } from 'svelte';
   export let open: boolean;
-  export let mapName: string;
-  export let onMapChange: () => void;
+  // export let mapName: string;
+  // export let onMapChange: () => void;
 
   import settings from '../store/settings';
   import store from '../store/client';
@@ -168,7 +168,7 @@
           {/each}
         </Select>
       </div>
-      <div>
+      <!-- <div>
         <Label for="map" class="mb-2">Map:</Label>
         <Select bind:value={mapName} onchange={onMapChange} id="map">
           <option value="de_dust2">Dust 2</option>
@@ -176,7 +176,7 @@
           <option value="de_inferno">Inferno</option>
           <option value="de_nuke">Nuke</option>
         </Select>
-      </div>
+      </div> -->
 
       <ChangeSocketServer open={true} />
       <div>

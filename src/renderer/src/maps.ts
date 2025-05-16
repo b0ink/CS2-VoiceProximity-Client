@@ -8,11 +8,13 @@ const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo']
 
 const mapScale: number = 39.3701;
 
+let map: THREE.Group<THREE.Object3DEventMap> | null = null;
+
 interface MapData {
-  map: THREE.Group<THREE.Object3DEventMap> | null;
   scene: THREE.Scene;
   mapName: string;
 }
+
 async function initializeMap(
   mapData: MapData,
 ): Promise<THREE.Group<THREE.Object3DEventMap> | null> {
@@ -22,8 +24,8 @@ async function initializeMap(
   }
 
   // Destroy any previously loaded maps, including its textures
-  if (mapData.map && mapData.scene) {
-    mapData.map.traverse((child) => {
+  if (map && mapData.scene) {
+    map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.isMesh) {
           // console.log('disposing old mesh');
@@ -36,8 +38,8 @@ async function initializeMap(
         }
       }
     });
-    mapData.scene.remove(mapData.map);
-    mapData.map = null;
+    mapData.scene.remove(map);
+    map = null;
   }
 
   console.log(`[GLTF] Fetching map blob (${mapData.mapName})`);
@@ -56,12 +58,12 @@ async function initializeMap(
   try {
     const gltf = await loader.loadAsync(url);
     console.log('[GLTF] Loaded into ThreeJS!');
-    mapData.map = gltf.scene;
-    mapData.map.scale.set(mapScale, mapScale, mapScale);
-    mapData.map.rotation.x = -Math.PI / 2;
+    map = gltf.scene;
+    map.scale.set(mapScale, mapScale, mapScale);
+    map.rotation.x = -Math.PI / 2;
 
     if (mapData.scene) {
-      mapData.scene.add(mapData.map);
+      mapData.scene.add(map);
     }
 
     // We don't care about textures, but to help see the map, we assign each mesh a random color
@@ -73,18 +75,22 @@ async function initializeMap(
       return new THREE.MeshBasicMaterial({ color: pastel });
     });
 
-    mapData.map.traverse((child) => {
+    map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.material = materials[Math.floor(Math.random() * materials.length)];
       }
     });
 
-    console.log(`returning`, mapData.map);
-    return mapData.map;
+    console.log(`returning`, map);
+    return map;
   } catch (e) {
     console.error(`Could not load GLB: ${e}`);
     return null;
   }
 }
 
-export { initializeMap, mapList };
+function getMap(): THREE.Group<THREE.Object3DEventMap> | null {
+  return map;
+}
+
+export { initializeMap, mapList, getMap };
