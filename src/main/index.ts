@@ -8,6 +8,7 @@ import icon from '../../resources/icon.png?asset';
 import './ipc-handlers';
 import { SteamAuth } from './SteamAuth';
 import { setMainWindow, settingsStore, store } from './store';
+import { version as appVersion } from '../../package.json';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -67,6 +68,8 @@ function createWindow(): void {
       backgroundThrottling: false,
     },
   });
+
+  mainWindow.webContents.userAgent = `CS2VoiceProximity/${appVersion}`;
 
   setMainWindow(mainWindow);
 
