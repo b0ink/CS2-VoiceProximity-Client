@@ -26,11 +26,18 @@ const settingsStore = new Store<SettingsData>({
   },
 });
 
+const defaultSocketServer = 'https://cs2voiceproximity.chat';
 // Settings store
 for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
   settingsStore.onDidChange(key, (newValue, oldValue) => {
-    mainWindowRef?.webContents.send('settings:update', { key, newValue });
     console.log(`Settings onDidChange`, newValue, oldValue);
+    if (key == 'socketServer') {
+      if (!newValue) {
+        //TODO: regex the url either here or in the ui
+        newValue = defaultSocketServer;
+      }
+    }
+    mainWindowRef?.webContents.send('settings:update', { key, newValue });
   });
 }
 

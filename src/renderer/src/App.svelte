@@ -839,19 +839,19 @@
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 
-{#if clientSteamId}
-  <CogSolid
-    onclick={() => {
-      settingsOpen = !settingsOpen;
-    }}
-    color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
-    class={cn(
-      'cursor-pointer absolute top-5.5 right-4 z-20 select-none transition-all duration-300',
-      settingsOpen ? 'rotate-90' : 'rotate-0',
-    )}
-    size="lg"
-  />
+<CogSolid
+  onclick={() => {
+    settingsOpen = !settingsOpen;
+  }}
+  color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
+  class={cn(
+    'cursor-pointer absolute top-5.5 right-4 z-20 select-none transition-all duration-300',
+    settingsOpen ? 'rotate-90' : 'rotate-0',
+  )}
+  size="lg"
+/>
 
+{#if clientSteamId}
   <svelte:component
     this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
     onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}

@@ -71,8 +71,17 @@ export class SteamAuth {
   }
 
   async openSteamAuthenticationWindow(): Promise<void> {
-    const realm = settingsStore.get('socketServer');
+    const defaultRealm = 'https://cs2voiceproximity.chat';
+
+    if (!(await settingsStore.get('socketServer'))) {
+      settingsStore.set('socketServer', defaultRealm);
+    }
+
+    const realm = await settingsStore.get('socketServer');
     const returnUrl = `${realm}/verify-steam`;
+
+    console.log('realm', realm);
+    console.log('return1', returnUrl);
 
     const rely = new openid.RelyingParty(
       returnUrl,
