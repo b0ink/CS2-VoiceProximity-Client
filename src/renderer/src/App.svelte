@@ -22,6 +22,7 @@
   import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
+  import serverConfigStore from './store/server-config';
   import settings from './store/settings';
   import type {
     AudioConnectionStuff,
@@ -54,6 +55,11 @@
   $: turnUsername = $store.turnUsername;
   $: turnPassword = $store.turnPassword;
   $: savedRoomCode = $store.savedRoomCode;
+
+  // ServerConfig Store
+  $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
+  $: allowDeadTeamVoice = $serverConfigStore.allowDeadTeamVoice;
+  $: allowSpectatorC4Voice = $serverConfigStore.allowSpectatorC4Voice;
 
   // The API will notify the client if they have joined a CS2 server but have not joined the room yet
   let playerServerRoomCode: string | undefined;
@@ -214,6 +220,18 @@
         });
       });
 
+      socket?.on('server-config', async (data: Uint8Array) => {
+        console.log(`socket.on('server-config'): ${data}`);
+        const decoded = decode(data) as [number, boolean, boolean];
+        const [deadPlayerMuteDelay, allowDeadTeamVoice, allowSpectatorC4Voice] = decoded;
+
+        serverConfigStore.set({
+          deadPlayerMuteDelay,
+          allowDeadTeamVoice,
+          allowSpectatorC4Voice,
+        });
+      });
+
       // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
       socket?.on('player-positions', (data) => {
         const decoded = decode(new Uint8Array(data));
@@ -320,10 +338,11 @@
               me &&
               !player.isAlive && // player is dead
               (me.isAlive || // mute if im alive (don't want to hear any dead players)
-                player.team !== me.team) && // or if the player is an enemy
-              !player.spectatingC4 // and if they're not spectating the c4
+                player.team !== me.team || // or if the player is an enemy
+                allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
+              (!player.spectatingC4 || !allowSpectatorC4Voice) // and if they're not spectating the c4, and spectators are allowed to communicate from c4
             ) {
-              positionalSound.Mute(1000); // TODO: the delay should be dynamically set directly from the cs2 server
+              positionalSound.Mute(deadPlayerMuteDelay);
             } else {
               positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
             }
