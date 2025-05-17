@@ -55,6 +55,9 @@
   $: turnPassword = $store.turnPassword;
   $: savedRoomCode = $store.savedRoomCode;
 
+  // The API will notify the client if they have joined a CS2 server but have not joined the room yet
+  let playerServerRoomCode: string | undefined;
+
   // THREE
   let clientCamera: THREE.PerspectiveCamera | undefined;
   let scene: THREE.Scene;
@@ -99,7 +102,7 @@
   };
 
   async function intialise(): Promise<void> {
-    if (clientSteamId && socketUrl && !scene) {
+    if (clientSteamId && socketUrl && !scene && clientToken) {
       const threeJsDom = document.querySelector('#threejs');
       // Ensure dom is available
       if (!threeJsDom) {
@@ -126,7 +129,11 @@
       await window.api.retrieveTurnCredentials();
       console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
-      socket = io(socketUrl);
+      socket = io(socketUrl, {
+        auth: {
+          token: clientToken,
+        },
+      });
 
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket.on('connect', () => {
@@ -135,19 +142,31 @@
       });
 
       socket.on('disconnect', () => {
-        console.log(`socket.on('disconnect')`);
+        console.log(`socket.on('disconnect') Lost connection to the socket server`);
 
         socketConnected = false;
-        window.api.reloadApp();
-        // TODO: toast notification
-
         queueNotification({
           text: 'Lost connection to the socket server. Application restarted.',
           position: 'top-center',
           removeAfter: 2500,
           type: 'warning',
         });
-        console.error(`Lost connection to the socket server`);
+        window.api.reloadApp();
+      });
+
+      // eslint-disable-next-line no-undef
+      let clearPlayerServerRoomCode: NodeJS.Timeout;
+
+      socket.on('player-on-server', (data: { roomCode: string }) => {
+        console.log(`socket.on('player-on-server', ${JSON.stringify(data)})`);
+        playerServerRoomCode = data.roomCode;
+        clearTimeout(clearPlayerServerRoomCode);
+
+        // The server will notify the user every 5 seconds, we clear the room code if no subsequent updates after 6 seconds
+        clearPlayerServerRoomCode = setTimeout(() => {
+          playerServerRoomCode = undefined;
+          clearTimeout(clearPlayerServerRoomCode);
+        }, 6000);
       });
 
       // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
@@ -881,6 +900,22 @@
     {#if !socketConnected}
       <Alert color="yellow" class="text-center mb-4">
         <span class="font-medium">Connecting to the backend service...</span>
+      </Alert>
+    {/if}
+    {#if playerServerRoomCode && !isConnected}
+      <Alert color="green" class="text-center mb-4">
+        <span class="font-medium">
+          You are connected to a server<br />(Steam ID detected)<br />
+          <button
+            class="underline cursor-pointer hover:text-black"
+            onclick={() => {
+              if (playerServerRoomCode) {
+                roomCodeInput = playerServerRoomCode;
+                joinRoom();
+              }
+            }}>Connect now.</button
+          >
+        </span>
       </Alert>
     {/if}
 
