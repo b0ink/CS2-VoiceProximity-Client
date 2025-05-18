@@ -22,7 +22,7 @@
   import { RemotePlayer } from './RemotePlayer';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
-  import serverConfigStore from './store/server-config';
+  import serverConfigStore, { type ServerConfigData } from './store/server-config';
   import settings from './store/settings';
   import type {
     AudioConnectionStuff,
@@ -220,15 +220,21 @@
         });
       });
 
-      socket?.on('server-config', async (data: Uint8Array) => {
+      socket?.on('server-config', async (data: Buffer) => {
         console.log(`socket.on('server-config'): ${data}`);
-        const decoded = decode(data) as [number, boolean, boolean];
-        const [deadPlayerMuteDelay, allowDeadTeamVoice, allowSpectatorC4Voice] = decoded;
+        const raw = decode(new Uint8Array(data)) as Record<string, unknown>;
+        const decoded: ServerConfigData = {
+          deadPlayerMuteDelay: raw.DeadPlayerMuteDelay as number,
+          allowDeadTeamVoice: raw.AllowDeadTeamVoice as boolean,
+          allowSpectatorC4Voice: raw.AllowSpectatorC4Voice as boolean,
+        };
+
+        console.log(`socket.on('server-config'):`, decoded);
 
         serverConfigStore.set({
-          deadPlayerMuteDelay,
-          allowDeadTeamVoice,
-          allowSpectatorC4Voice,
+          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay,
+          allowDeadTeamVoice: decoded.allowDeadTeamVoice,
+          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
         });
       });
 
@@ -701,7 +707,7 @@
       socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
         // TODO: we should validate there are no duplicate steamIds trying to join
         console.log(`socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
-        console.log(response);
+        console.log(JSON.stringify(response));
         if (response.success) {
           socketClientMap = {
             ...socketClientMap,
@@ -714,6 +720,11 @@
             scene: scene,
             mapName: response.mapName ?? 'de_dust2',
           });
+          if (response.serverConfig) {
+            serverConfigStore.set({
+              ...response.serverConfig,
+            });
+          }
 
           joinedRoom = true;
         } else {

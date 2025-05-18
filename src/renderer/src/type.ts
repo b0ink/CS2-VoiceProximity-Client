@@ -1,4 +1,5 @@
 import Peer from 'simple-peer';
+import type { ServerConfigData } from './store/server-config';
 
 export enum CsTeam {
   None = 0,
@@ -59,6 +60,7 @@ export interface JoinRoomResponse {
   message: string;
   mapName?: string;
   joinedClients?: { [key: string]: Client };
+  serverConfig?: ServerConfigData;
 }
 
 // interface AudioNodes {
