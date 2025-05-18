@@ -65,27 +65,52 @@
     // console.log(joinedSocketConnections);
     // console.log(joinedPlayers);
   }
+
+  $: playerLength = joinedPlayers.length;
 </script>
 
-<div class="w-full">
-  <div class="text-center text-white">Joined Players</div>
+<div class="w-full min-h-screen">
+  <div class="text-center mb-2 font-bold text-primary-600">Joined Players</div>
   <div class="text-center w-full">
     {#if !clientIsOnServer}
       <div class="text-red-600 italic"><i>You are not on the server yet.</i></div>
     {/if}
 
     {#if players}
-      <!-- TODO: fix up css of columns -->
       <div
-        class="columns-1 sm:columns-2 md:columns-3 text-white space-y-1 h-28 overflow-auto-y w-fit text-center"
+        class={cn(
+          'grid text-center justify-between',
+          // Each grid-cols-* class is hardcoded so that tailwind can calculate each step properly (weird bug if the class is dynamic)
+          playerLength <= 5 && 'grid-cols-1',
+          playerLength <= 10 && playerLength > 5 && 'grid-cols-2',
+          playerLength <= 15 && playerLength > 10 && 'grid-cols-3',
+          playerLength <= 20 && playerLength > 15 && 'grid-cols-4',
+          playerLength <= 30 && playerLength > 20 && 'grid-cols-5',
+          playerLength <= 48 && playerLength > 30 && 'grid-cols-6',
+          playerLength <= 56 && playerLength > 48 && 'grid-cols-7',
+          playerLength > 56 && 'grid-cols-8',
+        )}
       >
         {#each joinedPlayers as player (player)}
           {#if player.steamId !== '0'}
-            <div class={cn('w-fit', player.peerConnectionExists ? 'text-white' : 'text-red-600')}>
-              {player.name}{player.steamId === mySteamId ? ' (You)' : ''}
-              {#if player.peer && peerConnectingBandwidth[player.peer]}
-                ({(peerConnectingBandwidth[player.peer] / 125000).toFixed(2)}) MB
-              {/if}
+            {@const bandwidth = player.peer ? peerConnectingBandwidth[player.peer] : null}
+            {@const title =
+              bandwidth && bandwidth > 0
+                ? `${player.name}: ${(bandwidth / 125000).toFixed(2)} MB`
+                : 'N/A'}
+            <div
+              {title}
+              class={cn(
+                'truncate  whitespace-nowrap text-center overflow-hidden',
+                playerLength > 30 ? 'text-xs' : playerLength > 20 ? 'text-sm' : '',
+                player.steamId === mySteamId
+                  ? 'underline font-bold text-green-400'
+                  : title === 'N/A'
+                    ? 'text-red-500' // Indicate peer is not fully connected
+                    : 'text-white', // Connected peer
+              )}
+            >
+              {player.name}
             </div>
           {/if}
         {/each}
