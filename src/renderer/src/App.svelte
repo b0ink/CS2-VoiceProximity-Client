@@ -587,16 +587,21 @@
             initialiseRemotePlayer(stream, client);
           });
 
-          connection.on('error', (error) => {
-            console.log(`connection.on('error'): ${error}`);
+          connection.on('error', (error: Error) => {
+            console.log(`connection.on('error'): ${JSON.stringify(error)}`);
+            peerConnectingBandwidth[peer] = 0;
+            cleanupUser(peer, socketClientMap[peer]);
 
-            // TODO: play a disconnect sound effect so that user is aware mid game
-            queueNotification({
-              text: 'Something weird happened. Please rejoin the room.',
-              position: 'top-center',
-              removeAfter: 10000,
-              type: 'error',
-            });
+            if ('code' in error && error.code !== 'ERR_DATA_CHANNEL') {
+              // TODO: play a disconnect sound effect so that user is aware mid game
+              queueNotification({
+                text: `Something weird happened. Please rejoin the room. ${error}`,
+                position: 'top-center',
+                removeAfter: 10000,
+                type: 'error',
+              });
+            }
+
             // window.api.reloadApp();
           });
           return connection;
