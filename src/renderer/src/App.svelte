@@ -272,19 +272,17 @@
 
         // console.log(playerPositions);
 
-        // TODO: if (not connected... || is not in a room...)
-        // console.log(players);
-        // if (!joinedRoom) {
-        //   return;
-        // }
+        if (!joinedRoom) {
+          return;
+        }
 
-        // const mySocketId = socket?.id;
-        // if (!mySocketId) {
-        //   return;
-        // }
-        // if (socketClientMap[mySocketId]) {
-        //   return;
-        // }
+        const mySocketId = socket?.id;
+        if (!mySocketId) {
+          return;
+        }
+        if (socketClientMap[mySocketId]) {
+          return;
+        }
 
         const me = localPlayerData.find((player) => player.steamId === getSteamId());
 
@@ -801,6 +799,8 @@
     if (roomCode) {
       return;
     }
+    playerServerRoomCode = undefined;
+
     // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
     const code = roomCodeInput;
     console.log(`Attempting to join room code ${code}`);
@@ -945,7 +945,6 @@
               if (playerServerRoomCode) {
                 roomCodeInput = playerServerRoomCode;
                 joinRoom();
-                playerServerRoomCode = undefined;
               }
             }}>Connect now.</button
           >
