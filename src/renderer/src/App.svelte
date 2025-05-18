@@ -48,6 +48,7 @@
   $: selectedDeviceId = $settings.inputDeviceId;
   $: useTurnConfig = $settings.natFixEnabled;
   $: broadcastHqVoice = $settings.hqVoice;
+  $: microphoneMuted = $settings.micMuted;
 
   // ClientStore
   $: clientSteamId = $store.steamId;
@@ -86,7 +87,6 @@
   let currentLobby: string | undefined = '';
 
   let shouldUpdateSoundFilters: number = 0;
-  let microphoneMuted: boolean = false;
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
     muted: false,
@@ -99,13 +99,13 @@
   };
 
   const unmuteMicrophone = (): void => {
-    microphoneMuted = false;
-    audioConnectionStuff.toggleMute(microphoneMuted);
+    window.api.setSettingsValue('micMuted', false);
+    audioConnectionStuff.toggleMute(false);
   };
 
   const muteMicrophone = (): void => {
-    microphoneMuted = true;
-    audioConnectionStuff.toggleMute(microphoneMuted);
+    window.api.setSettingsValue('micMuted', true);
+    audioConnectionStuff.toggleMute(true);
   };
 
   async function intialise(): Promise<void> {
@@ -462,6 +462,7 @@
         };
 
         if (microphoneMuted) {
+          console.log('Joining the room muted');
           inStream.getAudioTracks()[0].enabled = true;
         }
 

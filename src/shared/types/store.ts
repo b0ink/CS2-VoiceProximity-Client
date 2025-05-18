@@ -15,4 +15,5 @@ export interface SettingsData {
   hqVoice: boolean;
   inputDeviceId: string | null;
   socketServer: string | null;
+  micMuted: boolean;
 }

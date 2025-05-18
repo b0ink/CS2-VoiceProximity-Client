@@ -8,6 +8,7 @@ const settings = writable<SettingsData>({
   hqVoice: false,
   inputDeviceId: null,
   socketServer: DEFAULT_SOCKET_SERVER,
+  micMuted: false,
 });
 
 window.api.getSettings().then((data) => {

@@ -24,6 +24,7 @@ const settingsStore = new Store<SettingsData>({
     natFixEnabled: true,
     hqVoice: false,
     inputDeviceId: null,
+    micMuted: false,
   },
 });
 
