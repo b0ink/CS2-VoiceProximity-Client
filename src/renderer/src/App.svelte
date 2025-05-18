@@ -85,6 +85,7 @@
   let joinedRoom: boolean = false;
   let currentLobby: string | undefined = '';
 
+  let shouldUpdateSoundFilters: number = 0;
   let microphoneMuted: boolean = false;
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
@@ -380,7 +381,11 @@
         if (clientCamera) {
           threejs.render(scene, clientCamera);
         }
-        if (getMap()) {
+
+        // TODO: set how often this runs by the server?
+        shouldUpdateSoundFilters++;
+        if (getMap() && shouldUpdateSoundFilters % 4 == 0) {
+          shouldUpdateSoundFilters = 0;
           updateSoundFilters();
         }
       });
