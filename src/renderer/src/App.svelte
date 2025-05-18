@@ -590,7 +590,7 @@
           connection.on('error', (error: Error) => {
             console.log(`connection.on('error'): ${JSON.stringify(error)}`);
             peerConnectingBandwidth[peer] = 0;
-            cleanupUser(peer, socketClientMap[peer]);
+            // cleanupUser(peer, socketClientMap[peer]);
 
             if ('code' in error && error.code !== 'ERR_DATA_CHANNEL') {
               // TODO: play a disconnect sound effect so that user is aware mid game
