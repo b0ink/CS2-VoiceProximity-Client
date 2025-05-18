@@ -798,6 +798,9 @@
   };
 
   const joinRoom = (): void => {
+    if (roomCode) {
+      return;
+    }
     // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
     const code = roomCodeInput;
     console.log(`Attempting to join room code ${code}`);
@@ -942,6 +945,7 @@
               if (playerServerRoomCode) {
                 roomCodeInput = playerServerRoomCode;
                 joinRoom();
+                playerServerRoomCode = undefined;
               }
             }}>Connect now.</button
           >
@@ -991,7 +995,11 @@
             class="cursor-pointer"
             type="submit"
             onclick={joinRoom}
-            disabled={isConnected || !socketConnected || !turnUsername || !turnPassword}
+            disabled={isConnected ||
+              !socketConnected ||
+              !turnUsername ||
+              !turnPassword ||
+              !!roomCode}
           >
             Join</Button
           >{/if}
