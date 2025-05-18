@@ -238,6 +238,7 @@ export class RemotePlayer {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
+    //TODO: we could check if distance >= 2000 to avoid calculating occlusion, but we want to ensure performance everywhere
     if (distance === null) {
       return;
     }
@@ -441,28 +442,28 @@ export class RemotePlayer {
       return 0;
     }
 
-    const hits = raycaster.intersectObject(occlusionMesh, true);
+    const hits = raycaster.intersectObject(occlusionMesh, false);
 
     const maxDistance = v1.distanceTo(v2);
     const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);
     // console.log(`Ray hit ${filteredHits.length} objects`);
 
-    filteredHits.forEach((hit) => {
-      // console.log(`Hit ${i}: Distance = ${hit.distance.toFixed(2)}, Object = ${hit.object.name}`);
+    // filteredHits.forEach((hit) => {
+    //   // console.log(`Hit ${i}: Distance = ${hit.distance.toFixed(2)}, Object = ${hit.object.name}`);
 
-      // Calculate the size of the mesh
-      // TODO: we can use this in the future if our walls have thickness, and we can scale our occlusion with the 3d volume of the wall
-      if (hit.object instanceof THREE.Mesh) {
-        const object = hit.object as THREE.Mesh;
-        object.geometry.computeBoundingBox();
-        const box = object.geometry.boundingBox;
-        const size = new THREE.Vector3();
-        if (box) {
-          box.getSize(size);
-          // console.log("Mesh size:", size);
-        }
-      }
-    });
+    //   // Calculate the size of the mesh
+    //   // TODO: we can use this in the future if our walls have thickness, and we can scale our occlusion with the 3d volume of the wall
+    //   if (hit.object instanceof THREE.Mesh) {
+    //     const object = hit.object as THREE.Mesh;
+    //     object.geometry.computeBoundingBox();
+    //     const box = object.geometry.boundingBox;
+    //     const size = new THREE.Vector3();
+    //     if (box) {
+    //       box.getSize(size);
+    //       // console.log("Mesh size:", size);
+    //     }
+    //   }
+    // });
 
     return filteredHits.length;
   };
