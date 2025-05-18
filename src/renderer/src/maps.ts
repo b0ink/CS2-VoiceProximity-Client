@@ -1,5 +1,21 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three-stdlib';
+import {
+  computeBoundsTree,
+  disposeBoundsTree,
+  computeBatchedBoundsTree,
+  disposeBatchedBoundsTree,
+  acceleratedRaycast,
+} from 'three-mesh-bvh';
+
+// Add the extension functions
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+THREE.BatchedMesh.prototype.computeBoundsTree = computeBatchedBoundsTree;
+THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
+THREE.BatchedMesh.prototype.raycast = acceleratedRaycast;
 
 // Available 3D .glb meshes of maps found in the static folder
 // TODO: validate the mapList in the main process
@@ -71,15 +87,24 @@ async function initializeMap(
     const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
       const hue = Math.random() * 360;
       const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-      // return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
-      return new THREE.MeshBasicMaterial({ color: pastel });
+      return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
+      // return new THREE.MeshBasicMaterial({ color: pastel });
     });
 
     map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.material = materials[Math.floor(Math.random() * materials.length)];
+        child.geometry.computeBoundsTree({ lazyGeneration: false });
       }
     });
+
+    // const meshes = map.children.filter((c): c is THREE.Mesh => c instanceof THREE.Mesh);
+    // for (const mesh of meshes) {
+    //   mesh.geometry.computeBoundsTree();
+    //   // if (!('boundsTree' in mesh.geometry)) {
+    //   //   (mesh.geometry as any).computeBoundsTree?.({ lazyGeneration: true });
+    //   // }
+    // }
 
     console.log(`returning`, map);
     return map;

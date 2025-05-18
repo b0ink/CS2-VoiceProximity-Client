@@ -44,6 +44,7 @@
     "svelte-notifications": "^0.9.98",
     "tailwindcss": "^4.1.5",
     "three": "^0.175.0",
+    "three-mesh-bvh": "^0.9.0",
     "three-stdlib": "^2.35.15"
   },
   "devDependencies": {

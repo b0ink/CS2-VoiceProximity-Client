@@ -2,6 +2,23 @@ import * as THREE from 'three';
 import type { Client } from './type';
 import { transformVector } from './lib/vector';
 
+import {
+  computeBoundsTree,
+  disposeBoundsTree,
+  computeBatchedBoundsTree,
+  disposeBatchedBoundsTree,
+  acceleratedRaycast,
+} from 'three-mesh-bvh';
+
+// Add the extension functions
+THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+THREE.BatchedMesh.prototype.computeBoundsTree = computeBatchedBoundsTree;
+THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
+THREE.BatchedMesh.prototype.raycast = acceleratedRaycast;
+
 interface OcclusionData {
   occlusion: number; // between 0 - 1.0
   totalExtraHits: number;
@@ -348,56 +365,58 @@ export class RemotePlayer {
     }
     //! if our widening is less than the edges of our player model (32 units on each side); then the ray casts wont go through the walls
     // alternatively we add another layer of meshes inbetween large walls gaps (dust 2 B car to tunnels)
-    const SndOcclusonWidening = 31;
+    // const SndOcclusonWidening = 31;
 
     // const Sound = new THREE.Vector3(23.8, -57.1, 0.66);
     // const Listener = new THREE.Vector3(8.18, -55.1, 0.66);
     // console.log(`listener: ${listener.x} ${listener.y} ${listener.z}`)
     // console.log(`sound: ${sound.x} ${sound.y} ${sound.z}`)
 
-    // const playerVoice3D = new THREE.Vector3(sound.x, sound.z, (sound.y * -1));
-    // const Listener_ = new THREE.Vector3(listener.x, listener.z, (listener.y * -1));
+    // const playerVoice3D = new THREE.Vector3(sound.x, sound.z, sound.y * -1);
+    // const Listener_ = new THREE.Vector3(listener.x, listener.z, listener.y * -1);
 
-    const SoundLeft = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, true);
-    const SoundRight = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, false);
+    // const SoundLeft = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, true);
+    // const SoundRight = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, false);
 
-    const SoundAbove = new THREE.Vector3(
-      playerVoice3D.x,
-      playerVoice3D.y,
-      playerVoice3D.z + SndOcclusonWidening,
-    );
-    const SoundBelow = new THREE.Vector3(
-      playerVoice3D.x,
-      playerVoice3D.y,
-      playerVoice3D.z - SndOcclusonWidening,
-    );
+    // const SoundAbove = new THREE.Vector3(
+    //   playerVoice3D.x,
+    //   playerVoice3D.y,
+    //   playerVoice3D.z + SndOcclusonWidening,
+    // );
+    // const SoundBelow = new THREE.Vector3(
+    //   playerVoice3D.x,
+    //   playerVoice3D.y,
+    //   playerVoice3D.z - SndOcclusonWidening,
+    // );
 
-    const ListenerLeft = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, true);
-    const ListenerRight = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, false);
+    // const ListenerLeft = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, true);
+    // const ListenerRight = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, false);
 
-    const ListenerAbove = new THREE.Vector3(
-      Listener_.x,
-      Listener_.y,
-      Listener_.z + SndOcclusonWidening * 0.5,
-    );
-    const ListenerBelow = new THREE.Vector3(
-      Listener_.x,
-      Listener_.y,
-      Listener_.z - SndOcclusonWidening * 0.5,
-    );
+    // const ListenerAbove = new THREE.Vector3(
+    //   Listener_.x,
+    //   Listener_.y,
+    //   Listener_.z + SndOcclusonWidening * 0.5,
+    // );
+    // const ListenerBelow = new THREE.Vector3(
+    //   Listener_.x,
+    //   Listener_.y,
+    //   Listener_.z - SndOcclusonWidening * 0.5,
+    // );
 
-    const line1 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
-    const line2 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
-    const line3 = this.didIntersect(occlusionMesh, SoundLeft, ListenerRight);
-    const line4 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft);
+    // TODO: this tanks performance once we have 10+ players connected
+    // const line1 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
+    // const line2 = this.didIntersect(occlusionMesh, SoundLeft, Listener_);
+    // const line3 = this.didIntersect(occlusionMesh, SoundLeft, ListenerRight);
+    // const line4 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft);
     const line5 = this.didIntersect(occlusionMesh, playerVoice3D, Listener_);
-    const line6 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight);
-    const line7 = this.didIntersect(occlusionMesh, SoundRight, ListenerLeft);
-    const line8 = this.didIntersect(occlusionMesh, SoundRight, Listener_);
-    const line9 = this.didIntersect(occlusionMesh, SoundRight, ListenerRight);
-    const line10 = this.didIntersect(occlusionMesh, SoundAbove, ListenerAbove);
-    const line11 = this.didIntersect(occlusionMesh, SoundBelow, ListenerBelow);
-    const lines = [line1, line2, line3, line4, line5, line6, line7, line8, line9, line10, line11];
+    // const line6 = this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight);
+    // const line7 = this.didIntersect(occlusionMesh, SoundRight, ListenerLeft);
+    // const line8 = this.didIntersect(occlusionMesh, SoundRight, Listener_);
+    // const line9 = this.didIntersect(occlusionMesh, SoundRight, ListenerRight);
+    // const line10 = this.didIntersect(occlusionMesh, SoundAbove, ListenerAbove);
+    // const line11 = this.didIntersect(occlusionMesh, SoundBelow, ListenerBelow);
+    // const lines = [line1, line2, line3, line4, line5, line6, line7, line8, line9, line10, line11];
+    const lines = [line5];
     let hits = 0;
     for (const line of lines) {
       if (line >= 1) {
@@ -424,28 +443,31 @@ export class RemotePlayer {
       occlusionRatio += extraDampening; // could also weight this if needed
     }
 
-    return { occlusion: hits / 11, totalExtraHits: totalExtraHits };
+    return { occlusion: hits / 1, totalExtraHits: totalExtraHits };
 
     // return hits / 11;
   };
+  private raycaster = new THREE.Raycaster();
 
   private didIntersect = (
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     v1: THREE.Vector3,
     v2: THREE.Vector3,
   ): number => {
-    const raycaster = new THREE.Raycaster();
-    const dir = v2.clone().sub(v1).normalize();
-    raycaster.set(v1, dir);
-
     if (occlusionMesh == null) {
       return 0;
     }
 
-    const hits = raycaster.intersectObject(occlusionMesh, false);
+    const dir = v2.clone().sub(v1).normalize();
+    this.raycaster.set(v1, dir);
+    this.raycaster.firstHitOnly = true;
 
+    const hits = this.raycaster.intersectObject(occlusionMesh, true);
     const maxDistance = v1.distanceTo(v2);
     const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);
+    // return hits.length;
+    // const hits = this.raycaster.intersectObject(occlusionMesh, true);
+
     // console.log(`Ray hit ${filteredHits.length} objects`);
 
     // filteredHits.forEach((hit) => {
