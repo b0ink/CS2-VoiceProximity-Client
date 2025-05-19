@@ -19,6 +19,8 @@
   $: alwaysOnTop = $settings.alwaysOnTop;
   $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
+  $: noiseSuppression = $settings.noiseSuppression;
+  $: echoCancellation = $settings.echoCancellation;
 
   let selectedDeviceId: string | null;
 
@@ -223,11 +225,37 @@
         <Toggle
           id="hq-voice"
           checked={hqVoice}
-          class="justify-between mb-4"
+          class="justify-between mb-2"
           onclick={toggleHqVoice}
         >
           {#snippet offLabel()}
             High-Quality Mic
+          {/snippet}</Toggle
+        >
+        <Toggle
+          id="noise-supression"
+          checked={noiseSuppression}
+          class="justify-between mb-2"
+          onclick={() => {
+            window.api.setSettingsValue('noiseSuppression', !noiseSuppression);
+            modalConfirmRestartRequired = true;
+          }}
+        >
+          {#snippet offLabel()}
+            Noise Suppression
+          {/snippet}</Toggle
+        >
+        <Toggle
+          id="echo-cancellation"
+          checked={echoCancellation}
+          class="justify-between mb-2"
+          onclick={() => {
+            window.api.setSettingsValue('echoCancellation', !echoCancellation);
+            modalConfirmRestartRequired = true;
+          }}
+        >
+          {#snippet offLabel()}
+            Echo Cancellation
           {/snippet}</Toggle
         >
         <Label title="" for="occlusion-quality" class="">Sound Occlusion Detail:</Label>

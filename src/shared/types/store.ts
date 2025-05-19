@@ -18,6 +18,8 @@ export interface SettingsData {
   micMuted: boolean;
   globalGainAmount: number;
   occlusionQuality: OcclusionQuality;
+  noiseSuppression: boolean;
+  echoCancellation: boolean;
 }
 
 export enum OcclusionQuality {

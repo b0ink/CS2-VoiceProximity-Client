@@ -27,6 +27,8 @@ const settingsStore = new Store<SettingsData>({
     micMuted: false,
     globalGainAmount: 2.5,
     occlusionQuality: OcclusionQuality.HIGH,
+    noiseSuppression: true,
+    echoCancellation: true,
   },
 });
 

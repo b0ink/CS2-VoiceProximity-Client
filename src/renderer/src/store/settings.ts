@@ -11,6 +11,8 @@ const settings = writable<SettingsData>({
   micMuted: false,
   globalGainAmount: 2.5,
   occlusionQuality: OcclusionQuality.HIGH,
+  noiseSuppression: true,
+  echoCancellation: true,
 });
 
 window.api.getSettings().then((data) => {

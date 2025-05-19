@@ -35,6 +35,7 @@
     SteamIdSocketMap,
   } from './type';
   import { OcclusionQuality } from '../../shared/types/store';
+  import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
 
   const { addNotification } = getNotificationsContext();
 
@@ -52,6 +53,8 @@
   $: microphoneMuted = $settings.micMuted;
   $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
+  $: noiseSuppression = $settings.noiseSuppression;
+  $: echoCancellation = $settings.echoCancellation;
 
   $: if (globalGainAmount) {
     updateGainFilters();
@@ -403,52 +406,60 @@
   };
 
   const initUserMedia = (): void => {
-    const noiseSuppression = true; // TODO: replace as a user setting
-    const echoCancellation = true; // TODO: replace as a user setting
-    const sampleRate = broadcastHqVoice ? 48000 : 16000;
-    const sampleSize = broadcastHqVoice ? 16 : 8;
-    console.log(`sampleRate: ${sampleRate} | sampleSize: ${sampleSize}`);
-
-    const enableSampleDebug = true;
-
     // eslint-disable-next-line no-undef
     const audio: MediaTrackConstraintSet = {
-      // deviceId: (undefined as unknown) as string,
       autoGainControl: false,
-      channelCount: 2,
+      channelCount: 1,
       echoCancellation: echoCancellation,
       // @ts-ignore - non-standard constraint
       latency: 0,
       noiseSuppression: noiseSuppression,
       // @ts-ignore - non-standard constraint used by chrome
       googNoiseSuppression: noiseSuppression,
+      googNoiseSupression: noiseSuppression,
       // @ts-ignore - non-standard constraint used by chrome
       googEchoCancellation: echoCancellation,
       // @ts-ignore - non-standard constraint used by chrome
       googTypingNoiseDetection: noiseSuppression,
-      sampleRate: enableSampleDebug ? sampleRate : undefined,
-      sampleSize: enableSampleDebug ? sampleSize : undefined,
+      // @ts-ignore - non-standard constraint used by chrome
+      sampleRate: broadcastHqVoice ? 48000 : 16000,
+      sampleSize: broadcastHqVoice ? 16 : 8,
     };
+
+    console.log(`sampleRate: ${audio.sampleRate} | sampleSize: ${audio.sampleSize}`);
 
     if (selectedDeviceId) {
       audio.deviceId = selectedDeviceId;
     }
 
+    // TODO: figure out how to fetch files locally from /public folder
+    const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/disst';
+    // const assetsPath = `${__dirname}`; // this works when running `npm run dev:multi` but not during `npm run dev`
+    const processor = new NoiseSuppressionProcessor(assetsPath);
+
     navigator.mediaDevices.getUserMedia({ video: false, audio }).then(
-      async (inStream) => {
-        let stream = inStream;
+      async (rawStream) => {
         console.log(`Getting user media:`);
-        const audioTrack = stream.getAudioTracks()[0];
-        console.log(`Device Name: ${audioTrack.label}`);
-        console.log(`Device ID: ${audioTrack.getSettings().deviceId}`);
 
-        // const devices = await navigator.mediaDevices.enumerateDevices();
-        // const audioOutputs = devices.filter((d) => d.kind === 'audiooutput');
-        // console.log(audioOutputs);
+        // eslint-disable-next-line no-undef
+        let processedTrack: MediaStreamAudioTrack | undefined = undefined;
 
-        // const ac = new AudioContext();
-        //TODO: microphone gain
-        // const source = ac.createMediaStreamSource(inStream);
+        if (noiseSuppression) {
+          try {
+            processedTrack = await processor.startProcessing(rawStream.getAudioTracks()[0]);
+          } catch (e) {
+            console.error(`Unable to activate noise suppression: ${e}`);
+            addNotification({
+              text: `Failed to enable noise suppression.`,
+              position: 'top-center',
+              removeAfter: 5000,
+              type: 'warning',
+            });
+          }
+        }
+
+        const stream = processedTrack ? new MediaStream([processedTrack]) : rawStream;
+        const inStream = stream;
 
         // TODO: what WILL be the difference between stream & inStream
         audioConnectionStuff.stream = stream;
