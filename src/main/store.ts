@@ -1,7 +1,7 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
 import { DEFAULT_SOCKET_SERVER } from '../shared/constants';
-import { SettingsData, StoreData } from '../shared/types/store';
+import { OcclusionQuality, SettingsData, StoreData } from '../shared/types/store';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -26,6 +26,7 @@ const settingsStore = new Store<SettingsData>({
     inputDeviceId: null,
     micMuted: false,
     globalGainAmount: 2,
+    occlusionQuality: OcclusionQuality.HIGH,
   },
 });
 

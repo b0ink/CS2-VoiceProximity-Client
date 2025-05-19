@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Client } from './type';
+import { type Client } from './type';
 import { transformVector } from './lib/vector';
 
 import {
@@ -9,6 +9,7 @@ import {
   disposeBatchedBoundsTree,
   acceleratedRaycast,
 } from 'three-mesh-bvh';
+import { OcclusionQuality } from '../../shared/types/store';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -260,7 +261,10 @@ export class RemotePlayer {
     this.monoHighpassFilter!.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
-  public updateOcclusion(occlusionMesh: THREE.Group<THREE.Object3DEventMap>): void {
+  public updateOcclusion(
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    occlusionQuality: OcclusionQuality,
+  ): void {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
@@ -273,6 +277,7 @@ export class RemotePlayer {
       occlusionMesh,
       this.clientCamera?.position,
       this.playerObject?.position,
+      occlusionQuality,
     );
     const maxDist = 1000;
     const fadeStart = 1500;
@@ -365,6 +370,7 @@ export class RemotePlayer {
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     Listener_?: THREE.Vector3,
     playerVoice3D?: THREE.Vector3,
+    occlusionQuality: OcclusionQuality = OcclusionQuality.MEDIUM,
   ): OcclusionData => {
     if (!Listener_ || !playerVoice3D) {
       return {
@@ -407,15 +413,22 @@ export class RemotePlayer {
 
     // TODO: this tanks performance once we have 10+ players connected
     const lines: number[] = [];
-    lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerLeft));
-    lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
-    lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
-    lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));
-    lines.push(this.didIntersect(occlusionMesh, playerVoice3D, Listener_));
-    lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight));
-    lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerLeft));
-    lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
-    lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
+
+    if (occlusionQuality >= OcclusionQuality.LOW) {
+      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, Listener_));
+    }
+    if (occlusionQuality >= OcclusionQuality.MEDIUM) {
+      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerLeft));
+      lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
+      lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
+      lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
+    }
+    if (occlusionQuality >= OcclusionQuality.HIGH) {
+      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
+      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));
+      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight));
+      lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerLeft));
+    }
 
     // lines.push(this.didIntersect(occlusionMesh, SoundAbove, ListenerAbove));
     // lines.push(this.didIntersect(occlusionMesh, SoundBelow, ListenerBelow));

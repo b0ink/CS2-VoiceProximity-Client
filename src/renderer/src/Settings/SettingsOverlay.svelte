@@ -9,6 +9,7 @@
 
   import settings from '../store/settings';
   import store from '../store/client';
+  import { OcclusionQuality } from '../../../shared/types/store';
 
   $: socketUrl = $settings.socketServer;
   $: clientSteamId = $store.steamId;
@@ -17,6 +18,7 @@
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
   $: globalGainAmount = $settings.globalGainAmount;
+  $: occlusionQuality = $settings.occlusionQuality;
 
   let selectedDeviceId: string | null;
 
@@ -61,6 +63,15 @@
   $: if (globalGainAmount) {
     gainAmountRangeValue = globalGainAmount;
   }
+
+  let occlusionQualitySelectValue: number;
+  $: if (occlusionQuality !== null) {
+    occlusionQualitySelectValue = occlusionQuality;
+  }
+  const onOcclusionQualityChange = (): void => {
+    console.log(occlusionQualitySelectValue);
+    window.api.setSettingsValue('occlusionQuality', occlusionQualitySelectValue);
+  };
 
   onMount(() => {
     getDevices();
@@ -212,14 +223,30 @@
         <Toggle
           id="hq-voice"
           checked={hqVoice}
-          class="justify-between mb-2"
+          class="justify-between mb-4"
           onclick={toggleHqVoice}
         >
           {#snippet offLabel()}
             High-Quality Mic
           {/snippet}</Toggle
         >
-        <br />
+        <Label title="" for="occlusion-quality" class="">Sound Occlusion Detail:</Label>
+        <p class="text-xs text-gray-400 mb-2">
+          Controls how precisely sound is blocked. Higher levels use more raycasts and may reduce
+          performance.
+        </p>
+
+        <Select
+          bind:value={occlusionQualitySelectValue}
+          onchange={onOcclusionQualityChange}
+          id="occlusion-quality"
+          class="mb-4"
+        >
+          <option value={OcclusionQuality.OFF}>Off</option>
+          <option value={OcclusionQuality.LOW}>Low</option>
+          <option value={OcclusionQuality.MEDIUM}>Medium</option>
+          <option value={OcclusionQuality.HIGH}>High</option>
+        </Select>
         <Label>Global gain amount: {gainAmountRangeValue}</Label>
         <Range
           class="mb-2"

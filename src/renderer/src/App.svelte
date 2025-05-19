@@ -34,6 +34,7 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
+  import { OcclusionQuality } from '../../shared/types/store';
 
   const { addNotification } = getNotificationsContext();
 
@@ -50,6 +51,7 @@
   $: broadcastHqVoice = $settings.hqVoice;
   $: microphoneMuted = $settings.micMuted;
   $: globalGainAmount = $settings.globalGainAmount;
+  $: occlusionQuality = $settings.occlusionQuality;
 
   $: if (globalGainAmount) {
     updateGainFilters();
@@ -778,7 +780,7 @@
     const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
-        soundData?.updateOcclusion(map);
+        soundData?.updateOcclusion(map, occlusionQuality);
       }
     }
   };
@@ -816,6 +818,7 @@
       console.error(`initializeRenderer(): threeJsDom is null`);
       return;
     }
+
     threeJsDom.appendChild(threejs.domElement);
   };
 
@@ -1029,8 +1032,14 @@
       </ButtonGroup>
     </div>
 
-    <div class="m-2 overflow-hidden">
-      <div class="dark:bg-gray-900" id="threejs"></div>
+    <div class="m-2 overflow-hidden relative">
+      {#if roomCode}
+        <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
+          <span>Occlusion Detail:</span>
+          {OcclusionQuality[occlusionQuality]}
+        </div>
+      {/if}
+      <div class="dark:bg-gray-900 relative" id="threejs"></div>
     </div>
 
     {#if !!roomCode}

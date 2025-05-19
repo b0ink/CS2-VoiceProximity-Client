@@ -1,6 +1,6 @@
 import { writable } from 'svelte/store';
 import { DEFAULT_SOCKET_SERVER } from '../../../shared/constants';
-import type { SettingsData } from '../../../shared/types/store';
+import { OcclusionQuality, type SettingsData } from '../../../shared/types/store';
 
 const settings = writable<SettingsData>({
   alwaysOnTop: true,
@@ -10,6 +10,7 @@ const settings = writable<SettingsData>({
   socketServer: DEFAULT_SOCKET_SERVER,
   micMuted: false,
   globalGainAmount: 2,
+  occlusionQuality: OcclusionQuality.HIGH,
 });
 
 window.api.getSettings().then((data) => {

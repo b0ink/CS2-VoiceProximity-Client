@@ -17,4 +17,12 @@ export interface SettingsData {
   socketServer: string | null;
   micMuted: boolean;
   globalGainAmount: number;
+  occlusionQuality: OcclusionQuality;
+}
+
+export enum OcclusionQuality {
+  OFF = 0,
+  LOW,
+  MEDIUM,
+  HIGH,
 }
