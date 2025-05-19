@@ -924,7 +924,8 @@
   }}
   color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
   class={cn(
-    'cursor-pointer absolute top-5.5 right-4 z-20 select-none transition-all duration-300',
+    'cursor-pointer absolute  right-4 z-20 select-none transition-all duration-300',
+    clientSteamId || settingsOpen ? 'top-5.5' : 'bottom-5.5',
     settingsOpen ? 'rotate-90' : 'rotate-0',
   )}
   size="lg"
@@ -952,7 +953,10 @@
       <SteamLoginButton />
     </div>
     <div class="m-2">
-      <span class="text-white opacity-50 text-xs">v{window.api.clientVersion()}</span>
+      <span
+        class="text-gray-400 text-xs underline hover:text-gray-300 cursor-pointer transition-colors duration-250"
+        >Why do I need to login?</span
+      >
     </div>
   {/if}
 
@@ -1050,5 +1054,10 @@
         {peerConnectingBandwidth}
       ></PlayerList>
     {/if}
+  {/if}
+  {#if !clientSteamId}
+    <span class="absolute bottom-0 mb-6.5 text-white opacity-50 text-xs"
+      >v{window.api.clientVersion()}</span
+    >
   {/if}
 </div>
