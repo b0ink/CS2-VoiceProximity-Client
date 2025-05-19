@@ -433,7 +433,7 @@
     }
 
     // TODO: figure out how to fetch files locally from /public folder
-    const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/disst';
+    const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/dist';
     // const assetsPath = `${__dirname}`; // this works when running `npm run dev:multi` but not during `npm run dev`
     const processor = new NoiseSuppressionProcessor(assetsPath);
 
