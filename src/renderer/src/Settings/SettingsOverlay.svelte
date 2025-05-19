@@ -163,7 +163,7 @@
 
 {#if open}
   <div
-    class="w-full h-lvh absolute dark:bg-gray-900/50 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
+    class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
       <Heading tag="h1" class="mb-4 text-xl font-extrabold">Settings</Heading>
