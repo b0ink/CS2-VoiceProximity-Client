@@ -25,6 +25,7 @@ const settingsStore = new Store<SettingsData>({
     hqVoice: false,
     inputDeviceId: null,
     micMuted: false,
+    globalGainAmount: 2,
   },
 });
 

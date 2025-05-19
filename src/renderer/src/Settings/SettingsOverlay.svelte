@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Heading, Label, Modal, Select, Toggle } from 'flowbite-svelte';
+  import { Button, Heading, Label, Modal, Select, Toggle, Range } from 'flowbite-svelte';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import { onMount } from 'svelte';
@@ -16,6 +16,7 @@
   $: natFixEnabled = $settings.natFixEnabled;
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
+  $: globalGainAmount = $settings.globalGainAmount;
 
   let selectedDeviceId: string | null;
 
@@ -54,6 +55,12 @@
     window.api.setSettingsValue('hqVoice', !hqVoice);
     modalConfirmRestartRequired = true;
   };
+
+  let gainAmountRangeValue: number;
+
+  $: if (globalGainAmount) {
+    gainAmountRangeValue = globalGainAmount;
+  }
 
   onMount(() => {
     getDevices();
@@ -212,6 +219,19 @@
             High-Quality Mic
           {/snippet}</Toggle
         >
+        <br />
+        <Label>Global gain amount: {gainAmountRangeValue}</Label>
+        <Range
+          class="mb-2"
+          id="range1"
+          min="0"
+          max="5"
+          step="0.1"
+          bind:value={gainAmountRangeValue}
+          oninput={() => {
+            window.api.setSettingsValue('globalGainAmount', gainAmountRangeValue);
+          }}
+        />
       </div>
       <br />
       <!-- 

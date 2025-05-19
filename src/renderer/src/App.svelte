@@ -49,7 +49,11 @@
   $: useTurnConfig = $settings.natFixEnabled;
   $: broadcastHqVoice = $settings.hqVoice;
   $: microphoneMuted = $settings.micMuted;
+  $: globalGainAmount = $settings.globalGainAmount;
 
+  $: if (globalGainAmount) {
+    updateGainFilters();
+  }
   // ClientStore
   $: clientSteamId = $store.steamId;
   $: clientToken = $store.token;
@@ -775,6 +779,15 @@
     if (map) {
       for (const soundData of remotePlayers.values()) {
         soundData?.updateOcclusion(map);
+      }
+    }
+  };
+
+  const updateGainFilters = (): void => {
+    const map = getMap();
+    if (map) {
+      for (const soundData of remotePlayers.values()) {
+        soundData?.SetGain(globalGainAmount);
       }
     }
   };

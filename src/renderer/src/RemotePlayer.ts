@@ -209,6 +209,15 @@ export class RemotePlayer {
     }
   }
 
+  public SetGain(amount: number): void {
+    if (this.gainAmount !== amount) {
+      this.gainAmount = amount;
+      const now = this.listener_.context.currentTime;
+      this.gainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+      this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+    }
+  }
+
   private setFilterFrequency(filter: BiquadFilterNode | undefined, amount: number): void {
     if (!filter || !Number.isFinite(amount) || !this.listener_) {
       return;

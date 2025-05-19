@@ -16,4 +16,5 @@ export interface SettingsData {
   inputDeviceId: string | null;
   socketServer: string | null;
   micMuted: boolean;
+  globalGainAmount: number;
 }
