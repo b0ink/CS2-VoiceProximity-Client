@@ -9,7 +9,7 @@ const settings = writable<SettingsData>({
   inputDeviceId: null,
   socketServer: DEFAULT_SOCKET_SERVER,
   micMuted: false,
-  globalGainAmount: 2,
+  globalGainAmount: 2.5,
   occlusionQuality: OcclusionQuality.HIGH,
 });
 

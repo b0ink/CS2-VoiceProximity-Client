@@ -101,7 +101,7 @@ export class RemotePlayer {
     this.steamId = client.steamId;
     this.Mute(0);
 
-    this.gainAmount = 2; // TODO: to be adjusted by the player
+    this.gainAmount = 2.5;
     this.initStereoFilters();
     this.initMonoFilters();
   }
