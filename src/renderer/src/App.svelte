@@ -55,6 +55,7 @@
   $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
+  $: occlusionUpdateRate = $settings.occlusionUpdateRate;
 
   $: if (globalGainAmount) {
     updateGainFilters();
@@ -391,9 +392,11 @@
           threejs.render(scene, clientCamera);
         }
 
-        // TODO: set how often this runs by the server?
         shouldUpdateSoundFilters++;
-        if (getMap() && shouldUpdateSoundFilters % 4 == 0) {
+        if (occlusionUpdateRate > 5 || occlusionUpdateRate < 1) {
+          window.api.setSettingsValue('occlusionUpdateRate', 1);
+        }
+        if (getMap() && shouldUpdateSoundFilters % Math.floor(occlusionUpdateRate) == 0) {
           shouldUpdateSoundFilters = 0;
           updateSoundFilters();
         }

@@ -33,6 +33,7 @@ export interface SettingsData {
   micMuted: boolean;
   globalGainAmount: number;
   occlusionQuality: OcclusionQuality;
+  occlusionUpdateRate: number;
   noiseSuppression: boolean;
   echoCancellation: boolean;
 }
@@ -46,6 +47,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   micMuted: false,
   globalGainAmount: 2.5,
   occlusionQuality: OcclusionQuality.HIGH,
+  occlusionUpdateRate: 2,
   noiseSuppression: true,
   echoCancellation: true,
 };
