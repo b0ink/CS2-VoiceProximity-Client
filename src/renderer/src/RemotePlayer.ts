@@ -379,30 +379,7 @@ export class RemotePlayer {
       };
     }
 
-    // const SoundAbove = new THREE.Vector3(
-    //   playerVoice3D.x,
-    //   playerVoice3D.y,
-    //   playerVoice3D.z + SndOcclusonWidening,
-    // );
-    // const SoundBelow = new THREE.Vector3(
-    //   playerVoice3D.x,
-    //   playerVoice3D.y,
-    //   playerVoice3D.z - SndOcclusonWidening,
-    // );
-
-    // const ListenerAbove = new THREE.Vector3(
-    //   Listener_.x,
-    //   Listener_.y,
-    //   Listener_.z + SndOcclusonWidening * 0.5,
-    // );
-    // const ListenerBelow = new THREE.Vector3(
-    //   Listener_.x,
-    //   Listener_.y,
-    //   Listener_.z - SndOcclusonWidening * 0.5,
-    // );
-
-    //! if our widening is less than the edges of our player model (32 units on each side); then the ray casts wont go through the walls
-    // alternatively we add another layer of meshes inbetween large walls gaps (dust 2 B car to tunnels)
+    // Ensure our widening isnt bigger than our playermodel (64; 32 from middle), otherwise itll pass through walls
     const SndOcclusonWidening = 31;
 
     const SoundLeft = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, true);
@@ -411,27 +388,26 @@ export class RemotePlayer {
     const ListenerLeft = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, true);
     const ListenerRight = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, false);
 
-    // TODO: this tanks performance once we have 10+ players connected
     const lines: number[] = [];
 
     if (occlusionQuality >= OcclusionQuality.LOW) {
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, Listener_));
     }
+
     if (occlusionQuality >= OcclusionQuality.MEDIUM) {
       lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerLeft));
       lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
       lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
       lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
     }
+
+    // Not reccommended on maps with high mesh/face count, unless occlusionUpdateRate has a larger value (less frequent updates)
     if (occlusionQuality >= OcclusionQuality.HIGH) {
       lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight));
       lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerLeft));
     }
-
-    // lines.push(this.didIntersect(occlusionMesh, SoundAbove, ListenerAbove));
-    // lines.push(this.didIntersect(occlusionMesh, SoundBelow, ListenerBelow));
 
     let hits = 0;
     for (const line of lines) {
@@ -443,7 +419,7 @@ export class RemotePlayer {
       // console.log(`${hits} / 11 got hit. these equals to ${hits / 11}. setting filter to ${11000 - (hits / 11) * 11000}`);
     }
 
-    let occlusionRatio = hits / 11;
+    let occlusionRatio = hits / lines.length;
     let totalExtraHits = 0;
 
     if (occlusionRatio === 1) {
@@ -453,7 +429,7 @@ export class RemotePlayer {
           totalExtraHits += line - 1;
         }
       }
-      const extraDampening = THREE.MathUtils.clamp(totalExtraHits / 11, 0, 1);
+      const extraDampening = THREE.MathUtils.clamp(totalExtraHits / lines.length, 0, 1);
       // Blend between normal full occlusion and extreme occlusion
       // 1 => 100% occluded, 2 => extra occluded (more walls)
       occlusionRatio += extraDampening; // could also weight this if needed
