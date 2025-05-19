@@ -3,7 +3,6 @@ import { electronAPI } from '@electron-toolkit/preload';
 import { version } from '../../package.json';
 import { SettingsData, StoreData } from '../shared/types/store';
 
-console.log('HELLo');
 // Custom APIs for renderer
 const api = {
   setStoreValue: <K extends keyof StoreData>(key: K, value: StoreData[K]) =>

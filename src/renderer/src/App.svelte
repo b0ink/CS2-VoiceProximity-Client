@@ -1,6 +1,7 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
+  import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import {
     CogSolid,
@@ -14,6 +15,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { getNotificationsContext, type DefaultNotificationOptions } from 'svelte-notifications';
   import * as THREE from 'three';
+  import { OcclusionQuality } from '../../shared/types/store';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
@@ -34,8 +36,6 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
-  import { OcclusionQuality } from '../../shared/types/store';
-  import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
 
   const { addNotification } = getNotificationsContext();
 
@@ -435,10 +435,8 @@
       audio.deviceId = selectedDeviceId;
     }
 
-    // TODO: figure out how to fetch files locally from /public folder
-    const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/dist';
-    // const assetsPath = `${__dirname}`; // this works when running `npm run dev:multi` but not during `npm run dev`
-    const processor = new NoiseSuppressionProcessor(assetsPath);
+    // const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/dist';
+    const processor = new NoiseSuppressionProcessor('rnnoise');
 
     navigator.mediaDevices.getUserMedia({ video: false, audio }).then(
       async (rawStream) => {
