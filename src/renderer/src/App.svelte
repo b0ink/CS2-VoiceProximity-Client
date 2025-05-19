@@ -467,7 +467,7 @@
 
         if (microphoneMuted) {
           console.log('Joining the room muted');
-          inStream.getAudioTracks()[0].enabled = true;
+          inStream.getAudioTracks()[0].enabled = false;
         }
 
         // audioElements = {};
