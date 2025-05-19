@@ -1,19 +1,8 @@
 import { writable } from 'svelte/store';
 import { DEFAULT_SOCKET_SERVER } from '../../../shared/constants';
-import { OcclusionQuality, type SettingsData } from '../../../shared/types/store';
+import { DEFAULT_SETTINGS, type SettingsData } from '../../../shared/types/store';
 
-const settings = writable<SettingsData>({
-  alwaysOnTop: true,
-  natFixEnabled: true,
-  hqVoice: false,
-  inputDeviceId: null,
-  socketServer: DEFAULT_SOCKET_SERVER,
-  micMuted: false,
-  globalGainAmount: 2.5,
-  occlusionQuality: OcclusionQuality.HIGH,
-  noiseSuppression: true,
-  echoCancellation: true,
-});
+const settings = writable<SettingsData>(DEFAULT_SETTINGS);
 
 window.api.getSettings().then((data) => {
   if (!data.socketServer) {

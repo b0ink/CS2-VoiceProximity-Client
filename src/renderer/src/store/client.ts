@@ -1,14 +1,7 @@
 import { writable } from 'svelte/store';
-import type { StoreData } from '../../../shared/types/store';
+import { DEFAULT_STORE, type StoreData } from '../../../shared/types/store';
 
-const store = writable<StoreData>({
-  steamId: null,
-  token: null,
-  turnUsername: null,
-  turnPassword: null,
-  notification: null,
-  savedRoomCode: null,
-});
+const store = writable<StoreData>(DEFAULT_STORE);
 
 window.api.getStore().then((data) => {
   console.log(`Renderer: getStore() => ${JSON.stringify(data)}`);

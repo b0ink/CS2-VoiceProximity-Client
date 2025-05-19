@@ -1,34 +1,20 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
 import { DEFAULT_SOCKET_SERVER } from '../shared/constants';
-import { OcclusionQuality, SettingsData, StoreData } from '../shared/types/store';
+import { DEFAULT_SETTINGS, DEFAULT_STORE, SettingsData, StoreData } from '../shared/types/store';
 
 let mainWindowRef: BrowserWindow | null = null;
 
 const store = new Store<StoreData>({
   name: 'clientStore',
   defaults: {
-    steamId: null,
-    token: null,
-    turnUsername: null,
-    turnPassword: null,
-    notification: null,
-    savedRoomCode: null,
+    ...DEFAULT_STORE,
   },
 });
 const settingsStore = new Store<SettingsData>({
   name: 'settings',
   defaults: {
-    socketServer: DEFAULT_SOCKET_SERVER,
-    alwaysOnTop: true,
-    natFixEnabled: true,
-    hqVoice: false,
-    inputDeviceId: null,
-    micMuted: false,
-    globalGainAmount: 2.5,
-    occlusionQuality: OcclusionQuality.HIGH,
-    noiseSuppression: true,
-    echoCancellation: true,
+    ...DEFAULT_SETTINGS,
   },
 });
 

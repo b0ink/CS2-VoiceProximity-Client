@@ -1,4 +1,5 @@
 import { DefaultNotificationOptions } from 'svelte-notifications';
+import { DEFAULT_SOCKET_SERVER } from '../constants';
 
 export interface StoreData {
   steamId: string | null;
@@ -8,7 +9,21 @@ export interface StoreData {
   notification: DefaultNotificationOptions | null;
   savedRoomCode: string | null;
 }
+export const DEFAULT_STORE: StoreData = {
+  steamId: null,
+  token: null,
+  turnUsername: null,
+  turnPassword: null,
+  notification: null,
+  savedRoomCode: null,
+};
 
+export enum OcclusionQuality {
+  OFF = 0,
+  LOW,
+  MEDIUM,
+  HIGH,
+}
 export interface SettingsData {
   alwaysOnTop: boolean;
   natFixEnabled: boolean;
@@ -22,9 +37,15 @@ export interface SettingsData {
   echoCancellation: boolean;
 }
 
-export enum OcclusionQuality {
-  OFF = 0,
-  LOW,
-  MEDIUM,
-  HIGH,
-}
+export const DEFAULT_SETTINGS: SettingsData = {
+  alwaysOnTop: true,
+  natFixEnabled: true,
+  hqVoice: false,
+  inputDeviceId: null,
+  socketServer: DEFAULT_SOCKET_SERVER,
+  micMuted: false,
+  globalGainAmount: 2.5,
+  occlusionQuality: OcclusionQuality.HIGH,
+  noiseSuppression: true,
+  echoCancellation: true,
+};
