@@ -981,15 +981,7 @@
     <Heading tag="h1" class="mb-4 text-xl font-extrabold z-10">CS2 Proximity Chat</Heading>
   </div>
   {#if !clientSteamId}
-    <div class="relative w-[270px] h-[50px] mx-auto pb-10">
-      <SteamLoginButton />
-    </div>
-    <div class="m-2">
-      <span
-        class="text-gray-400 text-xs underline hover:text-gray-300 cursor-pointer transition-colors duration-250"
-        >Why do I need to login?</span
-      >
-    </div>
+    <SteamLoginButton />
   {/if}
 
   {#if clientSteamId}
