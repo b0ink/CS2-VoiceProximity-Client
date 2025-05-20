@@ -120,7 +120,7 @@
 
   const playSound = (sound: HTMLAudioElement): void => {
     const audio = sound.cloneNode() as HTMLAudioElement;
-    audio.volume = 0.75;
+    audio.volume = 1;
     audio.play();
   };
 
