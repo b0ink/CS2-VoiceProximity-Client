@@ -1079,6 +1079,13 @@
           {OcclusionQuality[occlusionQuality]}
         </div>
       {/if}
+      {#if microphoneMuted}
+        <div
+          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs p-1 z-5"
+        >
+          <span>You are currently muted</span>
+        </div>
+      {/if}
       <div class="dark:bg-gray-900 relative" id="threejs"></div>
     </div>
 
