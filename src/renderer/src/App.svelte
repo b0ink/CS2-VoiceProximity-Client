@@ -108,6 +108,18 @@
     },
   };
 
+  let userJoinSound = new Audio('user-joined.mp3');
+  userJoinSound.load();
+
+  let userLeftSound = new Audio('user-left.mp3');
+  userLeftSound.load();
+
+  const playSound = (sound: HTMLAudioElement): void => {
+    const audio = sound.cloneNode() as HTMLAudioElement;
+    audio.volume = 0.75;
+    audio.play();
+  };
+
   const unmuteMicrophone = (): void => {
     window.api.setSettingsValue('micMuted', false);
     audioConnectionStuff.toggleMute(false);
@@ -636,12 +648,15 @@
 
           // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
           // await window.api.retrieveTurnCredentials();
+          playSound(userJoinSound);
 
           createPeerConnection(peer, true, client);
           socketClientMap[peer] = client;
         });
 
         socket?.on('user-left', async (peer: string, client: Client) => {
+          playSound(userLeftSound);
+
           console.log(`socket.on('user-left') ${peer} ${client.steamId}`);
           cleanupUser(peer, client);
         });
@@ -757,7 +772,7 @@
               ...response.serverConfig,
             });
           }
-
+          playSound(userJoinSound);
           joinedRoom = true;
         } else {
           roomCode = undefined;
@@ -1023,12 +1038,16 @@
             class="cursor-pointer"
             type="submit"
             onclick={() => {
+              playSound(userLeftSound);
               Object.keys(peerConnections).forEach((k) => {
                 cleanupUser(k, socketClientMap[k]);
               });
+              isConnected = false;
+              joinedRoom = false;
+              roomCode = undefined;
               setTimeout(() => {
                 window.api.reloadApp();
-              }, 250);
+              }, 350);
             }}
           >
             Leave<PhoneHangupSolid
