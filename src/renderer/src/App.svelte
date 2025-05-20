@@ -108,11 +108,15 @@
     },
   };
 
-  let userJoinSound = new Audio('user-joined.mp3');
-  userJoinSound.load();
+  const userJoinSound = new Audio('sound/user-joined.mp3');
+  const userLeftSound = new Audio('sound/user-left.mp3');
+  const micMuteSound = new Audio('sound/mic-mute.mp3');
+  const micUnmuteSound = new Audio('sound/mic-unmute.mp3');
 
-  let userLeftSound = new Audio('user-left.mp3');
+  userJoinSound.load();
   userLeftSound.load();
+  micMuteSound.load();
+  micUnmuteSound.load();
 
   const playSound = (sound: HTMLAudioElement): void => {
     const audio = sound.cloneNode() as HTMLAudioElement;
@@ -123,11 +127,13 @@
   const unmuteMicrophone = (): void => {
     window.api.setSettingsValue('micMuted', false);
     audioConnectionStuff.toggleMute(false);
+    playSound(micUnmuteSound);
   };
 
   const muteMicrophone = (): void => {
     window.api.setSettingsValue('micMuted', true);
     audioConnectionStuff.toggleMute(true);
+    playSound(micMuteSound);
   };
 
   async function intialise(): Promise<void> {
