@@ -20,7 +20,7 @@ THREE.BatchedMesh.prototype.raycast = acceleratedRaycast;
 // Available 3D .glb meshes of maps found in the static folder
 // TODO: validate the mapList in the main process
 // TODO: fetch mapList directly from the static folder, allows for custom maps to be downloaded into the folder and loaded into the app
-const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo'];
+const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo', 'de_anubis'];
 
 const mapScale: number = 39.3701;
 
