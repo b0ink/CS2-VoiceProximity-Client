@@ -19,6 +19,10 @@ const settingsStore = new Store<SettingsData>({
 });
 
 // Settings store
+settingsStore.events.setMaxListeners(
+  settingsStore.events.getMaxListeners() + Object.keys(settingsStore.store).length,
+);
+
 for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
   settingsStore.onDidChange(key, (newValue, oldValue) => {
     console.log(`Settings onDidChange`, newValue, oldValue);
@@ -33,6 +37,8 @@ for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
 }
 
 // Client Store
+store.events.setMaxListeners(store.events.getMaxListeners() + Object.keys(store.store).length);
+
 for (const key of Object.keys(store.store) as (keyof StoreData)[]) {
   store.onDidChange(key, (newValue, oldValue) => {
     mainWindowRef?.webContents.send('store:update', { key, newValue });
