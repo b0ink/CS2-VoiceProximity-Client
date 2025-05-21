@@ -76,10 +76,14 @@
         step="20"
         bind:value={playerVolume}
         oninput={() => {
-          window.api.setSettingsValue('playerVolumes', {
-            ...playerVolumes,
-            [player.steamId]: playerVolume,
-          });
+          const updatedVolumes = { ...playerVolumes };
+          if (playerVolume === 250) {
+            // 250 is default
+            delete updatedVolumes[player.steamId];
+          } else {
+            updatedVolumes[player.steamId] = playerVolume;
+          }
+          window.api.setSettingsValue('playerVolumes', updatedVolumes);
         }}
       />
     {/if}

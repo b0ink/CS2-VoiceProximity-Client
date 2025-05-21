@@ -151,7 +151,7 @@ export class RemotePlayer {
       this.gainFilter?.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
       this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       console.log(`Switching ${this.steamId} to mono audio`);
-      this.playerVoice2D.setVolume(0.3);
+      this.playerVoice2D.setVolume(0.3); // TODO: user setting: "Volume of dead teammates"
     }
   }
 

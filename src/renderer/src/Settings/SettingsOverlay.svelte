@@ -17,7 +17,7 @@
   $: natFixEnabled = $settings.natFixEnabled;
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
-  $: globalGainAmount = $settings.globalGainAmount;
+  // $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
@@ -61,11 +61,11 @@
     modalConfirmRestartRequired = true;
   };
 
-  let gainAmountRangeValue: number;
+  // let gainAmountRangeValue: number;
 
-  $: if (globalGainAmount) {
-    gainAmountRangeValue = globalGainAmount;
-  }
+  // $: if (globalGainAmount) {
+  //   gainAmountRangeValue = globalGainAmount;
+  // }
 
   let occlusionUpdateRateValue: number;
 
@@ -305,7 +305,7 @@
             window.api.setSettingsValue('occlusionUpdateRate', occlusionUpdateRateValue);
           }}
         />
-        <Label>Player volume boost: {Math.floor(gainAmountRangeValue * 100)}%</Label>
+        <!-- <Label>Player volume boost: {Math.floor(gainAmountRangeValue * 100)}%</Label>
         <p class="text-xs text-gray-400 mb-2">Adjusts the overall volume level for all players.</p>
         <Range
           class="mb-2"
@@ -317,7 +317,7 @@
           oninput={() => {
             window.api.setSettingsValue('globalGainAmount', gainAmountRangeValue);
           }}
-        />
+        /> -->
       </div>
       <br />
       <!-- 

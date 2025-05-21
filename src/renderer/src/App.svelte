@@ -52,13 +52,14 @@
   $: useTurnConfig = $settings.natFixEnabled;
   $: broadcastHqVoice = $settings.hqVoice;
   $: microphoneMuted = $settings.micMuted;
-  $: globalGainAmount = $settings.globalGainAmount;
+  // $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
   $: occlusionUpdateRate = $settings.occlusionUpdateRate;
+  $: playerVolumes = $settings.playerVolumes;
 
-  $: if (globalGainAmount) {
+  $: if (playerVolumes) {
     updateGainFilters();
   }
   // ClientStore
@@ -848,11 +849,16 @@
     }
   };
 
+  $: if (playerVolumes) {
+    updateGainFilters();
+  }
+
   const updateGainFilters = (): void => {
-    const map = getMap();
-    if (map) {
-      for (const soundData of remotePlayers.values()) {
-        soundData?.SetGain(globalGainAmount);
+    for (const soundData of remotePlayers.values()) {
+      if (soundData?.steamId !== undefined) {
+        const gainAmount = playerVolumes[soundData?.steamId] ?? 250;
+        console.log(gainAmount);
+        soundData?.SetGain(Math.floor(gainAmount / 100));
       }
     }
   };
@@ -866,6 +872,7 @@
       clientListener,
     );
     remotePlayers.set(client.steamId, remotePlayer);
+    updateGainFilters();
     console.log(`Creating remote player: ${client.steamId}`);
   };
 
