@@ -319,7 +319,6 @@
           }}
         /> -->
       </div>
-      <br />
       <!-- 
       <Button
         class="cursor-pointer"
@@ -329,14 +328,15 @@
       > -->
 
       {#if clientSteamId}
-        <button
-          class="opacity-100 underline cursor-pointer text-white w-fit m-auto"
+        <Button
+          color="light"
+          class="opacity-100 cursor-pointer text-white w-fit m-auto"
           onclick={async () => {
             await window.api.setStoreValue('steamId', null);
             await window.api.setStoreValue('token', null);
             window.api.reloadApp();
             open = false;
-          }}>Sign Out</button
+          }}>Sign Out</Button
         >
       {/if}
     </div>
