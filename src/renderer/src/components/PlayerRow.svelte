@@ -3,6 +3,11 @@
   import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { cn } from 'flowbite-svelte';
   import { CsTeam } from '../type';
+  import { onMount } from 'svelte';
+
+  import settings from '../store/settings';
+
+  $: playerVolumes = $settings.playerVolumes;
 
   interface PlayerData {
     steamId: string;
@@ -15,6 +20,12 @@
   }
   export let playerIsClient: boolean;
   export let player: PlayerData;
+
+  let playerVolume: number;
+
+  onMount(() => {
+    playerVolume = playerVolumes[player.steamId] ?? 250;
+  });
 </script>
 
 {#if player.steamId !== '0'}
@@ -63,7 +74,13 @@
         min="0"
         max="500"
         step="20"
-        value="250"
+        bind:value={playerVolume}
+        oninput={() => {
+          window.api.setSettingsValue('playerVolumes', {
+            ...playerVolumes,
+            [player.steamId]: playerVolume,
+          });
+        }}
       />
     {/if}
   </div>

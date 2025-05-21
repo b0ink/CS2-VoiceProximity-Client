@@ -24,6 +24,10 @@ export enum OcclusionQuality {
   MEDIUM,
   HIGH,
 }
+
+interface ClientVolumeMap {
+  [steamId: string]: number;
+}
 export interface SettingsData {
   alwaysOnTop: boolean;
   natFixEnabled: boolean;
@@ -36,6 +40,7 @@ export interface SettingsData {
   occlusionUpdateRate: number;
   noiseSuppression: boolean;
   echoCancellation: boolean;
+  playerVolumes: ClientVolumeMap;
 }
 
 export const DEFAULT_SETTINGS: SettingsData = {
@@ -50,4 +55,5 @@ export const DEFAULT_SETTINGS: SettingsData = {
   occlusionUpdateRate: 2,
   noiseSuppression: true,
   echoCancellation: true,
+  playerVolumes: {},
 };
