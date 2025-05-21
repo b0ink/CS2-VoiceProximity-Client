@@ -2,7 +2,7 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
-  import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Input } from 'flowbite-svelte';
   import {
     CogSolid,
     MicrophoneSlashSolid,
@@ -29,6 +29,7 @@
   import type {
     AudioConnectionStuff,
     Client,
+    JoinRoomData,
     JoinRoomResponse,
     PeerConnectionBandwidth,
     PeerConnections,
@@ -128,12 +129,14 @@
     window.api.setSettingsValue('micMuted', false);
     audioConnectionStuff.toggleMute(false);
     playSound(micUnmuteSound);
+    socket?.emit('microphone-state', { isMuted: false });
   };
 
   const muteMicrophone = (): void => {
     window.api.setSettingsValue('micMuted', true);
     audioConnectionStuff.toggleMute(true);
     playSound(micMuteSound);
+    socket?.emit('microphone-state', { isMuted: true });
   };
 
   async function intialise(): Promise<void> {
@@ -265,6 +268,18 @@
           allowDeadTeamVoice: decoded.allowDeadTeamVoice,
           allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
         });
+      });
+
+      socket?.on('microphone-state', (socketId: string, isMuted: boolean) => {
+        console.log(`socket.on(microphone-state): ${socketId}  isMuted: ${isMuted}`);
+        const client = socketClientMap[socketId];
+        if (client) {
+          client.isMuted = isMuted;
+        } else {
+          console.error(
+            `socket.on(microphone-state): Tried to update microphone-state for an unknown socket ${socketId}`,
+          );
+        }
       });
 
       // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
@@ -650,14 +665,16 @@
         };
 
         socket?.on('user-joined', async (peer: string, client: Client) => {
-          console.log(`socket.on('user-joined') ${peer} ${client.steamId}`);
+          console.log(`socket.on('user-joined') ${peer} ${JSON.stringify(client)}`);
 
           // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
           // await window.api.retrieveTurnCredentials();
           playSound(userJoinSound);
 
-          createPeerConnection(peer, true, client);
           socketClientMap[peer] = client;
+          socketClientMap = { ...socketClientMap };
+
+          createPeerConnection(peer, true, client);
         });
 
         socket?.on('user-left', async (peer: string, client: Client) => {
@@ -733,6 +750,11 @@
     clientId: string,
     isHost: boolean,
   ): void => {
+    if (!clientToken) {
+      window.api.reloadApp();
+      return;
+    }
+
     // setOtherVAD({});
     // setOtherTalking({}); // probably used for talking indicators?
     if (lobbyCode === 'MENU') {
@@ -749,12 +771,15 @@
       // socket?.emit('leave');
       // socket?.emit('id', playerId, clientId);
 
-      const joinRoomPayload = {
+      const joinRoomPayload: JoinRoomData = {
         token: clientToken,
         roomCode: lobbyCode,
+        // TODO: combine steamid, clientid, ismuted with the Client object
         steamId: playerId,
-        clientId: clientId,
-        isHost: isHost,
+        clientId: clientId, // TODO: deprecate clientId (only use steamId)
+        isMuted: microphoneMuted,
+
+        isHost: isHost, // TODO: remove this
       };
 
       socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
@@ -956,73 +981,22 @@
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 
-<CogSolid
-  onclick={() => {
-    settingsOpen = !settingsOpen;
-  }}
-  color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
-  class={cn(
-    'cursor-pointer absolute  right-4 z-20 select-none transition-all duration-300',
-    clientSteamId || settingsOpen ? 'top-5.5' : 'bottom-5.5',
-    settingsOpen ? 'rotate-90' : 'rotate-0',
-  )}
-  size="lg"
-/>
-
-{#if clientSteamId}
-  <svelte:component
-    this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
-    onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
-    color={microphoneMuted ? 'red' : 'grey'}
-    class={cn(
-      'cursor-pointer absolute top-5.5 left-4 z-20 select-none transition-all duration-300',
-    )}
-    size="lg"
-  />
-{/if}
-
 <SettingsOverlay bind:open={settingsOpen} />
-<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center h-dvh w-full')}>
-  <div class="text-center">
-    <Heading tag="h1" class="mb-4 text-xl font-extrabold z-10">CS2 Proximity Chat</Heading>
-  </div>
-  {#if !clientSteamId}
-    <SteamLoginButton />
-  {/if}
-
-  {#if clientSteamId}
-    {#if !socketConnected}
-      <Alert color="yellow" class="text-center mb-4">
-        <span class="font-medium">Connecting to the backend service...</span>
-      </Alert>
-    {/if}
-    {#if playerServerRoomCode && !isConnected}
-      <Alert color="green" class="text-center mb-4">
-        <span class="font-medium">
-          You are connected to a server<br />(Steam ID detected)<br />
-          <button
-            class="underline cursor-pointer hover:text-black"
-            onclick={() => {
-              if (playerServerRoomCode) {
-                roomCodeInput = playerServerRoomCode;
-                joinRoom();
-              }
-            }}>Connect now.</button
-          >
-        </span>
-      </Alert>
-    {/if}
-
-    {#if !turnUsername || !turnPassword}
-      <Alert color="orange" class="text-center mb-4">
-        <span class="font-medium">Failed to fetch TURN credentials.</span>
-        <p>Please try logging out and back in, restarting the app, or try again later.</p>
-      </Alert>
-    {/if}
-    <div>
-      <Label for="room-code" class="mb-2">Room Code:</Label>
-
-      <ButtonGroup class="w-full">
+<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center w-full')}>
+  <div class="flex justify-center w-full items-center">
+    <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
+    {#if clientSteamId}
+      <svelte:component
+        this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
+        onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
+        color={microphoneMuted ? 'red' : 'grey'}
+        class={cn(
+          'cursor-pointer z-20 select-none transition-all duration-300',
+          // 'absolute top-5.5 left-4',
+        )}
+        size="lg"
+      />
+      <ButtonGroup class="w-full max-w-54 ml-3 mr-4" size="sm">
         <Input
           id="room-code"
           name="room-code"
@@ -1068,7 +1042,55 @@
             Join</Button
           >{/if}
       </ButtonGroup>
-    </div>
+    {/if}
+
+    <CogSolid
+      onclick={() => {
+        settingsOpen = !settingsOpen;
+      }}
+      color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
+      class={cn(
+        'cursor-pointer z-20 select-none transition-all duration-300',
+        // clientSteamId || settingsOpen ? 'top-7' : 'bottom-5.5',
+        !clientSteamId ? 'absolute top-7.5 right-5.5' : '',
+        settingsOpen ? 'rotate-90' : 'rotate-0',
+      )}
+      size="lg"
+    />
+  </div>
+  {#if !clientSteamId}
+    <SteamLoginButton />
+  {/if}
+
+  {#if clientSteamId}
+    {#if !socketConnected}
+      <Alert color="yellow" class="text-center mb-4">
+        <span class="font-medium">Connecting to the backend service...</span>
+      </Alert>
+    {/if}
+    {#if playerServerRoomCode && !isConnected}
+      <Alert color="green" class="text-center mb-4">
+        <span class="font-medium">
+          You are connected to a server<br />(Steam ID detected)<br />
+          <button
+            class="underline cursor-pointer hover:text-black"
+            onclick={() => {
+              if (playerServerRoomCode) {
+                roomCodeInput = playerServerRoomCode;
+                joinRoom();
+              }
+            }}>Connect now.</button
+          >
+        </span>
+      </Alert>
+    {/if}
+
+    {#if !turnUsername || !turnPassword}
+      <Alert color="orange" class="text-center mb-4">
+        <span class="font-medium">Failed to fetch TURN credentials.</span>
+        <p>Please try logging out and back in, restarting the app, or try again later.</p>
+      </Alert>
+    {/if}
 
     <div class="m-2 overflow-hidden relative">
       {#if roomCode}

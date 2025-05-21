@@ -11,6 +11,7 @@ export enum CsTeam {
 export interface Client {
   steamId: string;
   clientId: string; // this would have to be unique to the players PC?
+  isMuted: boolean;
 }
 
 export interface SocketClientMap {
@@ -61,6 +62,15 @@ export interface JoinRoomResponse {
   mapName?: string;
   joinedClients?: { [key: string]: Client };
   serverConfig?: ServerConfigData;
+}
+
+export interface JoinRoomData {
+  token: string;
+  roomCode: string;
+  steamId: string;
+  clientId: string;
+  isHost: boolean;
+  isMuted: boolean;
 }
 
 // interface AudioNodes {
