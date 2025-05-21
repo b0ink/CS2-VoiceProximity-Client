@@ -81,12 +81,14 @@ export class RemotePlayer {
     audioRef.srcObject = remoteStream;
     audioRef.muted = true;
 
-    const playerVoice3D = new THREE.PositionalAudio(listener);
+    const playerVoice3D = new THREE.PositionalAudio(listener); // defaults to "inverse" distance model
     playerVoice3D.setMediaStreamSource(remoteStream);
     playerVoice3D.setVolume(1);
+    // TODO: experiment with a larger refDistance (60): https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/refDistance
     playerVoice3D.setRefDistance(39);
+    // TODO: experiment with a smaller rolloff factor (0.75): https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/rolloffFactor
     playerVoice3D.setRolloffFactor(1);
-    playerVoice3D.setMaxDistance(1000);
+    // playerVoice3D.setMaxDistance(1000); // only used by the "linear" distance model
     playerObject.add(playerVoice3D);
     this.playerVoice3D = playerVoice3D;
 
@@ -104,6 +106,18 @@ export class RemotePlayer {
     this.gainAmount = 2.5;
     this.initStereoFilters();
     this.initMonoFilters();
+  }
+
+  public setRefDistance(distance: number): void {
+    if (this.playerVoice3D.getRefDistance() !== distance) {
+      this.playerVoice3D.setRefDistance(distance);
+    }
+  }
+
+  public setRolloffFactor(factor: number): void {
+    if (this.playerVoice3D.getRolloffFactor() !== factor) {
+      this.playerVoice3D.setRolloffFactor(factor);
+    }
   }
 
   private initStereoFilters(): void {

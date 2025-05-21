@@ -73,6 +73,8 @@
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
   $: allowDeadTeamVoice = $serverConfigStore.allowDeadTeamVoice;
   $: allowSpectatorC4Voice = $serverConfigStore.allowSpectatorC4Voice;
+  $: refDistance = $serverConfigStore.refDistance;
+  $: rolloffFactor = $serverConfigStore.rolloffFactor;
 
   // The API will notify the client if they have joined a CS2 server but have not joined the room yet
   let playerServerRoomCode: string | undefined;
@@ -260,6 +262,8 @@
           deadPlayerMuteDelay: raw.DeadPlayerMuteDelay as number,
           allowDeadTeamVoice: raw.AllowDeadTeamVoice as boolean,
           allowSpectatorC4Voice: raw.AllowSpectatorC4Voice as boolean,
+          rolloffFactor: raw.rolloffFactor as number,
+          refDistance: raw.refDistance as number,
         };
 
         console.log(`socket.on('server-config'):`, decoded);
@@ -268,6 +272,8 @@
           deadPlayerMuteDelay: decoded.deadPlayerMuteDelay,
           allowDeadTeamVoice: decoded.allowDeadTeamVoice,
           allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
+          rolloffFactor: decoded.rolloffFactor,
+          refDistance: decoded.refDistance,
         });
       });
 
@@ -845,6 +851,8 @@
     if (map) {
       for (const soundData of remotePlayers.values()) {
         soundData?.updateOcclusion(map, occlusionQuality);
+        soundData?.setRolloffFactor(rolloffFactor);
+        soundData?.setRefDistance(refDistance);
       }
     }
   };
