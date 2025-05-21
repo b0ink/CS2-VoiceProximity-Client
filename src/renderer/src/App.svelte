@@ -2,7 +2,7 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
-  import { Alert, Button, ButtonGroup, Heading, Input } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import {
     CogSolid,
     MicrophoneSlashSolid,
@@ -1002,7 +1002,7 @@
 
 <SettingsOverlay bind:open={settingsOpen} />
 <div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center w-full h-dvh')}>
-  <div class="flex justify-center w-full items-center">
+  <div class={cn('flex w-full items-center', isConnected ? 'justify-center' : 'justify-between')}>
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId}
       <svelte:component
@@ -1015,52 +1015,65 @@
         )}
         size="lg"
       />
-      <ButtonGroup class="w-full max-w-54 ml-3 mr-4" size="sm">
-        <Input
-          id="room-code"
-          name="room-code"
-          disabled={isConnected || !socketConnected}
-          bind:value={roomCodeInput}
-          placeholder="Room code"
-        />
-        {#if isConnected && socketConnected}
-          <Button
-            color="red"
-            class="cursor-pointer"
-            type="submit"
-            onclick={() => {
-              playSound(userLeftSound);
-              Object.keys(peerConnections).forEach((k) => {
-                cleanupUser(k, socketClientMap[k]);
-              });
-              isConnected = false;
-              joinedRoom = false;
-              roomCode = undefined;
-              setTimeout(() => {
-                window.api.reloadApp();
-              }, 350);
-            }}
-          >
-            <PhoneHangupSolid
-              color="white"
-              class={cn('cursor-pointer select-none transition-all duration-300')}
-            /></Button
-          >
-        {:else}
-          <Button
-            color="primary"
-            class="cursor-pointer"
-            type="submit"
-            onclick={joinRoom}
-            disabled={isConnected ||
-              !socketConnected ||
-              !turnUsername ||
-              !turnPassword ||
-              !!roomCode}
-          >
-            Join</Button
-          >{/if}
-      </ButtonGroup>
+      <div
+        class={cn(
+          'w-full',
+          !isConnected && 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
+        )}
+      >
+        {#if !isConnected}
+          <Label class="mb-2">Server IP:</Label>
+        {/if}
+        <ButtonGroup
+          class={cn('w-full ', isConnected && 'max-w-54 ml-4 mr-4')}
+          size={!isConnected ? 'md' : 'sm'}
+        >
+          <Input
+            id="room-code"
+            name="room-code"
+            disabled={isConnected || !socketConnected}
+            bind:value={roomCodeInput}
+            placeholder="Room code"
+          />
+          {#if isConnected && socketConnected}
+            <Button
+              color="red"
+              class="cursor-pointer"
+              type="submit"
+              onclick={() => {
+                playSound(userLeftSound);
+                Object.keys(peerConnections).forEach((k) => {
+                  cleanupUser(k, socketClientMap[k]);
+                });
+                isConnected = false;
+                joinedRoom = false;
+                roomCode = undefined;
+                setTimeout(() => {
+                  window.api.reloadApp();
+                }, 350);
+              }}
+            >
+              <PhoneHangupSolid
+                color="white"
+                class={cn('cursor-pointer select-none transition-all duration-300')}
+              /></Button
+            >
+          {:else}
+            <Button
+              color="primary"
+              class="cursor-pointer"
+              type="submit"
+              onclick={joinRoom}
+              disabled={isConnected ||
+                !socketConnected ||
+                !turnUsername ||
+                !turnPassword ||
+                !!roomCode}
+            >
+              Join</Button
+            >{/if}
+        </ButtonGroup>
+      </div>
     {/if}
 
     <CogSolid
@@ -1126,10 +1139,10 @@
           <span>You are currently muted</span>
         </div>
       {/if}
-      <div class="dark:bg-gray-900 relative" id="threejs"></div>
+      <div class={cn('dark:bg-gray-900 relative', !isConnected && 'hidden')} id="threejs"></div>
     </div>
 
-    {#if !!roomCode}
+    {#if !!roomCode && isConnected}
       <PlayerList
         mySteamId={clientSteamId}
         players={playerPositions}
