@@ -2,7 +2,7 @@
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
   import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
-  import { Alert, Button, ButtonGroup, Input } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Heading, Input } from 'flowbite-svelte';
   import {
     CogSolid,
     MicrophoneSlashSolid,
@@ -1001,7 +1001,7 @@
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 
 <SettingsOverlay bind:open={settingsOpen} />
-<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center w-full')}>
+<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center w-full h-dvh')}>
   <div class="flex justify-center w-full items-center">
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId}
@@ -1078,6 +1078,7 @@
     />
   </div>
   {#if !clientSteamId}
+    <Heading tag="h1" class="mb-4 text-xl font-extrabold z-10">CS2 Proximity Chat</Heading>
     <SteamLoginButton />
   {/if}
 
