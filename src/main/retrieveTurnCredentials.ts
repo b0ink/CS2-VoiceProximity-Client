@@ -1,4 +1,5 @@
-import { store, settingsStore } from './store';
+import { settingsStore, store } from './store';
+
 interface TurnCredential {
   username: string;
   password: string;
@@ -36,15 +37,26 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
         authorization: `Bearer ${token}`,
       },
     });
-    const data: { message: string; data: TurnCredential } = await response.json();
-    const credential = data.data;
-    store.set('turnUsername', credential.username);
-    store.set('turnPassword', credential.password);
-    console.log(`Received turn credentials: ${JSON.stringify(credential)}`);
-    return {
-      username: credential.username,
-      password: credential.password,
-    };
+    const statusCode = response.status;
+    if (statusCode === 401) {
+      console.log('Token must be invalid, user must authenticate');
+      store.set('token', null);
+      store.set('steamId', null);
+      return null;
+    }
+    if (statusCode === 200) {
+      const data: { message: string; data: TurnCredential } = await response.json();
+      const credential = data.data;
+      store.set('turnUsername', credential.username);
+      store.set('turnPassword', credential.password);
+      console.log(`Received turn credentials: ${JSON.stringify(credential)}`);
+
+      return {
+        username: credential.username,
+        password: credential.password,
+      };
+    }
+    throw Error(`Failed to fetch credentials`);
   } catch (e) {
     console.error(e);
     return null;
