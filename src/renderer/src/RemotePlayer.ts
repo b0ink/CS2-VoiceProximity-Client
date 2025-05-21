@@ -109,14 +109,22 @@ export class RemotePlayer {
   }
 
   public setRefDistance(distance: number): void {
+    if (distance === undefined) {
+      return;
+    }
     if (this.playerVoice3D.getRefDistance() !== distance) {
+      console.log(`setting refDistance to ${distance}`);
       this.playerVoice3D.setRefDistance(distance);
     }
   }
 
   public setRolloffFactor(factor: number): void {
+    if (factor === undefined) {
+      return;
+    }
     if (this.playerVoice3D.getRolloffFactor() !== factor) {
       this.playerVoice3D.setRolloffFactor(factor);
+      console.log(`setting rolloffFactor to ${factor}`);
     }
   }
 

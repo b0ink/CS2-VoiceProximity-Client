@@ -259,21 +259,21 @@
         console.log(`socket.on('server-config'): ${data}`);
         const raw = decode(new Uint8Array(data)) as Record<string, unknown>;
         const decoded: ServerConfigData = {
-          deadPlayerMuteDelay: raw.DeadPlayerMuteDelay as number,
-          allowDeadTeamVoice: raw.AllowDeadTeamVoice as boolean,
-          allowSpectatorC4Voice: raw.AllowSpectatorC4Voice as boolean,
-          rolloffFactor: raw.rolloffFactor as number,
-          refDistance: raw.refDistance as number,
+          deadPlayerMuteDelay: raw.DeadPlayerMuteDelay as number | undefined,
+          allowDeadTeamVoice: raw.AllowDeadTeamVoice as boolean | undefined,
+          allowSpectatorC4Voice: raw.AllowSpectatorC4Voice as boolean | undefined,
+          rolloffFactor: raw.RolloffFactor as number | undefined,
+          refDistance: raw.RefDistance as number | undefined,
         };
 
         console.log(`socket.on('server-config'):`, decoded);
 
         serverConfigStore.set({
-          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay,
-          allowDeadTeamVoice: decoded.allowDeadTeamVoice,
-          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
-          rolloffFactor: decoded.rolloffFactor,
-          refDistance: decoded.refDistance,
+          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay ?? 1,
+          allowDeadTeamVoice: decoded.allowDeadTeamVoice ?? true,
+          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice ?? true,
+          rolloffFactor: decoded.rolloffFactor ?? 1,
+          refDistance: decoded.refDistance ?? 39,
         });
       });
 
@@ -851,8 +851,12 @@
     if (map) {
       for (const soundData of remotePlayers.values()) {
         soundData?.updateOcclusion(map, occlusionQuality);
-        soundData?.setRolloffFactor(rolloffFactor);
-        soundData?.setRefDistance(refDistance);
+        if (rolloffFactor !== undefined) {
+          soundData?.setRolloffFactor(rolloffFactor);
+        }
+        if (refDistance !== undefined) {
+          soundData?.setRefDistance(refDistance);
+        }
       }
     }
   };
