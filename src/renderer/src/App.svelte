@@ -1041,9 +1041,9 @@
               }, 350);
             }}
           >
-            Leave<PhoneHangupSolid
+            <PhoneHangupSolid
               color="white"
-              class={cn('cursor-pointer select-none ml-1 transition-all duration-300')}
+              class={cn('cursor-pointer select-none transition-all duration-300')}
             /></Button
           >
         {:else}
@@ -1088,7 +1088,7 @@
       </Alert>
     {/if}
     {#if playerServerRoomCode && !isConnected}
-      <Alert color="green" class="text-center mb-4">
+      <Alert color="green" class="text-center mb-4 mt-4">
         <span class="font-medium">
           You are connected to a server<br />(Steam ID detected)<br />
           <button
