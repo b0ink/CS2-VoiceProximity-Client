@@ -1084,7 +1084,7 @@
 
   {#if clientSteamId}
     {#if !socketConnected}
-      <Alert color="yellow" class="text-center mb-4">
+      <Alert color="yellow" class="text-center mb-4 mt-4">
         <span class="font-medium">Connecting to the backend service...</span>
       </Alert>
     {/if}
@@ -1106,7 +1106,7 @@
     {/if}
 
     {#if !turnUsername || !turnPassword}
-      <Alert color="orange" class="text-center mb-4">
+      <Alert color="orange" class="text-center mb-4 mt-4">
         <span class="font-medium">Failed to fetch TURN credentials.</span>
         <p>Please try logging out and back in, restarting the app, or try again later.</p>
       </Alert>
