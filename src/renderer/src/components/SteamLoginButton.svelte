@@ -7,13 +7,13 @@
 
 <Modal title="Login with Steam" bind:open={infoModalOpen} autoclose>
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    Logging in with Steam lets the app verify your SteamID and confirm you're actually on the CS2
-    server. This helps identify which player you are among everyone on the server and ensures only
-    the right player can access the voice chat, keeping random users out.
+    Logging in with Steam lets the app verify your SteamID and confirm your presence on the CS2
+    server. This ensures accurate player identification and restricts voice chat access to only
+    users who are currently on the server, preventing unauthorised access by random users.
   </p>
 
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    Your Steam credentials are never shared with us.
+    Your Steam credentials are never shared with the application.
   </p>
 
   {#snippet footer()}
