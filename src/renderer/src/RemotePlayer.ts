@@ -301,26 +301,34 @@ export class RemotePlayer {
       this.playerObject?.position,
       occlusionQuality,
     );
-    const maxDist = 1000;
-    const fadeStart = 1500;
-    const fadeEnd = 2000; // where it fully reaches 25
 
-    const distRatio = Math.min(distance / maxDist, 1);
+    // Used for overall occlusion
+    const highestOcclusionWhenClose = 500; // Maximum occlusion when player is closest to sound source
+    const maxDist = 1000; // Once player reaches this distance, occlusion will be capped at baseOcclusion. Occlusion fades from highestOcclusionWhenClose -> baseOcclusion.
+    const baseOcclusion = 200; // Fixed occlusion amount when player's distance is between maxDist and fadeStart.
+
+    // Used to fade out player voices entirely
+    const lowestPossibleOcclusion = 25; // The maximum occlusion when player's distance reaches fadeEnd
+    const fadeStart = 1500; // Distance where it begins fading from baseOcclusion -> lowestPossibleOcclusion
+    const fadeEnd = 2000; // Distance where it fully reaches lowestPossibleOcclusion
+
     let minOcclusion;
 
     if (distance <= fadeStart) {
-      minOcclusion = 100;
+      minOcclusion = baseOcclusion;
     } else {
       const fadeRatio = Math.min((distance - fadeStart) / (fadeEnd - fadeStart), 1);
-      minOcclusion = 100 - fadeRatio * (100 - 25); // fades from 100 → 25
+      minOcclusion = baseOcclusion - fadeRatio * (baseOcclusion - lowestPossibleOcclusion); // fades from baseOcclusion → lowestPossibleOcclusion
     }
 
-    const minFreq = minOcclusion + (1 - distRatio) * (500 - minOcclusion);
+    const distRatio = Math.min(distance / maxDist, 1);
+
+    const minFreq = minOcclusion + (1 - distRatio) * (highestOcclusionWhenClose - minOcclusion);
 
     const easing = 0.5;
     const eased = Math.pow(occlusion, easing);
 
-    const amount = Math.round((minFreq + (1 - eased) * (11000 - minFreq)) / 5) * 5;
+    const amount = Math.round((minFreq + (1 - eased) * (11000 - minFreq)) / 5) * 5; // Round up occlusion to the nearest 5
 
     this.setLowPassFilterFrequency(amount);
 
