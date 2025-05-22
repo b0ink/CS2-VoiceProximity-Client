@@ -204,7 +204,7 @@
         </Select>
       </div> -->
 
-      <ChangeSocketServer open={true} />
+      <ChangeSocketServer />
       <div>
         <Label class="mb-2">Window preferences:</Label>
         <Toggle
