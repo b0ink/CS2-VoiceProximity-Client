@@ -54,11 +54,11 @@
   $: microphoneMuted = $settings.micMuted;
   // $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
+  $: occlusionAutoQuality = $settings.occlusionAutoQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
   $: occlusionUpdateRate = $settings.occlusionUpdateRate;
   $: playerVolumes = $settings.playerVolumes;
-
   $: if (playerVolumes) {
     updateGainFilters();
   }
@@ -85,6 +85,13 @@
   let threejs: THREE.WebGLRenderer;
   let clientListener: THREE.AudioListener;
   let remotePlayers: Map<string, RemotePlayer | undefined> = new Map<string, RemotePlayer>();
+
+  let occlusionUpdateTimes: number[] = [];
+  const DOWNGRADE_THRESHOLD = 90; // must be consistently above this to decrease occlusion detail
+  const UPGRADE_THRESHOLD = 40; // must be consistently below this to increase occlusion detail
+  const REQUIRED_FRAMES = 30;
+  let goodFrameCount = 0;
+  let badFrameCount = 0;
 
   let playerPositions: PlayerPositionApiData[] = [];
 
@@ -428,6 +435,8 @@
           }
         }
 
+        const start: number = performance.now();
+
         if (clientCamera) {
           threejs.render(scene, clientCamera);
         }
@@ -444,6 +453,45 @@
         ) {
           shouldUpdateSoundFilters = 0;
           updateSoundFilters();
+
+          // Track how long it takes to render each frame and calculate occlusion
+          const duration: number = performance.now() - start;
+          occlusionUpdateTimes.push(duration);
+          if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
+
+          const averageFrameTime =
+            occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
+
+          if (occlusionAutoQuality) {
+            if (averageFrameTime > DOWNGRADE_THRESHOLD) {
+              badFrameCount++;
+              goodFrameCount = 0;
+            } else if (averageFrameTime < UPGRADE_THRESHOLD) {
+              goodFrameCount++;
+              badFrameCount = 0;
+            } else {
+              goodFrameCount = 0;
+              badFrameCount = 0;
+            }
+
+            if (badFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.LOW) {
+              const next =
+                occlusionQuality === OcclusionQuality.HIGH
+                  ? OcclusionQuality.MEDIUM
+                  : OcclusionQuality.LOW;
+              window.api.setSettingsValue('occlusionQuality', next);
+              badFrameCount = 0;
+            }
+
+            if (goodFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
+              const next =
+                occlusionQuality === OcclusionQuality.LOW
+                  ? OcclusionQuality.MEDIUM
+                  : OcclusionQuality.HIGH;
+              window.api.setSettingsValue('occlusionQuality', next);
+              goodFrameCount = 0;
+            }
+          }
         }
       });
     }

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { Button, Heading, Label, Modal, Select, Toggle, Range } from 'flowbite-svelte';
+  import { Button, Heading, Label, Modal, Select, Toggle, Range, cn } from 'flowbite-svelte';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import { onMount } from 'svelte';
@@ -22,6 +22,7 @@
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
   $: occlusionUpdateRate = $settings.occlusionUpdateRate;
+  $: occlusionAutoQuality = $settings.occlusionAutoQuality;
 
   let selectedDeviceId: string | null;
 
@@ -265,23 +266,41 @@
             Echo Cancellation
           {/snippet}</Toggle
         >
+
         <Label title="" for="occlusion-quality" class="">Sound Occlusion Detail:</Label>
         <p class="text-xs text-gray-400 mb-2">
           Controls how precisely sound is blocked. Higher levels use more raycasts and may reduce
           performance.
         </p>
 
-        <Select
-          bind:value={occlusionQualitySelectValue}
-          onchange={onOcclusionQualityChange}
-          id="occlusion-quality"
-          class="mb-4"
+        <Toggle
+          id="echo-cancellation"
+          checked={occlusionAutoQuality}
+          class="justify-between mb-2"
+          onclick={() => {
+            window.api.setSettingsValue('occlusionAutoQuality', !occlusionAutoQuality);
+          }}
         >
-          <option value={OcclusionQuality.OFF}>Off</option>
-          <option value={OcclusionQuality.LOW}>Low</option>
-          <option value={OcclusionQuality.MEDIUM}>Medium</option>
-          <option value={OcclusionQuality.HIGH}>High</option>
-        </Select>
+          {#snippet offLabel()}
+            Auto adjust occlusion detail
+          {/snippet}</Toggle
+        >
+
+        {#if !occlusionAutoQuality}
+          <Select
+            bind:value={occlusionQualitySelectValue}
+            onchange={onOcclusionQualityChange}
+            id="occlusion-quality"
+            class={cn('mb-4', occlusionAutoQuality && 'cursor-not-allowed dark:text-gray-400')}
+            disabled={occlusionAutoQuality}
+          >
+            <option value={OcclusionQuality.OFF}>Off</option>
+            <option value={OcclusionQuality.LOW}>Low</option>
+            <option value={OcclusionQuality.MEDIUM}>Medium</option>
+            <option value={OcclusionQuality.HIGH}>High</option>
+          </Select>
+        {/if}
+
         <!-- <Label>
           Sound occlusion update delay: {occlusionUpdateIntervalValue === 1
             ? 'Every frame'
@@ -290,6 +309,7 @@
         <Label>
           Sound occlusion update rate: {occlusionUpdateRateValue * 100}ms
         </Label>
+
         <p class="text-xs text-gray-400 mb-2">
           Controls how often audio occlusion is recalculated. Increasing the delay can improve
           performance but may cause a brief lag before players become audible.
