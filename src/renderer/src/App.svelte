@@ -68,6 +68,9 @@
   $: turnUsername = $store.turnUsername;
   $: turnPassword = $store.turnPassword;
   $: savedRoomCode = $store.savedRoomCode;
+  $: regions = $store.regions;
+
+  $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
 
   // ServerConfig Store
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
@@ -1121,6 +1124,17 @@
               Join</Button
             >{/if}
         </ButtonGroup>
+
+        {#if !isConnected}
+          <div class={cn('w-full text-center text-gray-400 text-sm p-2')}>
+            Region: <button
+              class="text-gray-500 cursor-pointer hover:text-primary-600"
+              onclick={() => {
+                settingsOpen = true;
+              }}>{socketServerLabel}</button
+            >
+          </div>
+        {/if}
       </div>
     {/if}
 
@@ -1199,9 +1213,22 @@
       ></PlayerList>
     {/if}
   {/if}
-  {#if !clientSteamId}
-    <span class="absolute bottom-0 mb-6.5 text-white opacity-50 text-xs"
-      >v{window.api.clientVersion()}</span
-    >
-  {/if}
+  <div
+    class={cn(
+      ' absolute bottom-0 text-center text-xs left-1/2  -translate-x-1/2 ',
+      !isConnected ? 'mb-6.5 text-gray-400' : 'mb-1 text-gray-500',
+    )}
+  >
+    <div>v{window.api.clientVersion()}</div>
+    {#if !clientSteamId}
+      <div>
+        Region: <button
+          class="text-gray-500 cursor-pointer hover:text-primary-600"
+          onclick={() => {
+            settingsOpen = true;
+          }}>{socketServerLabel}</button
+        >
+      </div>
+    {/if}
+  </div>
 </div>
