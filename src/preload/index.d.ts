@@ -23,5 +23,7 @@ declare global {
 
     getStore: () => Promise<StoreData>;
     onStoreUpdate: (callback: (data: { key: keyof StoreData; newValue: any }) => void) => void;
+
+    getRegionPings: () => void;
   }
 }

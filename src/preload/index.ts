@@ -26,6 +26,8 @@ const api = {
   onStoreUpdate: (callback: (data: { key: string; newValue: any }) => void) => {
     ipcRenderer.on('store:update', (_event, data) => callback(data));
   },
+
+  getRegionPings: () => ipcRenderer.invoke('get-region-pings'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

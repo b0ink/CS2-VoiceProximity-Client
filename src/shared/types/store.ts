@@ -1,6 +1,14 @@
 import { DefaultNotificationOptions } from 'svelte-notifications';
 import { DEFAULT_SOCKET_SERVER } from '../constants';
 
+interface Region {
+  name: string;
+  url: string;
+  turn: string;
+  disabled: boolean;
+  ping: number;
+}
+
 export interface StoreData {
   steamId: string | null;
   token: string | null;
@@ -8,6 +16,7 @@ export interface StoreData {
   turnPassword: string | null;
   notification: DefaultNotificationOptions | null;
   savedRoomCode: string | null;
+  regions: Region[];
 }
 export const DEFAULT_STORE: StoreData = {
   steamId: null,
@@ -16,6 +25,22 @@ export const DEFAULT_STORE: StoreData = {
   turnPassword: null,
   notification: null,
   savedRoomCode: null,
+  regions: [
+    {
+      name: 'Oceania',
+      url: 'https://au.cs2voiceproximity.chat',
+      turn: 'https://turn.cs2voiceproximity.chat',
+      disabled: false,
+      ping: 0,
+    },
+    {
+      name: 'Europe',
+      url: 'https://eu.cs2voiceproximity.chat',
+      turn: 'https://turn.cs2voiceproximity.chat',
+      disabled: true,
+      ping: 0,
+    },
+  ],
 };
 
 export enum OcclusionQuality {

@@ -2,39 +2,19 @@
   import { Button, ButtonGroup, Input, Label, Modal, Select } from 'flowbite-svelte';
   import { onMount } from 'svelte';
   import { cn } from '../lib/tailwind';
+  import store from '../store/client';
   import settings from '../store/settings';
 
   $: storedSocketServer = $settings.socketServer;
   let socketServerInput: string;
   let confirmModalOpen = false;
 
+  $: regions = $store.regions;
   let serverRegion: string;
-
-  interface Region {
-    name: string;
-    url: string;
-    turn: string;
-    disabled: boolean;
-  }
-
-  // TODO: move this to the main process as a store
-  const regions: Region[] = [
-    {
-      name: 'Oceania',
-      url: 'https://au.cs2voiceproximity.chat',
-      turn: 'https://turn.cs2voiceproximity.chat',
-      disabled: false,
-    },
-    {
-      name: 'Europe (N/A)',
-      url: 'https://eu.cs2voiceproximity.chat',
-      turn: 'https://turn.cs2voiceproximity.chat',
-      disabled: true,
-    },
-  ];
 
   onMount(() => {
     getStoredSocketServer();
+    window.api.getRegionPings();
   });
 
   const getStoredSocketServer = (): void => {
@@ -104,7 +84,9 @@
     }}
   >
     {#each regions as region (region.url)}
-      <option value={region.url} disabled={region.disabled}>{region.name}</option>
+      <option value={region.url} disabled={region.disabled || region.ping === -1}
+        >{region.name} ({region.ping !== -1 ? `${region.ping} ms` : 'N/A'})</option
+      >
     {/each}
     <option value="custom">Custom Server (URL)</option>
   </Select>
