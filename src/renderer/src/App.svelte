@@ -1139,7 +1139,7 @@
     />
   </div>
   {#if !clientSteamId}
-    <Heading tag="h1" class="mb-4 text-xl font-extrabold z-10">CS2 Proximity Chat</Heading>
+    <Heading tag="h1" class="mb-4 text-xl font-extrabold z-5">CS2 Proximity Chat</Heading>
     <SteamLoginButton />
   {/if}
 
