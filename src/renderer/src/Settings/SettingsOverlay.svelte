@@ -1,15 +1,13 @@
 <script lang="ts">
-  import { Button, Heading, Label, Modal, Select, Toggle, Range, cn } from 'flowbite-svelte';
+  import { Button, Heading, Label, Modal, Select, Toggle, cn } from 'flowbite-svelte';
+  import { onMount } from 'svelte';
+  import { OcclusionQuality } from '../../../shared/types/store';
+  import store from '../store/client';
+  import settings from '../store/settings';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
-  import { onMount } from 'svelte';
-  export let open: boolean;
-  // export let mapName: string;
-  // export let onMapChange: () => void;
 
-  import settings from '../store/settings';
-  import store from '../store/client';
-  import { OcclusionQuality } from '../../../shared/types/store';
+  export let open: boolean;
 
   $: socketUrl = $settings.socketServer;
   $: clientSteamId = $store.steamId;
@@ -21,7 +19,7 @@
   $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
-  $: occlusionUpdateRate = $settings.occlusionUpdateRate;
+  // $: occlusionUpdateRate = $settings.occlusionUpdateRate;
   $: occlusionAutoQuality = $settings.occlusionAutoQuality;
 
   let selectedDeviceId: string | null;
@@ -68,11 +66,11 @@
   //   gainAmountRangeValue = globalGainAmount;
   // }
 
-  let occlusionUpdateRateValue: number;
+  // let occlusionUpdateRateValue: number;
 
-  $: if (occlusionUpdateRate) {
-    occlusionUpdateRateValue = occlusionUpdateRate;
-  }
+  // $: if (occlusionUpdateRate) {
+  //   occlusionUpdateRateValue = occlusionUpdateRate;
+  // }
 
   let occlusionQualitySelectValue: number;
   $: if (occlusionQuality !== null) {
@@ -282,31 +280,29 @@
           }}
         >
           {#snippet offLabel()}
-            Auto adjust occlusion detail
+            Auto Performance Adjust
           {/snippet}</Toggle
         >
 
-        {#if !occlusionAutoQuality}
-          <Select
-            bind:value={occlusionQualitySelectValue}
-            onchange={onOcclusionQualityChange}
-            id="occlusion-quality"
-            class={cn('mb-4', occlusionAutoQuality && 'cursor-not-allowed dark:text-gray-400')}
-            disabled={occlusionAutoQuality}
-          >
-            <option value={OcclusionQuality.OFF}>Off</option>
-            <option value={OcclusionQuality.LOW}>Low</option>
-            <option value={OcclusionQuality.MEDIUM}>Medium</option>
-            <option value={OcclusionQuality.HIGH}>High</option>
-          </Select>
-        {/if}
+        <Select
+          bind:value={occlusionQualitySelectValue}
+          onchange={onOcclusionQualityChange}
+          id="occlusion-quality"
+          class={cn('mb-4', occlusionAutoQuality && 'cursor-not-allowed dark:text-gray-400')}
+          disabled={occlusionAutoQuality}
+        >
+          <option value={OcclusionQuality.OFF}>Off</option>
+          <option value={OcclusionQuality.LOW}>Low</option>
+          <option value={OcclusionQuality.MEDIUM}>Medium</option>
+          <option value={OcclusionQuality.HIGH}>High</option>
+        </Select>
 
         <!-- <Label>
           Sound occlusion update delay: {occlusionUpdateIntervalValue === 1
             ? 'Every frame'
             : `Every ${occlusionUpdateIntervalValue} frames`}
         </Label> -->
-        <Label>
+        <!-- <Label>
           Sound occlusion update rate: {occlusionUpdateRateValue * 100}ms
         </Label>
 
@@ -324,7 +320,7 @@
           oninput={() => {
             window.api.setSettingsValue('occlusionUpdateRate', occlusionUpdateRateValue);
           }}
-        />
+        /> -->
         <!-- <Label>Player volume boost: {Math.floor(gainAmountRangeValue * 100)}%</Label>
         <p class="text-xs text-gray-400 mb-2">Adjusts the overall volume level for all players.</p>
         <Range
