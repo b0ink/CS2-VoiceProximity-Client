@@ -73,6 +73,14 @@ export interface JoinRoomData {
   isMuted: boolean;
 }
 
+export enum SocketApiErrorType {
+  AuthExpired,
+}
+export interface SocketApiError {
+  code: SocketApiErrorType;
+  message: string;
+}
+
 // interface AudioNodes {
 //   dummyAudioElement: HTMLAudioElement;
 //   audioElement: HTMLAudioElement;

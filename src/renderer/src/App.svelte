@@ -22,22 +22,24 @@
   import { transformVector } from './lib/vector';
   import { getMap, initializeMap } from './maps';
   import { RemotePlayer } from './RemotePlayer';
+  import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
   import serverConfigStore, { type ServerConfigData } from './store/server-config';
   import settings from './store/settings';
-  import type {
-    AudioConnectionStuff,
-    Client,
-    JoinRoomData,
-    JoinRoomResponse,
-    PeerConnectionBandwidth,
-    PeerConnections,
-    PlayerPositionApiData,
-    SocketClientMap,
-    SteamIdSocketMap,
+  import {
+    SocketApiErrorType,
+    type AudioConnectionStuff,
+    type Client,
+    type JoinRoomData,
+    type JoinRoomResponse,
+    type PeerConnectionBandwidth,
+    type PeerConnections,
+    type PlayerPositionApiData,
+    type SocketApiError,
+    type SocketClientMap,
+    type SteamIdSocketMap,
   } from './type';
-  import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
 
   const { addNotification } = getNotificationsContext();
 
@@ -190,6 +192,20 @@
         auth: {
           token: clientToken,
         },
+      });
+
+      socket.on('exception', (error: SocketApiError) => {
+        if (error.code === SocketApiErrorType.AuthExpired) {
+          window.api.setStoreValue('steamId', null);
+          window.api.setStoreValue('token', null);
+          queueNotification({
+            text: error.message || 'An error occurred.',
+            position: 'top-center',
+            removeAfter: 5000,
+            type: 'error',
+          });
+          window.api.reloadApp();
+        }
       });
 
       //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
