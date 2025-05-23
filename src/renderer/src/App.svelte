@@ -71,6 +71,7 @@
   $: regions = $store.regions;
 
   $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
+  $: selectedRegion = regions.find((r) => r.url === socketUrl);
 
   // ServerConfig Store
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
@@ -620,10 +621,10 @@
               { urls: 'stun:stun1.l.google.com:19302' },
               { urls: 'stun:stun2.l.google.com:19302' },
               {
-                urls: 'stun:turn.cs2voiceproximity.chat',
+                urls: selectedRegion ? selectedRegion.stun : 'stun:turn.cs2voiceproximity.chat',
               },
               {
-                urls: 'turn:turn.cs2voiceproximity.chat',
+                urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
                 username: turnUsername!,
                 credential: turnPassword!,
               },
@@ -635,7 +636,7 @@
             iceTransportPolicy: 'relay', // protect IPs
             iceServers: [
               {
-                urls: 'turn:turn.cs2voiceproximity.chat',
+                urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
                 username: turnUsername!,
                 credential: turnPassword!,
               },

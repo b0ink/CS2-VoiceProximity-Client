@@ -56,6 +56,8 @@ export class SteamAuth {
       return console.log('Invalid steamid64');
     }
 
+    store.set('turnUsername', null);
+    store.set('turnPassword', null);
     store.set('token', token);
     store.set('steamId', steamId64);
     console.log(`Setting token ${token}`);

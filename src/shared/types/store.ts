@@ -5,6 +5,7 @@ interface Region {
   name: string;
   url: string;
   turn: string;
+  stun: string;
   disabled: boolean;
   ping: number;
 }
@@ -29,15 +30,17 @@ export const DEFAULT_STORE: StoreData = {
     {
       name: 'Oceania',
       url: 'https://au.cs2voiceproximity.chat',
-      turn: 'https://turn.cs2voiceproximity.chat',
+      turn: 'turn:turn.cs2voiceproximity.chat',
+      stun: 'stun:turn.cs2voiceproximity.chat',
       disabled: false,
       ping: 0,
     },
     {
       name: 'Europe',
       url: 'https://eu.cs2voiceproximity.chat',
-      turn: 'https://turn.cs2voiceproximity.chat',
-      disabled: true,
+      turn: 'turn:eu.turn.cs2voiceproximity.chat',
+      stun: 'stun:eu.turn.cs2voiceproximity.chat',
+      disabled: false,
       ping: 0,
     },
   ],
