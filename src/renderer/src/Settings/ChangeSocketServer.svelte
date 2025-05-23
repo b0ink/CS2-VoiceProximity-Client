@@ -31,6 +31,10 @@
       return;
     }
     window.api.setSettingsValue('socketServer', socketServerInput);
+    window.api.setStoreValue('token', null);
+    window.api.setStoreValue('steamId', null);
+    window.api.setStoreValue('turnUsername', null);
+    window.api.setStoreValue('turnPassword', null);
     window.api.reloadApp();
   };
 
@@ -45,12 +49,12 @@
 <Modal title="Confirm" bind:open={confirmModalOpen} autoclose>
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
     Changing the socket server to <span class="text-primary-600 font-bold">{socketServerLabel}</span
-    > will reload the app. If you're in a room, you'll need to reconnect afterward.
+    > will require you to sign in again.
   </p>
 
-  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+  <!-- <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
     Only update this if you're sure about what it does.
-  </p>
+  </p> -->
 
   {#snippet footer()}
     <Button onclick={saveSocketServer}>Save</Button>
