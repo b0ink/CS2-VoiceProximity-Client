@@ -1199,7 +1199,7 @@
     {/if}
 
     {#if !playerServerRoomCode && !isConnected && socketConnected}
-      <div class="text-center text-gray-400 text-xs mt-12">
+      <div class="text-center text-gray-500 text-xs mt-12">
         Join the CS2 Server to auto-retrieve the room code if Proximity Chat is enabled.
       </div>
     {/if}
