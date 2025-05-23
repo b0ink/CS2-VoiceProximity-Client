@@ -1,13 +1,9 @@
 import { writable } from 'svelte/store';
-import { DEFAULT_SOCKET_SERVER } from '../../../shared/constants';
 import { DEFAULT_SETTINGS, type SettingsData } from '../../../shared/types/store';
 
 const settings = writable<SettingsData>(DEFAULT_SETTINGS);
 
 window.api.getSettings().then((data) => {
-  if (!data.socketServer) {
-    data.socketServer = DEFAULT_SOCKET_SERVER;
-  }
   console.log(`Renderer: getSettings() => ${JSON.stringify(data)}`);
   settings.set(data);
 });

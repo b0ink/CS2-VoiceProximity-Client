@@ -1,7 +1,6 @@
 import { shell } from 'electron';
 import jwt from 'jsonwebtoken';
 import openid from 'openid';
-import { DEFAULT_SOCKET_SERVER } from '../shared/constants';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 import { settingsStore, store } from './store';
 
@@ -74,30 +73,29 @@ export class SteamAuth {
   }
 
   async openSteamAuthenticationWindow(): Promise<void> {
-    const defaultRealm = DEFAULT_SOCKET_SERVER;
-
-    if (!(await settingsStore.get('socketServer'))) {
-      settingsStore.set('socketServer', defaultRealm);
-    }
-
     const realm = await settingsStore.get('socketServer');
+
     const returnUrl = `${realm}/verify-steam`;
 
     console.log('realm', realm);
     console.log('return1', returnUrl);
 
-    const rely = new openid.RelyingParty(
-      returnUrl,
-      realm,
-      //   'http://localhost:3000/verify-steam',
-      //   'http://localhost:3000/', // Realm (specifies realm for OpenID authentication)
-
-      true, // Use stateless verification
-      false, // Strict mode
-      [], // List of extensions to enable and include
-    );
-
     return new Promise((resolve, reject) => {
+      const rely = new openid.RelyingParty(
+        returnUrl,
+        realm,
+        //   'http://localhost:3000/verify-steam',
+        //   'http://localhost:3000/', // Realm (specifies realm for OpenID authentication)
+
+        true, // Use stateless verification
+        false, // Strict mode
+        [], // List of extensions to enable and include
+      );
+
+      if (realm === null) {
+        reject(new Error('Region has not been set.'));
+        return;
+      }
       rely.authenticate('http://steamcommunity.com/openid', false, (error, providerUrl) => {
         if (error) {
           reject(new Error(error));

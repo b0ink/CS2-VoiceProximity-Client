@@ -1,5 +1,4 @@
 import { DefaultNotificationOptions } from 'svelte-notifications';
-import { DEFAULT_SOCKET_SERVER } from '../constants';
 
 interface Region {
   name: string;
@@ -77,7 +76,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
-  socketServer: DEFAULT_SOCKET_SERVER,
+  socketServer: null,
   micMuted: false,
   globalGainAmount: 2.5,
   occlusionQuality: OcclusionQuality.HIGH,

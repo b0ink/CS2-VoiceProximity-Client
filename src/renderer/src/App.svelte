@@ -37,6 +37,7 @@
     SocketClientMap,
     SteamIdSocketMap,
   } from './type';
+  import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
 
   const { addNotification } = getNotificationsContext();
 
@@ -48,6 +49,10 @@
 
   // Settings Store
   $: socketUrl = $settings.socketServer;
+
+  $: if (socketUrl) {
+    console.log(`SOCKET URL IS ${socketUrl}`);
+  }
   $: selectedDeviceId = $settings.inputDeviceId;
   $: useTurnConfig = $settings.natFixEnabled;
   $: broadcastHqVoice = $settings.hqVoice;
@@ -1053,10 +1058,15 @@
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 
 <SettingsOverlay bind:open={settingsOpen} />
-<div class={cn('p-5', !clientSteamId && 'flex flex-col items-center justify-center w-full h-dvh')}>
+<div
+  class={cn(
+    'p-5',
+    (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full h-dvh',
+  )}
+>
   <div class={cn('flex w-full items-center', isConnected ? 'justify-center' : 'justify-between')}>
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
-    {#if clientSteamId}
+    {#if clientSteamId && socketUrl}
       <svelte:component
         this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
         onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
@@ -1073,60 +1083,63 @@
           !isConnected && 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
         )}
       >
-        {#if !isConnected}
+        {#if !isConnected && socketUrl}
           <Label class="mb-2">Server IP:</Label>
         {/if}
-        <ButtonGroup
-          class={cn('w-full ', isConnected && 'max-w-54 ml-4 mr-4')}
-          size={!isConnected ? 'md' : 'sm'}
-        >
-          <Input
-            id="room-code"
-            name="room-code"
-            disabled={isConnected || !socketConnected}
-            bind:value={roomCodeInput}
-            placeholder="Room code"
-          />
-          {#if isConnected && socketConnected}
-            <Button
-              color="red"
-              class="cursor-pointer"
-              type="submit"
-              onclick={() => {
-                playSound(userLeftSound);
-                Object.keys(peerConnections).forEach((k) => {
-                  cleanupUser(k, socketClientMap[k]);
-                });
-                isConnected = false;
-                joinedRoom = false;
-                roomCode = undefined;
-                setTimeout(() => {
-                  window.api.reloadApp();
-                }, 350);
-              }}
-            >
-              <PhoneHangupSolid
-                color="white"
-                class={cn('cursor-pointer select-none transition-all duration-300')}
-              /></Button
-            >
-          {:else}
-            <Button
-              color="primary"
-              class="cursor-pointer"
-              type="submit"
-              onclick={joinRoom}
-              disabled={isConnected ||
-                !socketConnected ||
-                !turnUsername ||
-                !turnPassword ||
-                !!roomCode}
-            >
-              Join</Button
-            >{/if}
-        </ButtonGroup>
 
-        {#if !isConnected}
+        {#if socketUrl}
+          <ButtonGroup
+            class={cn('w-full ', isConnected && 'max-w-54 ml-4 mr-4')}
+            size={!isConnected ? 'md' : 'sm'}
+          >
+            <Input
+              id="room-code"
+              name="room-code"
+              disabled={isConnected || !socketConnected}
+              bind:value={roomCodeInput}
+              placeholder="Room code"
+            />
+            {#if isConnected && socketConnected}
+              <Button
+                color="red"
+                class="cursor-pointer"
+                type="submit"
+                onclick={() => {
+                  playSound(userLeftSound);
+                  Object.keys(peerConnections).forEach((k) => {
+                    cleanupUser(k, socketClientMap[k]);
+                  });
+                  isConnected = false;
+                  joinedRoom = false;
+                  roomCode = undefined;
+                  setTimeout(() => {
+                    window.api.reloadApp();
+                  }, 350);
+                }}
+              >
+                <PhoneHangupSolid
+                  color="white"
+                  class={cn('cursor-pointer select-none transition-all duration-300')}
+                /></Button
+              >
+            {:else}
+              <Button
+                color="primary"
+                class="cursor-pointer"
+                type="submit"
+                onclick={joinRoom}
+                disabled={isConnected ||
+                  !socketConnected ||
+                  !turnUsername ||
+                  !turnPassword ||
+                  !!roomCode}
+              >
+                Join</Button
+              >{/if}
+          </ButtonGroup>
+        {/if}
+
+        {#if !isConnected && socketUrl}
           <div class={cn('w-full text-center text-gray-400 text-sm p-2')}>
             Region: <button
               class="text-gray-500 cursor-pointer hover:text-primary-600"
@@ -1153,12 +1166,16 @@
       size="lg"
     />
   </div>
-  {#if !clientSteamId}
+  {#if !clientSteamId || !socketUrl}
     <Heading tag="h1" class="mb-4 text-xl font-extrabold z-5">CS2 Proximity Chat</Heading>
-    <SteamLoginButton />
+    {#if socketUrl && !clientSteamId}
+      <SteamLoginButton />
+    {:else}
+      <ChangeSocketServer />
+    {/if}
   {/if}
 
-  {#if clientSteamId}
+  {#if clientSteamId && socketUrl}
     {#if !socketConnected}
       <Alert color="yellow" class="text-center mb-4 mt-4">
         <span class="font-medium">Connecting to the backend service...</span>
@@ -1179,6 +1196,12 @@
           >
         </span>
       </Alert>
+    {/if}
+
+    {#if !playerServerRoomCode && !isConnected && socketConnected}
+      <div class="text-center text-gray-400 text-xs mt-12">
+        Join the CS2 Server to auto-retrieve the room code if Proximity Chat is enabled.
+      </div>
     {/if}
 
     {#if !turnUsername || !turnPassword}
@@ -1221,7 +1244,7 @@
     )}
   >
     <div>v{window.api.clientVersion()}</div>
-    {#if !clientSteamId}
+    {#if !clientSteamId && socketUrl}
       <div>
         Region: <button
           class="text-gray-500 cursor-pointer hover:text-primary-600"

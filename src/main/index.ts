@@ -87,6 +87,7 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     // Reset token and steamid if invalid or expired token
     auth.validateJwtToken();
+    // settingsStore.set('socketServer', null);
     mainWindow.show();
   });
 

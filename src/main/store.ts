@@ -1,6 +1,5 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
-import { DEFAULT_SOCKET_SERVER } from '../shared/constants';
 import { DEFAULT_SETTINGS, DEFAULT_STORE, SettingsData, StoreData } from '../shared/types/store';
 
 let mainWindowRef: BrowserWindow | null = null;
@@ -28,8 +27,8 @@ for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
     console.log(`Settings onDidChange`, newValue, oldValue);
     if (key == 'socketServer') {
       if (!newValue) {
-        //TODO: regex the url either here or in the ui
-        newValue = DEFAULT_SOCKET_SERVER;
+        // Force user to select region again
+        newValue = null;
       }
     }
     mainWindowRef?.webContents.send('settings:update', { key, newValue });

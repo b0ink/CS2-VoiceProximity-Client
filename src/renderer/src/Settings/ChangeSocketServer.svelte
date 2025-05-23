@@ -10,18 +10,21 @@
   let confirmModalOpen = false;
 
   $: regions = $store.regions;
-  let serverRegion: string;
+  let serverRegion: string | null;
 
   onMount(() => {
-    getStoredSocketServer();
     window.api.getRegionPings();
   });
 
+  $: if (storedSocketServer) {
+    getStoredSocketServer();
+  }
+
   const getStoredSocketServer = (): void => {
-    socketServerInput = storedSocketServer || regions[0].url;
-    serverRegion = storedSocketServer || 'custom';
+    socketServerInput = storedSocketServer || '';
+    serverRegion = storedSocketServer;
     const region = regions.find((_region) => _region.url === serverRegion);
-    if (!region) {
+    if (!region && storedSocketServer) {
       serverRegion = 'custom';
     }
   };
@@ -77,12 +80,13 @@
 
   <Select
     bind:value={serverRegion}
-    id="occlusion-quality"
+    placeholder="Select a region..."
+    id="server-region"
     class={cn('mb-4')}
     onchange={() => {
       console.log(serverRegion, storedSocketServer);
       if (serverRegion !== 'custom' && serverRegion !== storedSocketServer) {
-        socketServerInput = serverRegion;
+        socketServerInput = serverRegion || '';
         confirmModalOpen = true;
       }
     }}
