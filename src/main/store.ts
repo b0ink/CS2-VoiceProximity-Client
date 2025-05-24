@@ -1,6 +1,8 @@
 import { BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
 import { DEFAULT_SETTINGS, DEFAULT_STORE, SettingsData, StoreData } from '../shared/types/store';
+import { setToggleMuteKeybind } from './keybinds';
+import { KeyCodeEvent } from '../shared/types/keycodes';
 
 let mainWindowRef: BrowserWindow | null = null;
 
@@ -29,6 +31,19 @@ for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
       if (!newValue) {
         // Force user to select region again
         newValue = null;
+      }
+    }
+    if (key === 'muteKeybind') {
+      try {
+        setToggleMuteKeybind(
+          mainWindowRef,
+          oldValue as KeyCodeEvent[] | undefined,
+          newValue as KeyCodeEvent[] | undefined,
+        );
+      } catch (e) {
+        console.error(`Failed to set mute keybind: ${e}`);
+        settingsStore.set('muteKeybind', []);
+        newValue = [];
       }
     }
     mainWindowRef?.webContents.send('settings:update', { key, newValue });

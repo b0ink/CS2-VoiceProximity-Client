@@ -28,6 +28,10 @@ const api = {
   },
 
   getRegionPings: () => ipcRenderer.invoke('get-region-pings'),
+
+  toggleMuteMicrophone: (callback: () => void) => {
+    ipcRenderer.on('toggle-mute-microphone', () => callback());
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

@@ -24,6 +24,8 @@ declare global {
     getStore: () => Promise<StoreData>;
     onStoreUpdate: (callback: (data: { key: keyof StoreData; newValue: any }) => void) => void;
 
+    toggleMuteMicrophone: (callback: () => void) => void;
+
     getRegionPings: () => void;
   }
 }

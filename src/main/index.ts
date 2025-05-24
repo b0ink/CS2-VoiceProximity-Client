@@ -4,11 +4,12 @@ import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import path from 'node:path';
 import { join } from 'path';
+import { version as appVersion } from '../../package.json';
 import icon from '../../resources/icon.png?asset';
 import './ipc-handlers';
 import { SteamAuth } from './SteamAuth';
 import { setMainWindow, settingsStore, store } from './store';
-import { version as appVersion } from '../../package.json';
+import { setToggleMuteKeybind } from './keybinds';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -87,7 +88,12 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     // Reset token and steamid if invalid or expired token
     auth.validateJwtToken();
-    // settingsStore.set('socketServer', null);
+
+    const muteKeybind = settingsStore.get('muteKeybind');
+    if (muteKeybind) {
+      setToggleMuteKeybind(mainWindow, undefined, muteKeybind);
+    }
+
     mainWindow.show();
   });
 

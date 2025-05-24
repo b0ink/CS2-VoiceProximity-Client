@@ -1,4 +1,5 @@
 import { DefaultNotificationOptions } from 'svelte-notifications';
+import { KeyCodeEvent } from './keycodes';
 
 interface Region {
   name: string;
@@ -69,6 +70,7 @@ export interface SettingsData {
   noiseSuppression: boolean;
   echoCancellation: boolean;
   playerVolumes: ClientVolumeMap;
+  muteKeybind: KeyCodeEvent[];
 }
 
 export const DEFAULT_SETTINGS: SettingsData = {
@@ -85,4 +87,5 @@ export const DEFAULT_SETTINGS: SettingsData = {
   noiseSuppression: true,
   echoCancellation: true,
   playerVolumes: {},
+  muteKeybind: [],
 };

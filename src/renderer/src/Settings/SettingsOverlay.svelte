@@ -6,6 +6,7 @@
   import settings from '../store/settings';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
+  import MuteShortcut from './MuteShortcut.svelte';
 
   export let open: boolean;
 
@@ -296,6 +297,8 @@
           <option value={OcclusionQuality.MEDIUM}>Medium</option>
           <option value={OcclusionQuality.HIGH}>High</option>
         </Select>
+
+        <MuteShortcut />
 
         <!-- <Label>
           Sound occlusion update delay: {occlusionUpdateIntervalValue === 1
