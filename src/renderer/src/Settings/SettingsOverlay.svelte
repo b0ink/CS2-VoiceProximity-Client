@@ -7,6 +7,7 @@
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import MuteShortcut from './MuteShortcut.svelte';
+  import TestMicrophone from './TestMicrophone.svelte';
 
   export let open: boolean;
 
@@ -193,6 +194,7 @@
           {/each}
         </Select>
       </div>
+      <TestMicrophone />
       <!-- <div>
         <Label for="map" class="mb-2">Map:</Label>
         <Select bind:value={mapName} onchange={onMapChange} id="map">

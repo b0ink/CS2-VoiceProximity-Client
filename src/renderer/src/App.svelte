@@ -1,7 +1,6 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { decode } from '@msgpack/msgpack';
-  import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import {
     CogSolid,
@@ -40,6 +39,7 @@
     type SocketClientMap,
     type SteamIdSocketMap,
   } from './type';
+  import { getUserAudio } from './voice';
 
   const { addNotification } = getNotificationsContext();
 
@@ -55,15 +55,12 @@
   $: if (socketUrl) {
     console.log(`SOCKET URL IS ${socketUrl}`);
   }
-  $: selectedDeviceId = $settings.inputDeviceId;
   $: useTurnConfig = $settings.natFixEnabled;
-  $: broadcastHqVoice = $settings.hqVoice;
   $: microphoneMuted = $settings.micMuted;
   // $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
   $: occlusionAutoQuality = $settings.occlusionAutoQuality;
   $: noiseSuppression = $settings.noiseSuppression;
-  $: echoCancellation = $settings.echoCancellation;
   $: occlusionUpdateRate = $settings.occlusionUpdateRate;
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
@@ -147,15 +144,15 @@
   };
 
   const unmuteMicrophone = (): void => {
-    window.api.setSettingsValue('micMuted', false);
     audioConnectionStuff.toggleMute(false);
+    window.api.setSettingsValue('micMuted', false);
     playSound(micUnmuteSound);
     socket?.emit('microphone-state', { isMuted: false });
   };
 
   const muteMicrophone = (): void => {
-    window.api.setSettingsValue('micMuted', true);
     audioConnectionStuff.toggleMute(true);
+    window.api.setSettingsValue('micMuted', true);
     playSound(micMuteSound);
     socket?.emit('microphone-state', { isMuted: true });
   };
@@ -526,282 +523,240 @@
     return clientSteamId;
   };
 
-  const initUserMedia = (): void => {
-    // eslint-disable-next-line no-undef
-    const audio: MediaTrackConstraintSet = {
-      autoGainControl: false,
-      channelCount: 1,
-      echoCancellation: echoCancellation,
-      // @ts-ignore - non-standard constraint
-      latency: 0,
-      noiseSuppression: noiseSuppression,
-      // @ts-ignore - non-standard constraint used by chrome
-      googNoiseSuppression: noiseSuppression,
-      googNoiseSupression: noiseSuppression,
-      // @ts-ignore - non-standard constraint used by chrome
-      googEchoCancellation: echoCancellation,
-      // @ts-ignore - non-standard constraint used by chrome
-      googTypingNoiseDetection: noiseSuppression,
-      // @ts-ignore - non-standard constraint used by chrome
-      sampleRate: broadcastHqVoice ? 48000 : 16000,
-      sampleSize: broadcastHqVoice ? 16 : 8,
-    };
+  const initUserMedia = async (): Promise<void> => {
+    const userAudio = await getUserAudio();
+    if (!userAudio) {
+      return;
+    }
+    const { stream, noiseSupressionEnabled } = userAudio;
 
-    console.log(`sampleRate: ${audio.sampleRate} | sampleSize: ${audio.sampleSize}`);
-
-    if (selectedDeviceId) {
-      audio.deviceId = selectedDeviceId;
+    if (noiseSuppression && !noiseSupressionEnabled) {
+      addNotification({
+        text: `Failed to enable noise suppression.`,
+        position: 'top-center',
+        removeAfter: 5000,
+        type: 'warning',
+      });
     }
 
-    // const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/dist';
-    const processor = new NoiseSuppressionProcessor('rnnoise');
+    const inStream = stream;
 
-    navigator.mediaDevices.getUserMedia({ video: false, audio }).then(
-      async (rawStream) => {
-        console.log(`Getting user media:`);
+    // TODO: what WILL be the difference between stream & inStream
+    audioConnectionStuff.stream = stream;
+    audioConnectionStuff.instream = inStream;
 
-        // eslint-disable-next-line no-undef
-        let processedTrack: MediaStreamAudioTrack | undefined = undefined;
+    audioConnectionStuff.toggleMute = (muted: boolean) => {
+      audioConnectionStuff.muted = muted;
+      // TODO: implement deafen
+      // if (audioConnectionStuff.deafened) {
+      //   audioConnectionStuff.deafened = false;
+      //   audioConnectionStuff.muted = false;
+      // }
+      inStream.getAudioTracks()[0].enabled =
+        !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
+      // setMuted(audioConnectionStuff.current.muted);
+      // setDeafened(audioConnectionStuff.current.deafened);
+    };
 
-        if (noiseSuppression) {
-          try {
-            processedTrack = await processor.startProcessing(rawStream.getAudioTracks()[0]);
-          } catch (e) {
-            console.error(`Unable to activate noise suppression: ${e}`);
+    if (microphoneMuted) {
+      console.log('Joining the room muted');
+      inStream.getAudioTracks()[0].enabled = false;
+    }
+
+    // audioElements = {};
+    // TODO: call connect() when our lobby room code has been provided
+    // connect(currentLobby, )
+    connect(roomCode!, getSteamId()!, getSteamId()!, false);
+
+    // useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
+
+    const createPeerConnection = (
+      peer: string,
+      initiator: boolean,
+      client: Client,
+    ): Peer.Instance => {
+      console.log('CreatePeerConnection: ', peer, initiator, stream);
+      // console.log(`Using turn config?:`, useTurnConfig);
+      if (!useTurnConfig) {
+        console.warn(
+          'NAT fix is disabled — your IP address may be visible to other users with direct connection enabled.',
+        );
+      }
+
+      if (!turnUsername || !turnPassword) {
+        window.api.reloadApp();
+      }
+
+      // Cleanup any leftover data from this steamid first before initialising it again
+      const incomingClient = client;
+      if (incomingClient.steamId && steamIdSocketMap[incomingClient.steamId]) {
+        const oldSocketId = steamIdSocketMap[incomingClient.steamId];
+        cleanupUser(oldSocketId, incomingClient);
+      }
+      // disconnectClient(client); // TODO:
+
+      // eslint-disable-next-line no-undef
+      const DEFAULT_ICE_CONFIG: RTCConfiguration = {
+        iceTransportPolicy: 'all',
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' },
+          { urls: 'stun:stun1.l.google.com:19302' },
+          { urls: 'stun:stun2.l.google.com:19302' },
+          {
+            urls: selectedRegion ? selectedRegion.stun : 'stun:turn.cs2voiceproximity.chat',
+          },
+          {
+            urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
+            username: turnUsername!,
+            credential: turnPassword!,
+          },
+        ],
+      };
+
+      // eslint-disable-next-line no-undef
+      const ICE_CONFIG_TURN: RTCConfiguration = {
+        iceTransportPolicy: 'relay', // protect IPs
+        iceServers: [
+          {
+            urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
+            username: turnUsername!,
+            credential: turnPassword!,
+          },
+        ],
+      };
+
+      console.log(ICE_CONFIG_TURN);
+
+      const connection = new Peer({
+        stream,
+        initiator,
+        // @ts-ignore line
+        iceRestartEnabled: true,
+        config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+        // config: DEFAULT_ICE_CONFIG,
+        trickle: true,
+      });
+
+      // setPeerConnections((connections) => {
+      //   connections[peer] = connection;
+      //   return connections;
+      // });
+
+      socketClientMap[peer] = client;
+      peerConnections[peer] = connection;
+      steamIdSocketMap[client.steamId] = peer;
+
+      // Trigger reactive state
+      peerConnections = { ...peerConnections };
+      socketClientMap = { ...socketClientMap };
+      steamIdSocketMap = { ...steamIdSocketMap };
+
+      console.log(`Assigning ${peer} to ${client.steamId}`);
+
+      connection.on('connect', () => {
+        // setTimeout(() => {
+        //   if (hostRef.current.isHost && connection.writable) {
+        //     try {
+        //       console.log('sending settings..');
+        //       connection.send(JSON.stringify(lobbySettingsRef.current));
+        //     } catch (e) {
+        //       console.warn('failed to update lobby settings: ', e);
+        //     }
+        //   }
+        // }, 1000);
+      });
+
+      connection.on('iceCandidate', (candidate) => {
+        console.log('Candidate:', candidate);
+      });
+
+      connection.on('signal', (data) => {
+        console.log(`connection.on('signal'): ${JSON.stringify(data)}`);
+        socket?.emit('signal', {
+          data,
+          to: peer,
+        });
+      });
+
+      connection.on('stream', async (stream: MediaStream) => {
+        console.log(
+          `connection.on('stream'): stream from steamId:${client.steamId}; peer: ${peer}`,
+        );
+        initialiseRemotePlayer(stream, client);
+      });
+
+      connection.on('error', (error: Error) => {
+        console.log(`connection.on('error'): ${JSON.stringify(error)}`);
+        peerConnectingBandwidth[peer] = 0;
+        // cleanupUser(peer, socketClientMap[peer]);
+
+        if ('code' in error && error.code !== 'ERR_DATA_CHANNEL') {
+          // TODO: play a disconnect sound effect so that user is aware mid game
+          queueNotification({
+            text: `Something weird happened. Please rejoin the room. ${error}`,
+            position: 'top-center',
+            removeAfter: 10000,
+            type: 'error',
+          });
+        }
+
+        // window.api.reloadApp();
+      });
+      return connection;
+    };
+
+    socket?.on('user-joined', async (peer: string, client: Client) => {
+      console.log(`socket.on('user-joined') ${peer} ${JSON.stringify(client)}`);
+
+      // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
+      // await window.api.retrieveTurnCredentials();
+      playSound(userJoinSound);
+
+      socketClientMap[peer] = client;
+      socketClientMap = { ...socketClientMap };
+
+      createPeerConnection(peer, true, client);
+    });
+
+    socket?.on('user-left', async (peer: string, client: Client) => {
+      playSound(userLeftSound);
+
+      console.log(`socket.on('user-left') ${peer} ${client.steamId}`);
+      cleanupUser(peer, client);
+    });
+
+    socket?.on(
+      'signal',
+      ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
+        console.log(`1. socket.on('signal') ${client.steamId} ${from} ${JSON.stringify(data)}`);
+        console.log(`2. socket.on('signal') ${JSON.stringify(data)}`);
+        let connection: Peer.Instance;
+        if (!socketClientMap[from]) {
+          console.error(
+            `socket.on('signal'): (unknown socket) peer: ${from} - ${socketClientMap[from]}`,
+          );
+          return;
+        }
+        if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+          if (peerConnections[from] && data.type !== 'offer') {
+            connection = peerConnections[from];
+          } else {
+            connection = createPeerConnection(from, false, client);
+          }
+          if (connection && !connection.destroyed) {
+            connection.signal(data);
+          } else {
             addNotification({
-              text: `Failed to enable noise suppression.`,
+              text: `Failed to crete peer connection with ${client.steamId}`,
               position: 'top-center',
               removeAfter: 5000,
               type: 'warning',
             });
-          }
-        }
-
-        const stream = processedTrack ? new MediaStream([processedTrack]) : rawStream;
-        const inStream = stream;
-
-        // TODO: what WILL be the difference between stream & inStream
-        audioConnectionStuff.stream = stream;
-        audioConnectionStuff.instream = inStream;
-
-        audioConnectionStuff.toggleMute = (muted: boolean) => {
-          audioConnectionStuff.muted = muted;
-          // TODO: implement deafen
-          // if (audioConnectionStuff.deafened) {
-          //   audioConnectionStuff.deafened = false;
-          //   audioConnectionStuff.muted = false;
-          // }
-          inStream.getAudioTracks()[0].enabled =
-            !audioConnectionStuff.muted && !audioConnectionStuff.deafened;
-          // setMuted(audioConnectionStuff.current.muted);
-          // setDeafened(audioConnectionStuff.current.deafened);
-        };
-
-        if (microphoneMuted) {
-          console.log('Joining the room muted');
-          inStream.getAudioTracks()[0].enabled = false;
-        }
-
-        // audioElements = {};
-        // TODO: call connect() when our lobby room code has been provided
-        // connect(currentLobby, )
-        connect(roomCode!, getSteamId()!, getSteamId()!, false);
-
-        // useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
-
-        const createPeerConnection = (
-          peer: string,
-          initiator: boolean,
-          client: Client,
-        ): Peer.Instance => {
-          console.log('CreatePeerConnection: ', peer, initiator, stream);
-          // console.log(`Using turn config?:`, useTurnConfig);
-          if (!useTurnConfig) {
-            console.warn(
-              'NAT fix is disabled — your IP address may be visible to other users with direct connection enabled.',
+            console.error(
+              `socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
             );
           }
-
-          if (!turnUsername || !turnPassword) {
-            window.api.reloadApp();
-          }
-
-          // Cleanup any leftover data from this steamid first before initialising it again
-          const incomingClient = client;
-          if (incomingClient.steamId && steamIdSocketMap[incomingClient.steamId]) {
-            const oldSocketId = steamIdSocketMap[incomingClient.steamId];
-            cleanupUser(oldSocketId, incomingClient);
-          }
-          // disconnectClient(client); // TODO:
-
-          // eslint-disable-next-line no-undef
-          const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-            iceTransportPolicy: 'all',
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-              { urls: 'stun:stun2.l.google.com:19302' },
-              {
-                urls: selectedRegion ? selectedRegion.stun : 'stun:turn.cs2voiceproximity.chat',
-              },
-              {
-                urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
-                username: turnUsername!,
-                credential: turnPassword!,
-              },
-            ],
-          };
-
-          // eslint-disable-next-line no-undef
-          const ICE_CONFIG_TURN: RTCConfiguration = {
-            iceTransportPolicy: 'relay', // protect IPs
-            iceServers: [
-              {
-                urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
-                username: turnUsername!,
-                credential: turnPassword!,
-              },
-            ],
-          };
-
-          console.log(ICE_CONFIG_TURN);
-
-          const connection = new Peer({
-            stream,
-            initiator,
-            // @ts-ignore line
-            iceRestartEnabled: true,
-            config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
-            // config: DEFAULT_ICE_CONFIG,
-            trickle: true,
-          });
-
-          // setPeerConnections((connections) => {
-          //   connections[peer] = connection;
-          //   return connections;
-          // });
-
-          socketClientMap[peer] = client;
-          peerConnections[peer] = connection;
-          steamIdSocketMap[client.steamId] = peer;
-
-          // Trigger reactive state
-          peerConnections = { ...peerConnections };
-          socketClientMap = { ...socketClientMap };
-          steamIdSocketMap = { ...steamIdSocketMap };
-
-          console.log(`Assigning ${peer} to ${client.steamId}`);
-
-          connection.on('connect', () => {
-            // setTimeout(() => {
-            //   if (hostRef.current.isHost && connection.writable) {
-            //     try {
-            //       console.log('sending settings..');
-            //       connection.send(JSON.stringify(lobbySettingsRef.current));
-            //     } catch (e) {
-            //       console.warn('failed to update lobby settings: ', e);
-            //     }
-            //   }
-            // }, 1000);
-          });
-
-          connection.on('iceCandidate', (candidate) => {
-            console.log('Candidate:', candidate);
-          });
-
-          connection.on('signal', (data) => {
-            console.log(`connection.on('signal'): ${JSON.stringify(data)}`);
-            socket?.emit('signal', {
-              data,
-              to: peer,
-            });
-          });
-
-          connection.on('stream', async (stream: MediaStream) => {
-            console.log(
-              `connection.on('stream'): stream from steamId:${client.steamId}; peer: ${peer}`,
-            );
-            initialiseRemotePlayer(stream, client);
-          });
-
-          connection.on('error', (error: Error) => {
-            console.log(`connection.on('error'): ${JSON.stringify(error)}`);
-            peerConnectingBandwidth[peer] = 0;
-            // cleanupUser(peer, socketClientMap[peer]);
-
-            if ('code' in error && error.code !== 'ERR_DATA_CHANNEL') {
-              // TODO: play a disconnect sound effect so that user is aware mid game
-              queueNotification({
-                text: `Something weird happened. Please rejoin the room. ${error}`,
-                position: 'top-center',
-                removeAfter: 10000,
-                type: 'error',
-              });
-            }
-
-            // window.api.reloadApp();
-          });
-          return connection;
-        };
-
-        socket?.on('user-joined', async (peer: string, client: Client) => {
-          console.log(`socket.on('user-joined') ${peer} ${JSON.stringify(client)}`);
-
-          // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
-          // await window.api.retrieveTurnCredentials();
-          playSound(userJoinSound);
-
-          socketClientMap[peer] = client;
-          socketClientMap = { ...socketClientMap };
-
-          createPeerConnection(peer, true, client);
-        });
-
-        socket?.on('user-left', async (peer: string, client: Client) => {
-          playSound(userLeftSound);
-
-          console.log(`socket.on('user-left') ${peer} ${client.steamId}`);
-          cleanupUser(peer, client);
-        });
-
-        socket?.on(
-          'signal',
-          ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
-            console.log(`1. socket.on('signal') ${client.steamId} ${from} ${JSON.stringify(data)}`);
-            console.log(`2. socket.on('signal') ${JSON.stringify(data)}`);
-            let connection: Peer.Instance;
-            if (!socketClientMap[from]) {
-              console.error(
-                `socket.on('signal'): (unknown socket) peer: ${from} - ${socketClientMap[from]}`,
-              );
-              return;
-            }
-            if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-              if (peerConnections[from] && data.type !== 'offer') {
-                connection = peerConnections[from];
-              } else {
-                connection = createPeerConnection(from, false, client);
-              }
-              if (connection && !connection.destroyed) {
-                connection.signal(data);
-              } else {
-                addNotification({
-                  text: `Failed to crete peer connection with ${client.steamId}`,
-                  position: 'top-center',
-                  removeAfter: 5000,
-                  type: 'warning',
-                });
-                console.error(
-                  `socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
-                );
-              }
-            }
-          },
-        );
-      },
-      (error) => {
-        console.error(`Could not connect to user media (microphone)`);
-        console.error(error);
+        }
       },
     );
   };
