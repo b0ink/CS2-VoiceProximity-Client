@@ -31,13 +31,12 @@
   };
 
   function handleKeydown(e: KeyboardEvent): void {
-    console.log(`Key code: ${e.code}. Key thing : ${e.keyCode}`);
+    // console.log(`Key code: ${e.code}. Key thing : ${e.keyCode}`);
 
     if (recordingCombo) {
       if (e.code === 'Escape') {
         recordingCombo = false;
         pressedKeys = [];
-        console.log('clearing input');
         window.api.setSettingsValue('muteKeybind', []);
         setKeyboardText();
         return;
@@ -58,7 +57,6 @@
       recordingCombo = false;
       setKeyboardText();
       window.api.setSettingsValue('muteKeybind', pressedKeys);
-      console.log('Turned off recording combo?');
     }
   }
 
