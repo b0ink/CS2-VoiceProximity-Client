@@ -74,7 +74,7 @@ export interface SettingsData {
 }
 
 export const DEFAULT_SETTINGS: SettingsData = {
-  alwaysOnTop: true,
+  alwaysOnTop: false,
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
