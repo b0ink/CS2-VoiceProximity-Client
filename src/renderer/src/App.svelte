@@ -288,11 +288,15 @@
         console.log(`socket.on('server-config'): ${data}`);
         const raw = decode(new Uint8Array(data)) as Record<string, unknown>;
         const decoded: ServerConfigData = {
-          deadPlayerMuteDelay: raw.DeadPlayerMuteDelay as number | undefined,
-          allowDeadTeamVoice: raw.AllowDeadTeamVoice as boolean | undefined,
-          allowSpectatorC4Voice: raw.AllowSpectatorC4Voice as boolean | undefined,
-          rolloffFactor: raw.RolloffFactor as number | undefined,
-          refDistance: raw.RefDistance as number | undefined,
+          deadPlayerMuteDelay: (raw.DeadPlayerMuteDelay as number | undefined) ?? 1,
+          allowDeadTeamVoice: (raw.AllowDeadTeamVoice as boolean | undefined) ?? true,
+          allowSpectatorC4Voice: (raw.AllowSpectatorC4Voice as boolean | undefined) ?? true,
+          rolloffFactor: (raw.RolloffFactor as number | undefined) ?? 1,
+          refDistance: (raw.RefDistance as number | undefined) ?? 39,
+          occlusionNear: (raw.OcclusionNear as number | undefined) ?? 350,
+          occlusionFar: (raw.OcclusionFar as number | undefined) ?? 25,
+          occlusionEndDist: (raw.OcclusionEndDist as number | undefined) ?? 2000,
+          occlusionFalloffExponent: (raw.OcclusionFalloffExponent as number | undefined) ?? 3,
         };
 
         console.log(`socket.on('server-config'):`, decoded);
@@ -303,6 +307,10 @@
           allowSpectatorC4Voice: decoded.allowSpectatorC4Voice ?? true,
           rolloffFactor: decoded.rolloffFactor ?? 1,
           refDistance: decoded.refDistance ?? 39,
+          occlusionNear: decoded.occlusionNear ?? 350,
+          occlusionFar: decoded.occlusionFar ?? 25,
+          occlusionEndDist: decoded.occlusionEndDist ?? 2000,
+          occlusionFalloffExponent: decoded.occlusionFalloffExponent ?? 3,
         });
       });
 
@@ -878,7 +886,7 @@
     const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
-        soundData?.updateOcclusion(map, occlusionQuality);
+        soundData?.updateOcclusion(map, occlusionQuality, $serverConfigStore);
         if (rolloffFactor !== undefined) {
           soundData?.setRolloffFactor(rolloffFactor);
         }

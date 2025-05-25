@@ -1,15 +1,15 @@
 import * as THREE from 'three';
-import { type Client } from './type';
-import { transformVector } from './lib/vector';
-
 import {
-  computeBoundsTree,
-  disposeBoundsTree,
-  computeBatchedBoundsTree,
-  disposeBatchedBoundsTree,
   acceleratedRaycast,
+  computeBatchedBoundsTree,
+  computeBoundsTree,
+  disposeBatchedBoundsTree,
+  disposeBoundsTree,
 } from 'three-mesh-bvh';
 import { OcclusionQuality } from '../../shared/types/store';
+import { transformVector } from './lib/vector';
+import type { ServerConfigData } from './store/server-config';
+import { type Client } from './type';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -147,7 +147,7 @@ export class RemotePlayer {
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
 
-    this.playerVoice3D.setFilters([gain, highpass, filter]);
+    this.playerVoice3D.setFilters([highpass, filter, gain]);
   }
 
   private initMonoFilters(): void {
@@ -286,6 +286,7 @@ export class RemotePlayer {
   public updateOcclusion(
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     occlusionQuality: OcclusionQuality,
+    occlusionConfig?: ServerConfigData,
   ): void {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
@@ -302,35 +303,43 @@ export class RemotePlayer {
       occlusionQuality,
     );
 
-    // Used for overall occlusion
-    const highestOcclusionWhenClose = 500; // Maximum occlusion when player is closest to sound source
-    const maxDist = 1000; // Once player reaches this distance, occlusion will be capped at baseOcclusion. Occlusion fades from highestOcclusionWhenClose -> baseOcclusion.
-    const baseOcclusion = 200; // Fixed occlusion amount when player's distance is between maxDist and fadeStart.
+    // "highest" occlusion <=> lower value <=> minimum
+    // "lowest" occlusion <=> higher value <=> maximum
 
-    // Used to fade out player voices entirely
-    const lowestPossibleOcclusion = 25; // The maximum occlusion when player's distance reaches fadeEnd
-    const fadeStart = 1500; // Distance where it begins fading from baseOcclusion -> lowestPossibleOcclusion
-    const fadeEnd = 2000; // Distance where it fully reaches lowestPossibleOcclusion
+    const occlusionWhenClose = occlusionConfig?.occlusionNear ?? 350; // Maximum occlusion when player is closest to sound source. The lower the number, the more muffled the player will be at right next to you while behind a wall.
+    const occlusionWhenFar = occlusionConfig?.occlusionFar ?? 25; // The maximum occlusion when player's distance reaches fadeEnd
+    const fadeEnd = occlusionConfig?.occlusionEndDist ?? 2000; // Distance from player where it fully reaches occlusionWhenFar
+    const occlusionFalloffExponent = occlusionConfig?.occlusionFalloffExponent ?? 3; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
 
-    let minOcclusion;
-
-    if (distance <= fadeStart) {
-      minOcclusion = baseOcclusion;
+    let finalOcclusion: number;
+    if (occlusion === 0) {
+      finalOcclusion = 11000;
     } else {
-      const fadeRatio = Math.min((distance - fadeStart) / (fadeEnd - fadeStart), 1);
-      minOcclusion = baseOcclusion - fadeRatio * (baseOcclusion - lowestPossibleOcclusion); // fades from baseOcclusion → lowestPossibleOcclusion
+      const t = Math.min(distance / fadeEnd, 1);
+
+      /*
+        const occlusionFalloffExponent = 3;
+        https://www.desmos.com/calculator
+        Plug in `y=x^{exponent}` and zoom inbetween 0-1 on the X axis. The curve represents the sound occlusion falloff. (1 = furthest away)
+
+        Example:
+        Exponent: 1 = linear drop off
+        Exponent: 4 = slow drop off to begin, then rapidly drops off at the end
+        Exponent: 0.2 = rapidly drops off at the start, then very slowly drops off at the end
+      */
+
+      const eased = Math.pow(t, occlusionFalloffExponent); // exponent < 1 makes it drop off slower at first
+      const baseOcclusion = occlusionWhenClose + (occlusionWhenFar - occlusionWhenClose) * eased;
+
+      // Mix between 11000 (no occlusion) and baseOcclusion based on occlusion %
+      finalOcclusion = 11000 + (baseOcclusion - 11000) * occlusion;
     }
 
-    const distRatio = Math.min(distance / maxDist, 1);
+    const roundedOcclusion = Math.round(finalOcclusion / 5) * 5;
 
-    const minFreq = minOcclusion + (1 - distRatio) * (highestOcclusionWhenClose - minOcclusion);
+    console.log(`occlusion: ${roundedOcclusion}`);
 
-    const easing = 0.5;
-    const eased = Math.pow(occlusion, easing);
-
-    const amount = Math.round((minFreq + (1 - eased) * (11000 - minFreq)) / 5) * 5; // Round up occlusion to the nearest 5
-
-    this.setLowPassFilterFrequency(amount);
+    this.setLowPassFilterFrequency(roundedOcclusion);
 
     // const distance = calculateDistance(soundData.clientCamera.position, soundData.playerObject.position);
     // const normalized = THREE.MathUtils.clamp(distance / 1500, 0, 1); // scale to 0–1
