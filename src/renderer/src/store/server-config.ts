@@ -12,7 +12,7 @@ export interface ServerConfigData {
   occlusionFalloffExponent: number; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
 }
 
-const serverConfigStore = writable<ServerConfigData>({
+export const DEFAULT_SERVER_CONFIG: ServerConfigData = {
   deadPlayerMuteDelay: 1000,
   allowDeadTeamVoice: true,
   allowSpectatorC4Voice: true,
@@ -22,6 +22,10 @@ const serverConfigStore = writable<ServerConfigData>({
   occlusionFar: 25,
   occlusionEndDist: 2000,
   occlusionFalloffExponent: 3,
+};
+
+const serverConfigStore = writable<ServerConfigData>({
+  ...DEFAULT_SERVER_CONFIG,
 });
 
 export default serverConfigStore;

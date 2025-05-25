@@ -24,7 +24,10 @@
   import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
-  import serverConfigStore, { type ServerConfigData } from './store/server-config';
+  import serverConfigStore, {
+    DEFAULT_SERVER_CONFIG,
+    type ServerConfigData,
+  } from './store/server-config';
   import settings from './store/settings';
   import {
     SocketApiErrorType,
@@ -287,30 +290,35 @@
       socket?.on('server-config', async (data: Buffer) => {
         console.log(`socket.on('server-config'): ${data}`);
         const raw = decode(new Uint8Array(data)) as Record<string, unknown>;
+        const cfg = DEFAULT_SERVER_CONFIG;
         const decoded: ServerConfigData = {
-          deadPlayerMuteDelay: (raw.DeadPlayerMuteDelay as number | undefined) ?? 1,
-          allowDeadTeamVoice: (raw.AllowDeadTeamVoice as boolean | undefined) ?? true,
-          allowSpectatorC4Voice: (raw.AllowSpectatorC4Voice as boolean | undefined) ?? true,
-          rolloffFactor: (raw.RolloffFactor as number | undefined) ?? 1,
-          refDistance: (raw.RefDistance as number | undefined) ?? 39,
-          occlusionNear: (raw.OcclusionNear as number | undefined) ?? 350,
-          occlusionFar: (raw.OcclusionFar as number | undefined) ?? 25,
-          occlusionEndDist: (raw.OcclusionEndDist as number | undefined) ?? 2000,
-          occlusionFalloffExponent: (raw.OcclusionFalloffExponent as number | undefined) ?? 3,
+          deadPlayerMuteDelay:
+            (raw.DeadPlayerMuteDelay as number | undefined) ?? cfg.deadPlayerMuteDelay,
+          allowDeadTeamVoice:
+            (raw.AllowDeadTeamVoice as boolean | undefined) ?? cfg.allowDeadTeamVoice,
+          allowSpectatorC4Voice:
+            (raw.AllowSpectatorC4Voice as boolean | undefined) ?? cfg.allowSpectatorC4Voice,
+          rolloffFactor: (raw.RolloffFactor as number | undefined) ?? cfg.rolloffFactor,
+          refDistance: (raw.RefDistance as number | undefined) ?? cfg.refDistance,
+          occlusionNear: (raw.OcclusionNear as number | undefined) ?? cfg.occlusionNear,
+          occlusionFar: (raw.OcclusionFar as number | undefined) ?? cfg.occlusionFar,
+          occlusionEndDist: (raw.OcclusionEndDist as number | undefined) ?? cfg.occlusionEndDist,
+          occlusionFalloffExponent:
+            (raw.OcclusionFalloffExponent as number | undefined) ?? cfg.occlusionFalloffExponent,
         };
 
         console.log(`socket.on('server-config'):`, decoded);
 
         serverConfigStore.set({
-          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay ?? 1,
-          allowDeadTeamVoice: decoded.allowDeadTeamVoice ?? true,
-          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice ?? true,
-          rolloffFactor: decoded.rolloffFactor ?? 1,
-          refDistance: decoded.refDistance ?? 39,
-          occlusionNear: decoded.occlusionNear ?? 350,
-          occlusionFar: decoded.occlusionFar ?? 25,
-          occlusionEndDist: decoded.occlusionEndDist ?? 2000,
-          occlusionFalloffExponent: decoded.occlusionFalloffExponent ?? 3,
+          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay,
+          allowDeadTeamVoice: decoded.allowDeadTeamVoice,
+          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
+          rolloffFactor: decoded.rolloffFactor,
+          refDistance: decoded.refDistance,
+          occlusionNear: decoded.occlusionNear,
+          occlusionFar: decoded.occlusionFar,
+          occlusionEndDist: decoded.occlusionEndDist,
+          occlusionFalloffExponent: decoded.occlusionFalloffExponent,
         });
       });
 

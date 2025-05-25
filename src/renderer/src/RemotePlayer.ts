@@ -8,7 +8,7 @@ import {
 } from 'three-mesh-bvh';
 import { OcclusionQuality } from '../../shared/types/store';
 import { transformVector } from './lib/vector';
-import type { ServerConfigData } from './store/server-config';
+import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from './store/server-config';
 import { type Client } from './type';
 
 // Add the extension functions
@@ -306,10 +306,13 @@ export class RemotePlayer {
     // "highest" occlusion <=> lower value <=> minimum
     // "lowest" occlusion <=> higher value <=> maximum
 
-    const occlusionWhenClose = occlusionConfig?.occlusionNear ?? 350; // Maximum occlusion when player is closest to sound source. The lower the number, the more muffled the player will be at right next to you while behind a wall.
-    const occlusionWhenFar = occlusionConfig?.occlusionFar ?? 25; // The maximum occlusion when player's distance reaches fadeEnd
-    const fadeEnd = occlusionConfig?.occlusionEndDist ?? 2000; // Distance from player where it fully reaches occlusionWhenFar
-    const occlusionFalloffExponent = occlusionConfig?.occlusionFalloffExponent ?? 3; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
+    const cfg = DEFAULT_SERVER_CONFIG;
+
+    const occlusionWhenClose = occlusionConfig?.occlusionNear ?? cfg.occlusionNear; // Maximum occlusion when player is closest to sound source. The lower the number, the more muffled the player will be at right next to you while behind a wall.
+    const occlusionWhenFar = occlusionConfig?.occlusionFar ?? cfg.occlusionFar; // The maximum occlusion when player's distance reaches fadeEnd
+    const fadeEnd = occlusionConfig?.occlusionEndDist ?? cfg.occlusionEndDist; // Distance from player where it fully reaches occlusionWhenFar
+    const occlusionFalloffExponent =
+      occlusionConfig?.occlusionFalloffExponent ?? cfg.occlusionFalloffExponent; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
 
     let finalOcclusion: number;
     if (occlusion === 0) {
