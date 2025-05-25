@@ -7,10 +7,10 @@
   let rms: number = 0;
   let playing: boolean = false;
 
-  onMount(() => {});
-
   $: microphoneMuted = $settings.micMuted;
   let originalMuteState: boolean;
+
+  onMount(() => {});
 
   const minUpdateRate = 50;
   let lastRefreshTime = 0;
@@ -66,11 +66,12 @@
   };
 
   const stopVoice = (): void => {
-    if (originalMuteState !== microphoneMuted) {
-      window.api.toggleMuteMicrophone();
+    if (playing) {
+      if (originalMuteState !== microphoneMuted) {
+        window.api.toggleMuteMicrophone();
+      }
+      console.log('stopping voice');
     }
-
-    console.log('stopping voice');
 
     processor?.removeEventListener('audioprocess', handleProcess);
     processor?.disconnect();
