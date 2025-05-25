@@ -4,13 +4,11 @@ import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import path from 'node:path';
 import { join } from 'path';
-import { version as appVersion } from '../../package.json';
-import icon from '../../resources/icon.png?asset';
 import './ipc-handlers';
-import { SteamAuth } from './SteamAuth';
-import { setMainWindow, settingsStore, store } from './store';
 import { setToggleMuteKeybind } from './keybinds';
-
+import { initMainWindow } from './main-window';
+import { SteamAuth } from './SteamAuth';
+import { settingsStore, store } from './store';
 const appProtocolClient = `cs2-proximity-chat`;
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -42,37 +40,10 @@ function createWindow(): void {
   if (!app.isPackaged) {
     checkForUpdates();
   }
+
   const mainWindowState = windowStateKeeper({});
 
-  const alwaysOnTop = settingsStore.get('alwaysOnTop', true);
-
-  // Create the browser window.
-  mainWindow = new BrowserWindow({
-    width: 350,
-    height: 500,
-    show: false,
-    resizable: false,
-    autoHideMenuBar: true,
-    alwaysOnTop: alwaysOnTop,
-    // frame: false,
-    fullscreenable: false,
-    minimizable: false,
-    x: mainWindowState.x,
-    y: mainWindowState.y,
-    ...(process.platform === 'linux' ? { icon } : {}),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      nodeIntegration: true,
-      contextIsolation: false,
-      devTools: true,
-      backgroundThrottling: false,
-    },
-  });
-
-  mainWindow.webContents.userAgent = `CS2VoiceProximity/${appVersion}`;
-
-  setMainWindow(mainWindow);
+  mainWindow = initMainWindow();
 
   mainWindow.on('closed', () => {
     try {
@@ -91,7 +62,7 @@ function createWindow(): void {
 
     const muteKeybind = settingsStore.get('muteKeybind');
     if (muteKeybind) {
-      setToggleMuteKeybind(mainWindow, undefined, muteKeybind);
+      setToggleMuteKeybind(undefined, muteKeybind);
     }
 
     mainWindow.show();

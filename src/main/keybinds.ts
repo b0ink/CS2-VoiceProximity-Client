@@ -1,8 +1,8 @@
-import { BrowserWindow, globalShortcut } from 'electron';
+import { globalShortcut } from 'electron';
 import { KeyCodeEvent } from '../shared/types/keycodes';
+import { getMainWindow } from './main-window';
 
 export function setToggleMuteKeybind(
-  window: BrowserWindow | null,
   oldKeybind: KeyCodeEvent[] | undefined,
   newKeybind: KeyCodeEvent[] | undefined,
 ): void {
@@ -16,7 +16,9 @@ export function setToggleMuteKeybind(
     globalShortcut.unregisterAll();
   }
 
-  if (!window) {
+  const mainWindow = getMainWindow();
+
+  if (!mainWindow) {
     throw Error('Window is undefined');
   }
 
@@ -27,7 +29,7 @@ export function setToggleMuteKeybind(
 
     globalShortcut.register(keybind, () => {
       console.log('Toggling mic state from the main process');
-      window?.webContents.send('toggle-mute-microphone');
+      mainWindow.webContents.send('toggle-mute-microphone');
     });
   }
 }

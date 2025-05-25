@@ -1,6 +1,5 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
-import { StoreData } from '../shared/types/store';
-import { SettingsData } from '../shared/types/store';
+import { SettingsData, StoreData } from '../shared/types/store';
 declare global {
   interface Window {
     electron: ElectronAPI;
@@ -24,7 +23,8 @@ declare global {
     getStore: () => Promise<StoreData>;
     onStoreUpdate: (callback: (data: { key: keyof StoreData; newValue: any }) => void) => void;
 
-    toggleMuteMicrophone: (callback: () => void) => void;
+    onToggleMuteMicrophone: (callback: () => void) => void;
+    toggleMuteMicrophone: () => void;
 
     getRegionPings: () => void;
   }

@@ -995,7 +995,7 @@
     Object.defineProperty(document, 'hidden', { value: false, writable: false });
     document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
 
-    window.api.toggleMuteMicrophone(() => {
+    window.api.onToggleMuteMicrophone(() => {
       console.log('Toggling mute via keybind');
       if (microphoneMuted) {
         unmuteMicrophone();

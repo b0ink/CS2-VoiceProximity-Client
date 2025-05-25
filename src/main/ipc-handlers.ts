@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import ping from 'ping';
 import { DEFAULT_STORE } from '../shared/types/store';
+import { getMainWindow } from './main-window';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
 import { store } from './store';
 
@@ -34,4 +35,8 @@ ipcMain.handle('get-region-pings', async () => {
   );
 
   store.set('regions', regions);
+});
+
+ipcMain.handle('toggle-mute-microphone', async () => {
+  getMainWindow()?.webContents.send('toggle-mute-microphone');
 });

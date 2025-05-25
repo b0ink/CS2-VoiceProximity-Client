@@ -1,12 +1,16 @@
 <script lang="ts">
   import { Button, Progressbar } from 'flowbite-svelte';
-  import { getUserAudio } from '../voice';
   import { onDestroy, onMount } from 'svelte';
+  import settings from '../store/settings';
+  import { getUserAudio } from '../voice';
 
   let rms: number = 0;
   let playing: boolean = false;
 
   onMount(() => {});
+
+  $: microphoneMuted = $settings.micMuted;
+  let originalMuteState: boolean;
 
   const minUpdateRate = 50;
   let lastRefreshTime = 0;
@@ -40,6 +44,12 @@
       return;
     }
 
+    originalMuteState = microphoneMuted;
+
+    if (!microphoneMuted) {
+      window.api.toggleMuteMicrophone();
+    }
+
     stream = userAudio.stream;
 
     ctx = new AudioContext();
@@ -56,6 +66,10 @@
   };
 
   const stopVoice = (): void => {
+    if (originalMuteState !== microphoneMuted) {
+      window.api.toggleMuteMicrophone();
+    }
+
     console.log('stopping voice');
 
     processor?.removeEventListener('audioprocess', handleProcess);

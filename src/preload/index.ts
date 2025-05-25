@@ -1,5 +1,5 @@
-import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+import { contextBridge, ipcRenderer } from 'electron';
 import { version } from '../../package.json';
 import { SettingsData, StoreData } from '../shared/types/store';
 
@@ -29,9 +29,10 @@ const api = {
 
   getRegionPings: () => ipcRenderer.invoke('get-region-pings'),
 
-  toggleMuteMicrophone: (callback: () => void) => {
+  onToggleMuteMicrophone: (callback: () => void) => {
     ipcRenderer.on('toggle-mute-microphone', () => callback());
   },
+  toggleMuteMicrophone: () => ipcRenderer.invoke('toggle-mute-microphone'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
