@@ -47,6 +47,8 @@ export interface JoinRoomData {
 export enum SocketApiErrorType {
   AuthExpired,
   InvalidApiKey,
+  RoomShutdown,
+  PlayerDisconnected,
 }
 
 export interface SocketApiError {

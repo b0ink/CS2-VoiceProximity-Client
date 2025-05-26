@@ -108,6 +108,8 @@
   let goodFrameCount = 0;
   let badFrameCount = 0;
 
+  let lastSocketException: number = 0;
+
   let playerPositions: PlayerPositionApiData[] = [];
 
   let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
@@ -199,20 +201,22 @@
       });
 
       socket!.on('exception', (error: SocketApiError) => {
+        lastSocketException = Date.now() / 1000;
+
+        queueNotification({
+          text: error.message || 'An error occurred.',
+          position: 'top-center',
+          removeAfter: 5000,
+          type: 'error',
+        });
+
         if (error.code === SocketApiErrorType.AuthExpired) {
           window.api.setStoreValue('steamId', null);
           window.api.setStoreValue('token', null);
-          queueNotification({
-            text: error.message || 'An error occurred.',
-            position: 'top-center',
-            removeAfter: 5000,
-            type: 'error',
-          });
           window.api.reloadApp();
         }
       });
 
-      //TODO: if we were already in a room, reconnect here (attempt to survive server restarts)
       socket.on('connect', () => {
         socketConnected = true;
         console.log(`socket.on('connect'): my socket id is ${socket?.id}`);
@@ -225,19 +229,29 @@
         window.api.setStoreValue('tryReconnectRoom', false);
       });
 
-      socket.on('disconnect', () => {
+      socket.on('disconnect', async () => {
         console.log(`socket.on('disconnect') Lost connection to the socket server`);
 
-        socketConnected = false;
-        queueNotification({
-          id: 'lost-connection',
-          text: 'Lost connection to the socket server. Application restarted.',
-          position: 'top-center',
-          removeAfter: 2500,
-          type: 'warning',
-        });
+        const timeSinceLastSocketException: number = Date.now() / 1000 - lastSocketException;
 
-        window.api.setStoreValue('tryReconnectRoom', true);
+        const notification = (await window.api.getStore()).notification;
+        if (!notification || timeSinceLastSocketException > 5) {
+          queueNotification({
+            id: 'lost-connection',
+            text: 'Lost connection to the socket server. Application restarted.',
+            position: 'top-center',
+            removeAfter: 2500,
+            type: 'warning',
+          });
+        }
+
+        // attempt to reconnect to the room if we havent had any other exceptions from the socket
+        if (timeSinceLastSocketException > 5 && joinedRoom && socketConnected) {
+          window.api.setStoreValue('tryReconnectRoom', true);
+        }
+
+        socketConnected = false;
+
         window.api.reloadApp();
       });
 
@@ -963,7 +977,7 @@
   };
 
   const joinRoom = (): void => {
-    if (roomCode) {
+    if (roomCode && socketUrl && clientSteamId && clientToken) {
       return;
     }
     playerServerRoomCode = undefined;
