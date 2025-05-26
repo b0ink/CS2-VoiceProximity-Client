@@ -1,8 +1,8 @@
-import { electronAPI } from '@electron-toolkit/preload';
 import { contextBridge, ipcRenderer } from 'electron';
+import { electronAPI } from '@electron-toolkit/preload';
+import { StoreData } from '@shared/types/store/default';
+import { SettingsData } from '@shared/types/store/settings';
 import { version } from '../../package.json';
-import { StoreData } from '../shared/types/store/default';
-import { SettingsData } from '../shared/types/store/settings';
 
 // Custom APIs for renderer
 const api = {

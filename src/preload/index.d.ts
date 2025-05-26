@@ -1,5 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
-import { SettingsData, StoreData } from '../shared/types/store';
+import { StoreData } from '@shared/types/store/default';
+import { SettingsData } from '@shared/types/store/settings';
+
 declare global {
   interface Window {
     electron: ElectronAPI;
