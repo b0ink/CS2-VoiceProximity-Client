@@ -49,6 +49,7 @@ export enum SocketApiErrorType {
   InvalidApiKey,
   RoomShutdown,
   PlayerDisconnected,
+  PluginOutdated,
 }
 
 export interface SocketApiError {
