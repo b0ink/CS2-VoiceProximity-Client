@@ -4,7 +4,7 @@
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { spawn } = require('child_process');
 
-const instances = 10;
+const instances = parseInt(process.argv[2], 10) || 10;
 const basePort = 3000;
 const baseInspectPort = 9229;
 
