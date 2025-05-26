@@ -222,6 +222,7 @@
         console.log(`socket.on('connect'): my socket id is ${socket?.id}`);
         if (tryReconnectRoom && savedRoomCode && roomCodeInput === savedRoomCode) {
           setTimeout(() => {
+            // We just hope that the plugin on the CS2 server has connected before we do to ensure the room is active
             joinRoom();
             removeNotification('lost-connection');
           }, 1000);
