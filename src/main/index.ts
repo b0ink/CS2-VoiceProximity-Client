@@ -43,6 +43,9 @@ function createWindow(): void {
     checkForUpdates();
   }
 
+  // avoid automatic rejoins if we're loading up the app for the first time
+  defaultStore.set('tryReconnectRoom', false);
+
   const mainWindowState = windowStateKeeper({});
 
   mainWindow = initMainWindow();

@@ -16,6 +16,7 @@ export interface StoreData {
   turnPassword: string | null;
   notification: DefaultNotificationOptions | null;
   savedRoomCode: string | null;
+  tryReconnectRoom: boolean;
   regions: Region[];
 }
 export const DEFAULT_STORE: StoreData = {
@@ -25,6 +26,7 @@ export const DEFAULT_STORE: StoreData = {
   turnPassword: null,
   notification: null,
   savedRoomCode: null,
+  tryReconnectRoom: false,
   regions: [
     {
       name: 'Oceania',

@@ -47,7 +47,7 @@
   } from './type';
   import { getUserAudio } from './voice';
 
-  const { addNotification } = getNotificationsContext();
+  const { addNotification, removeNotification } = getNotificationsContext();
 
   const queueNotification = (options: DefaultNotificationOptions): void => {
     window.api.setStoreValue('notification', options);
@@ -79,6 +79,7 @@
   $: turnPassword = $store.turnPassword;
   $: savedRoomCode = $store.savedRoomCode;
   $: regions = $store.regions;
+  $: tryReconnectRoom = $store.tryReconnectRoom;
 
   $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
   $: selectedRegion = regions.find((r) => r.url === socketUrl);
@@ -215,6 +216,13 @@
       socket.on('connect', () => {
         socketConnected = true;
         console.log(`socket.on('connect'): my socket id is ${socket?.id}`);
+        if (tryReconnectRoom && savedRoomCode && roomCodeInput === savedRoomCode) {
+          setTimeout(() => {
+            joinRoom();
+            removeNotification('lost-connection');
+          }, 1000);
+        }
+        window.api.setStoreValue('tryReconnectRoom', false);
       });
 
       socket.on('disconnect', () => {
@@ -222,11 +230,14 @@
 
         socketConnected = false;
         queueNotification({
+          id: 'lost-connection',
           text: 'Lost connection to the socket server. Application restarted.',
           position: 'top-center',
           removeAfter: 2500,
           type: 'warning',
         });
+
+        window.api.setStoreValue('tryReconnectRoom', true);
         window.api.reloadApp();
       });
 
