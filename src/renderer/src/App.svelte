@@ -19,13 +19,14 @@
     type ClientToServerEvents,
     type JoinRoomData,
     type JoinRoomResponse,
+    type ServerConfigData,
     type ServerToClientEvents,
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import type { ServerConfigData } from '@shared/types/store/server-config';
+  import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
   import { OcclusionQuality } from '@shared/types/store/settings';
-  import serverConfigStore, { DEFAULT_SERVER_CONFIG } from '@store/server-config';
+  import serverConfigStore from '@store/server-config';
   import settings from '@store/settings';
   import { RemotePlayer } from './RemotePlayer';
   import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
