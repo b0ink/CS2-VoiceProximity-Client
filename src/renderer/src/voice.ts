@@ -1,6 +1,6 @@
-import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
 import { get } from 'svelte/store';
-import settings from './store/settings';
+import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
+import settings from '@store/settings';
 
 interface UserAudio {
   stream: MediaStream;

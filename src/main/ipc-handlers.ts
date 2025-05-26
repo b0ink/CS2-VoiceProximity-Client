@@ -2,10 +2,10 @@ import { app, ipcMain } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import ping from 'ping';
-import { DEFAULT_STORE } from '../shared/types/store';
+import { DEFAULT_STORE } from '@shared/types/store/default';
 import { getMainWindow } from './main-window';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
-import { store } from './store';
+import defaultStore from './store/default';
 
 ipcMain.handle('get-turn-credentials', async () => {
   return await retrieveTurnCredentials();
@@ -34,7 +34,7 @@ ipcMain.handle('get-region-pings', async () => {
     }),
   );
 
-  store.set('regions', regions);
+  defaultStore.set('regions', regions);
 });
 
 ipcMain.handle('toggle-mute-microphone', async () => {

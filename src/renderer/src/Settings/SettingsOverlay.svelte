@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Button, Heading, Label, Modal, Select, Toggle, cn } from 'flowbite-svelte';
   import { onMount } from 'svelte';
-  import { OcclusionQuality } from '../../../shared/types/store';
-  import store from '../store/client';
-  import settings from '../store/settings';
+  import { OcclusionQuality } from '@shared/types/store/settings';
+  import store from '@store/client';
+  import settings from '@store/settings';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import MuteShortcut from './MuteShortcut.svelte';

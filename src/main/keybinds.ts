@@ -1,5 +1,5 @@
 import { globalShortcut } from 'electron';
-import { KeyCodeEvent } from '../shared/types/keycodes';
+import { KeyCodeEvent } from '@shared/types/keycodes';
 import { getMainWindow } from './main-window';
 
 export function setToggleMuteKeybind(

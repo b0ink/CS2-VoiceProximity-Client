@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { DEFAULT_STORE, type StoreData } from '../../../shared/types/store';
+import { DEFAULT_STORE, type StoreData } from '@shared/types/store/default';
 
 const store = writable<StoreData>(DEFAULT_STORE);
 

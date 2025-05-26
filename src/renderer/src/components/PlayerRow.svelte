@@ -1,11 +1,10 @@
 <script lang="ts">
   import { Range } from 'flowbite-svelte';
-  import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { cn } from 'flowbite-svelte';
-  import { CsTeam } from '../type';
+  import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { onMount } from 'svelte';
-
   import settings from '../store/settings';
+  import { CsTeam } from '../type';
 
   $: playerVolumes = $settings.playerVolumes;
 

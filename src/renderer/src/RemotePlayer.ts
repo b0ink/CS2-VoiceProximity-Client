@@ -6,10 +6,11 @@ import {
   disposeBatchedBoundsTree,
   disposeBoundsTree,
 } from 'three-mesh-bvh';
-import { OcclusionQuality } from '../../shared/types/store';
+import type { Client } from '@shared/types/api';
+import type { ServerConfigData } from '@shared/types/store/server-config';
+import { OcclusionQuality } from '@shared/types/store/settings';
+import { DEFAULT_SERVER_CONFIG } from '@store/server-config';
 import { transformVector } from './lib/vector';
-import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from './store/server-config';
-import { type Client } from './type';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;

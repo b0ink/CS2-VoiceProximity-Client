@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Button, Progressbar } from 'flowbite-svelte';
   import { onDestroy, onMount } from 'svelte';
-  import settings from '../store/settings';
+  import settings from '@store/settings';
   import { getUserAudio } from '../voice';
 
   let rms: number = 0;

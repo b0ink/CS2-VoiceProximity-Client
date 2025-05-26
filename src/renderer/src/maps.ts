@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three-stdlib';
 import {
-  computeBoundsTree,
-  disposeBoundsTree,
-  computeBatchedBoundsTree,
-  disposeBatchedBoundsTree,
   acceleratedRaycast,
+  computeBatchedBoundsTree,
+  computeBoundsTree,
+  disposeBatchedBoundsTree,
+  disposeBoundsTree,
 } from 'three-mesh-bvh';
+import { GLTFLoader } from 'three-stdlib';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -118,4 +118,4 @@ function getMap(): THREE.Group<THREE.Object3DEventMap> | null {
   return map;
 }
 
-export { initializeMap, mapList, getMap };
+export { getMap, initializeMap, mapList };

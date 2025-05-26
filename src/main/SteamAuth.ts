@@ -2,7 +2,8 @@ import { shell } from 'electron';
 import jwt from 'jsonwebtoken';
 import openid from 'openid';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
-import { settingsStore, store } from './store';
+import defaultStore from './store/default';
+import settingsStore from './store/settings';
 
 const USE_EXTERNAL_BROWSER = true;
 
@@ -15,11 +16,11 @@ interface JwtAuthPayload {
 
 export class SteamAuth {
   async validateJwtToken(): Promise<void> {
-    const steamId = store.get('steamId');
-    const token = store.get('token');
+    const steamId = defaultStore.get('steamId');
+    const token = defaultStore.get('token');
     if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
-      store.set('steamId', null);
-      store.set('token', null);
+      defaultStore.set('steamId', null);
+      defaultStore.set('token', null);
     } else {
       try {
         const payload = jwt.decode(token) as JwtAuthPayload | null;
@@ -31,8 +32,8 @@ export class SteamAuth {
       } catch (e) {
         console.log(e);
         // Reset token
-        store.set('steamId', null);
-        store.set('token', null);
+        defaultStore.set('steamId', null);
+        defaultStore.set('token', null);
       }
     }
   }
@@ -55,10 +56,10 @@ export class SteamAuth {
       return console.log('Invalid steamid64');
     }
 
-    store.set('turnUsername', null);
-    store.set('turnPassword', null);
-    store.set('token', token);
-    store.set('steamId', steamId64);
+    defaultStore.set('turnUsername', null);
+    defaultStore.set('turnPassword', null);
+    defaultStore.set('token', token);
+    defaultStore.set('steamId', steamId64);
     console.log(`Setting token ${token}`);
     console.log(`Setting steamid ${steamId64}`);
 

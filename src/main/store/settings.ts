@@ -1,16 +1,10 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
-import { KeyCodeEvent } from '../shared/types/keycodes';
-import { DEFAULT_SETTINGS, DEFAULT_STORE, SettingsData, StoreData } from '../shared/types/store';
-import { setToggleMuteKeybind } from './keybinds';
-import { getMainWindow } from './main-window';
+import { KeyCodeEvent } from '@shared/types/keycodes';
+import { DEFAULT_SETTINGS, SettingsData } from '@shared/types/store/settings';
+import { setToggleMuteKeybind } from '../keybinds';
+import { getMainWindow } from '../main-window';
 
-const store = new Store<StoreData>({
-  name: 'clientStore',
-  defaults: {
-    ...DEFAULT_STORE,
-  },
-});
 const settingsStore = new Store<SettingsData>({
   name: 'settings',
   defaults: {
@@ -48,26 +42,8 @@ for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
   });
 }
 
-// Client Store
-store.events.setMaxListeners(store.events.getMaxListeners() + Object.keys(store.store).length);
-
-for (const key of Object.keys(store.store) as (keyof StoreData)[]) {
-  store.onDidChange(key, (newValue, oldValue) => {
-    getMainWindow()?.webContents.send('store:update', { key, newValue });
-    console.log(`Store onDidChange`, newValue, oldValue);
-  });
-}
-
 ipcMain.handle('settings:get', () => {
   return settingsStore.store;
-});
-
-ipcMain.handle('store:get', () => {
-  return store.store;
-});
-
-ipcMain.handle('set-store-value', async (_event, key: string, value: any) => {
-  store.set(key, value);
 });
 
 ipcMain.handle('set-settings-value', async (_event, key: string, value: any) => {
@@ -78,4 +54,4 @@ ipcMain.handle('set-settings-value', async (_event, key: string, value: any) => 
   }
 });
 
-export { settingsStore, store };
+export default settingsStore;

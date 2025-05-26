@@ -1,14 +1,16 @@
-import { electronApp, is, optimizer } from '@electron-toolkit/utils';
-import { app, BrowserWindow, ipcMain, session, shell } from 'electron';
+import { BrowserWindow, app, ipcMain, session, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import path from 'node:path';
 import { join } from 'path';
+import { electronApp, is, optimizer } from '@electron-toolkit/utils';
+import { SteamAuth } from './SteamAuth';
 import './ipc-handlers';
 import { setToggleMuteKeybind } from './keybinds';
 import { initMainWindow } from './main-window';
-import { SteamAuth } from './SteamAuth';
-import { settingsStore, store } from './store';
+import defaultStore from './store/default';
+import settingsStore from './store/settings';
+
 const appProtocolClient = `cs2-proximity-chat`;
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
@@ -165,7 +167,7 @@ if (!gotTheLock) {
 }
 
 const checkSteamAuthentication = (): void => {
-  const steamId = store.get('steamId');
+  const steamId = defaultStore.get('steamId');
   console.log(`Checking steam authentication: ${steamId}`);
 
   if (!steamId) {

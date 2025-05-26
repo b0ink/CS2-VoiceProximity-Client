@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Button, ButtonGroup, Input, Label, Modal, Select } from 'flowbite-svelte';
   import { onMount } from 'svelte';
+  import store from '@store/client';
+  import settings from '@store/settings';
   import { cn } from '../lib/tailwind';
-  import store from '../store/client';
-  import settings from '../store/settings';
 
   $: storedSocketServer = $settings.socketServer;
   let socketServerInput: string;

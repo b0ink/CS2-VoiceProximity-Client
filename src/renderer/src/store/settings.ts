@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { DEFAULT_SETTINGS, type SettingsData } from '../../../shared/types/store';
+import { DEFAULT_SETTINGS, type SettingsData } from '@shared/types/store/settings';
 
 const settings = writable<SettingsData>(DEFAULT_SETTINGS);
 

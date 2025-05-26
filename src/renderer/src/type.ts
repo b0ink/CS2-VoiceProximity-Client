@@ -1,5 +1,5 @@
 import Peer from 'simple-peer';
-import type { ServerConfigData } from './store/server-config';
+import type { Client } from '@shared/types/api';
 
 export enum CsTeam {
   None = 0,
@@ -8,11 +8,11 @@ export enum CsTeam {
   CounterTerrorist = 3,
 }
 
-export interface Client {
-  steamId: string;
-  clientId: string; // this would have to be unique to the players PC?
-  isMuted: boolean;
-}
+// export interface Client {
+//   steamId: string;
+//   clientId: string; // this would have to be unique to the players PC?
+//   isMuted: boolean;
+// }
 
 export interface SocketClientMap {
   [socketId: string]: Client;
@@ -56,30 +56,22 @@ export interface AudioConnectionStuff {
   toggleDeafen: () => void;
 }
 
-export interface JoinRoomResponse {
-  success: boolean;
-  message: string;
-  mapName?: string;
-  joinedClients?: { [key: string]: Client };
-  serverConfig?: ServerConfigData;
-}
+// export interface JoinRoomData {
+//   token: string;
+//   roomCode: string;
+//   steamId: string;
+//   clientId: string;
+//   isHost: boolean;
+//   isMuted: boolean;
+// }
 
-export interface JoinRoomData {
-  token: string;
-  roomCode: string;
-  steamId: string;
-  clientId: string;
-  isHost: boolean;
-  isMuted: boolean;
-}
-
-export enum SocketApiErrorType {
-  AuthExpired,
-}
-export interface SocketApiError {
-  code: SocketApiErrorType;
-  message: string;
-}
+// export enum SocketApiErrorType {
+//   AuthExpired,
+// }
+// export interface SocketApiError {
+//   code: SocketApiErrorType;
+//   message: string;
+// }
 
 // interface AudioNodes {
 //   dummyAudioElement: HTMLAudioElement;

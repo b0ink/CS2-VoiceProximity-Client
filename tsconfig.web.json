@@ -16,5 +16,9 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "composite": true,
     "moduleResolution": "bundler",
+    "paths": { 
+      "@shared/*": ["./src/shared/*"],
+      "@store/*": ["./src/renderer/src/store/*"],
+     },
   }
 }

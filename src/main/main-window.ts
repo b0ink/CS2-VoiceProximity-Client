@@ -3,7 +3,7 @@ import windowStateKeeper from 'electron-window-state';
 import { join } from 'path';
 import { version as appVersion } from '../../package.json';
 import icon from '../../resources/icon.png?asset';
-import { settingsStore } from './store';
+import settingsStore from './store/settings';
 
 let mainWindow: BrowserWindow | undefined;
 

@@ -1,8 +1,7 @@
 <script lang="ts">
   import { Button, ButtonGroup, Input, Label } from 'flowbite-svelte';
-
-  import { keyCodes, prettyPrintKey, type KeyCodeEvent } from '../../../shared/types/keycodes';
-  import settings from '../store/settings';
+  import { type KeyCodeEvent, keyCodes, prettyPrintKey } from '@shared/types/keycodes';
+  import settings from '@store/settings';
 
   let recordingCombo: boolean = false;
   let pressedKeys: KeyCodeEvent[] = [];

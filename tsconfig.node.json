@@ -10,6 +10,8 @@
     "composite": true,
     "types": ["electron-vite/node"],
     "moduleResolution": "bundler",
-    "strict": true
+    "strict": true,
+    "paths": { "@shared/*": ["./src/shared/*"], },
+
   }
 }

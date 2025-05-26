@@ -1,5 +1,4 @@
 import { DefaultNotificationOptions } from 'svelte-notifications';
-import { KeyCodeEvent } from './keycodes';
 
 interface Region {
   name: string;
@@ -44,48 +43,4 @@ export const DEFAULT_STORE: StoreData = {
       ping: 0,
     },
   ],
-};
-
-export enum OcclusionQuality {
-  OFF = 0,
-  LOW,
-  MEDIUM,
-  HIGH,
-}
-
-interface ClientVolumeMap {
-  [steamId: string]: number;
-}
-export interface SettingsData {
-  alwaysOnTop: boolean;
-  natFixEnabled: boolean;
-  hqVoice: boolean;
-  inputDeviceId: string | null;
-  socketServer: string | null;
-  micMuted: boolean;
-  globalGainAmount: number;
-  occlusionQuality: OcclusionQuality;
-  occlusionAutoQuality: boolean;
-  occlusionUpdateRate: number;
-  noiseSuppression: boolean;
-  echoCancellation: boolean;
-  playerVolumes: ClientVolumeMap;
-  muteKeybind: KeyCodeEvent[];
-}
-
-export const DEFAULT_SETTINGS: SettingsData = {
-  alwaysOnTop: false,
-  natFixEnabled: true,
-  hqVoice: false,
-  inputDeviceId: null,
-  socketServer: null,
-  micMuted: false,
-  globalGainAmount: 2.5,
-  occlusionQuality: OcclusionQuality.HIGH,
-  occlusionAutoQuality: true,
-  occlusionUpdateRate: 2,
-  noiseSuppression: true,
-  echoCancellation: true,
-  playerVolumes: {},
-  muteKeybind: [],
 };

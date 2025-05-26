@@ -1,4 +1,5 @@
-import { settingsStore, store } from './store';
+import defaultStore from './store/default';
+import settingsStore from './store/settings';
 
 interface TurnCredential {
   username: string;
@@ -6,13 +7,13 @@ interface TurnCredential {
 }
 
 export async function retrieveTurnCredentials(): Promise<TurnCredential | null> {
-  const token = store.get('token');
+  const token = defaultStore.get('token');
   if (!token) {
     return null;
   }
 
-  const turnUsername = store.get('turnUsername');
-  const turnPassword = store.get('turnPassword');
+  const turnUsername = defaultStore.get('turnUsername');
+  const turnPassword = defaultStore.get('turnPassword');
 
   console.log(turnUsername, turnPassword);
   if (turnUsername && turnPassword && turnUsername.indexOf(':') !== -1) {
@@ -27,8 +28,8 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
     }
   }
 
-  store.delete('turnUsername');
-  store.delete('turnPassword');
+  defaultStore.delete('turnUsername');
+  defaultStore.delete('turnPassword');
   const apiUrl = settingsStore.get('socketServer');
   try {
     const response = await fetch(`${apiUrl}/get-turn-credential`, {
@@ -40,15 +41,15 @@ export async function retrieveTurnCredentials(): Promise<TurnCredential | null> 
     const statusCode = response.status;
     if (statusCode === 401) {
       console.log('Token must be invalid, user must authenticate');
-      store.set('token', null);
-      store.set('steamId', null);
+      defaultStore.set('token', null);
+      defaultStore.set('steamId', null);
       return null;
     }
     if (statusCode === 200) {
       const data: { message: string; data: TurnCredential } = await response.json();
       const credential = data.data;
-      store.set('turnUsername', credential.username);
-      store.set('turnPassword', credential.password);
+      defaultStore.set('turnUsername', credential.username);
+      defaultStore.set('turnPassword', credential.password);
       console.log(`Received turn credentials: ${JSON.stringify(credential)}`);
 
       return {

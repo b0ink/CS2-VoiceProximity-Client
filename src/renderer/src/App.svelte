@@ -1,6 +1,5 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
-  import { decode } from '@msgpack/msgpack';
   import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import {
     CogSolid,
@@ -10,35 +9,38 @@
   } from 'flowbite-svelte-icons';
   import 'hacktimer';
   import Peer from 'simple-peer';
-  import { io, Socket } from 'socket.io-client';
+  import { Socket, io } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
-  import { getNotificationsContext, type DefaultNotificationOptions } from 'svelte-notifications';
+  import { type DefaultNotificationOptions, getNotificationsContext } from 'svelte-notifications';
   import * as THREE from 'three';
-  import { OcclusionQuality } from '../../shared/types/store';
+  import { decode } from '@msgpack/msgpack';
+  import {
+    type Client,
+    type ClientToServerEvents,
+    type JoinRoomData,
+    type JoinRoomResponse,
+    type ServerToClientEvents,
+    type SocketApiError,
+    SocketApiErrorType,
+  } from '@shared/types/api';
+  import type { ServerConfigData } from '@shared/types/store/server-config';
+  import { OcclusionQuality } from '@shared/types/store/settings';
+  import serverConfigStore, { DEFAULT_SERVER_CONFIG } from '@store/server-config';
+  import settings from '@store/settings';
+  import { RemotePlayer } from './RemotePlayer';
+  import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
+  import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
   import { getMap, initializeMap } from './maps';
-  import { RemotePlayer } from './RemotePlayer';
-  import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
-  import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import store from './store/client';
-  import serverConfigStore, {
-    DEFAULT_SERVER_CONFIG,
-    type ServerConfigData,
-  } from './store/server-config';
-  import settings from './store/settings';
   import {
-    SocketApiErrorType,
     type AudioConnectionStuff,
-    type Client,
-    type JoinRoomData,
-    type JoinRoomResponse,
     type PeerConnectionBandwidth,
     type PeerConnections,
     type PlayerPositionApiData,
-    type SocketApiError,
     type SocketClientMap,
     type SteamIdSocketMap,
   } from './type';
@@ -106,7 +108,7 @@
 
   let playerPositions: PlayerPositionApiData[] = [];
 
-  let socket: Socket | undefined;
+  let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
   let socketConnected = false;
   let socketClientMap: SocketClientMap = {};
   let steamIdSocketMap: SteamIdSocketMap = {};
@@ -194,7 +196,7 @@
         },
       });
 
-      socket.on('exception', (error: SocketApiError) => {
+      socket!.on('exception', (error: SocketApiError) => {
         if (error.code === SocketApiErrorType.AuthExpired) {
           window.api.setStoreValue('steamId', null);
           window.api.setStoreValue('token', null);
