@@ -6,7 +6,10 @@
   "endOfLine": "lf",
   "trailingComma": "all",
   "semi": true,
-  "plugins": ["prettier-plugin-svelte"],
+  "plugins": ["prettier-plugin-svelte", "@trivago/prettier-plugin-sort-imports"],
+  "importOrder": ["^(react|svelte|svelte/.*|[a-z])", "^@", "^[./]"],
+  "importOrderSeparation": false,
+  "importOrderSortSpecifiers": true,
   "overrides": [
     {
       "files": ["*.svelte"],
