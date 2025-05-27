@@ -340,7 +340,7 @@ export class RemotePlayer {
 
     const roundedOcclusion = Math.round(finalOcclusion / 5) * 5;
 
-    console.log(`occlusion: ${roundedOcclusion}`);
+    // console.log(`occlusion: ${roundedOcclusion}`);
 
     this.setLowPassFilterFrequency(roundedOcclusion);
 
