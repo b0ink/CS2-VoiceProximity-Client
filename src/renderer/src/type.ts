@@ -8,12 +8,6 @@ export enum CsTeam {
   CounterTerrorist = 3,
 }
 
-// export interface Client {
-//   steamId: string;
-//   clientId: string; // this would have to be unique to the players PC?
-//   isMuted: boolean;
-// }
-
 export interface SocketClientMap {
   [socketId: string]: Client;
 }
@@ -55,37 +49,3 @@ export interface AudioConnectionStuff {
   toggleMute: (muted: boolean) => void;
   toggleDeafen: () => void;
 }
-
-// export interface JoinRoomData {
-//   token: string;
-//   roomCode: string;
-//   steamId: string;
-//   clientId: string;
-//   isHost: boolean;
-//   isMuted: boolean;
-// }
-
-// export enum SocketApiErrorType {
-//   AuthExpired,
-// }
-// export interface SocketApiError {
-//   code: SocketApiErrorType;
-//   message: string;
-// }
-
-// interface AudioNodes {
-//   dummyAudioElement: HTMLAudioElement;
-//   audioElement: HTMLAudioElement;
-//   // gain: GainNode;
-//   // pan: PannerNode;
-//   // reverb: ConvolverNode;
-//   // muffle: BiquadFilterNode;
-//   destination: AudioNode;
-//   // reverbConnected: boolean;
-//   // muffleConnected: boolean;
-// }
-
-// interface AudioElements {
-//   // TODO: what is "peer" - socket id? steam id?
-//   [peer: string]: AudioNodes; // TODO: replace AudioNodes with THREEjs alternative?
-// }
