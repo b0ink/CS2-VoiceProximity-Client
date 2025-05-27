@@ -1,1 +1,4 @@
 * text=auto eol=lf
+
+# Down-weight .ts files to highlight Svelte as main language
+src/shared/** linguist-vendored
