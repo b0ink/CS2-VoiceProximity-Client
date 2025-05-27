@@ -2,7 +2,7 @@
   import { Button, Progressbar } from 'flowbite-svelte';
   import { onDestroy, onMount } from 'svelte';
   import settings from '@store/settings';
-  import { getUserAudio } from '../voice';
+  import { getUserAudio } from '../utils/getUserAudio';
 
   let rms: number = 0;
   let playing: boolean = false;

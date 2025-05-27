@@ -13,19 +13,17 @@
   import { onDestroy, onMount } from 'svelte';
   import { type DefaultNotificationOptions, getNotificationsContext } from 'svelte-notifications';
   import * as THREE from 'three';
-  import { decode } from '@msgpack/msgpack';
   import {
     type Client,
     type ClientToServerEvents,
     type JoinRoomData,
     type JoinRoomResponse,
-    type ServerConfigData,
     type ServerToClientEvents,
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
   import { OcclusionQuality } from '@shared/types/store/settings';
+  import store from '@store/client';
   import serverConfigStore from '@store/server-config';
   import settings from '@store/settings';
   import { RemotePlayer } from './RemotePlayer';
@@ -35,8 +33,8 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { getMap, initializeMap } from './maps';
-  import store from './store/client';
+  import { getMap, initializeMap } from './render/maps';
+  import { renderFrame } from './render/renderFrame';
   import {
     type AudioConnectionStuff,
     type PeerConnectionBandwidth,
@@ -45,7 +43,8 @@
     type SocketClientMap,
     type SteamIdSocketMap,
   } from './type';
-  import { getUserAudio } from './voice';
+  import { decodePlayerData, decodeServerConfig } from './utils/decode';
+  import { getUserAudio } from './utils/getUserAudio';
 
   const { addNotification, removeNotification } = getNotificationsContext();
 
@@ -63,11 +62,8 @@
   }
   $: useTurnConfig = $settings.natFixEnabled;
   $: microphoneMuted = $settings.micMuted;
-  // $: globalGainAmount = $settings.globalGainAmount;
   $: occlusionQuality = $settings.occlusionQuality;
-  $: occlusionAutoQuality = $settings.occlusionAutoQuality;
   $: noiseSuppression = $settings.noiseSuppression;
-  $: occlusionUpdateRate = $settings.occlusionUpdateRate;
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
     updateGainFilters();
@@ -101,13 +97,6 @@
   let clientListener: THREE.AudioListener;
   let remotePlayers: Map<string, RemotePlayer | undefined> = new Map<string, RemotePlayer>();
 
-  let occlusionUpdateTimes: number[] = [];
-  const DOWNGRADE_THRESHOLD = 90; // must be consistently above this to decrease occlusion detail
-  const UPGRADE_THRESHOLD = 40; // must be consistently below this to increase occlusion detail
-  const REQUIRED_FRAMES = 30;
-  let goodFrameCount = 0;
-  let badFrameCount = 0;
-
   let lastSocketException: number = 0;
 
   let playerPositions: PlayerPositionApiData[] = [];
@@ -124,7 +113,6 @@
   let joinedRoom: boolean = false;
   let currentLobby: string | undefined = '';
 
-  let shouldUpdateSoundFilters: number = 0;
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
     muted: false,
@@ -318,36 +306,18 @@
 
       socket?.on('server-config', async (data: Buffer) => {
         console.log(`socket.on('server-config'): ${data}`);
-        const raw = decode(new Uint8Array(data)) as Record<string, unknown>;
-        const cfg = DEFAULT_SERVER_CONFIG;
-        const decoded: ServerConfigData = {
-          deadPlayerMuteDelay:
-            (raw.DeadPlayerMuteDelay as number | undefined) ?? cfg.deadPlayerMuteDelay,
-          allowDeadTeamVoice:
-            (raw.AllowDeadTeamVoice as boolean | undefined) ?? cfg.allowDeadTeamVoice,
-          allowSpectatorC4Voice:
-            (raw.AllowSpectatorC4Voice as boolean | undefined) ?? cfg.allowSpectatorC4Voice,
-          rolloffFactor: (raw.RolloffFactor as number | undefined) ?? cfg.rolloffFactor,
-          refDistance: (raw.RefDistance as number | undefined) ?? cfg.refDistance,
-          occlusionNear: (raw.OcclusionNear as number | undefined) ?? cfg.occlusionNear,
-          occlusionFar: (raw.OcclusionFar as number | undefined) ?? cfg.occlusionFar,
-          occlusionEndDist: (raw.OcclusionEndDist as number | undefined) ?? cfg.occlusionEndDist,
-          occlusionFalloffExponent:
-            (raw.OcclusionFalloffExponent as number | undefined) ?? cfg.occlusionFalloffExponent,
-        };
-
-        console.log(`socket.on('server-config'):`, decoded);
-
+        const serverConfig = decodeServerConfig(data);
+        console.log(`socket.on('server-config'):`, serverConfig);
         serverConfigStore.set({
-          deadPlayerMuteDelay: decoded.deadPlayerMuteDelay,
-          allowDeadTeamVoice: decoded.allowDeadTeamVoice,
-          allowSpectatorC4Voice: decoded.allowSpectatorC4Voice,
-          rolloffFactor: decoded.rolloffFactor,
-          refDistance: decoded.refDistance,
-          occlusionNear: decoded.occlusionNear,
-          occlusionFar: decoded.occlusionFar,
-          occlusionEndDist: decoded.occlusionEndDist,
-          occlusionFalloffExponent: decoded.occlusionFalloffExponent,
+          deadPlayerMuteDelay: serverConfig.deadPlayerMuteDelay,
+          allowDeadTeamVoice: serverConfig.allowDeadTeamVoice,
+          allowSpectatorC4Voice: serverConfig.allowSpectatorC4Voice,
+          rolloffFactor: serverConfig.rolloffFactor,
+          refDistance: serverConfig.refDistance,
+          occlusionNear: serverConfig.occlusionNear,
+          occlusionFar: serverConfig.occlusionFar,
+          occlusionEndDist: serverConfig.occlusionEndDist,
+          occlusionFalloffExponent: serverConfig.occlusionFalloffExponent,
         });
       });
 
@@ -365,38 +335,6 @@
 
       // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
       socket?.on('player-positions', (data) => {
-        const decoded = decode(new Uint8Array(data));
-        const players = decoded as Array<
-          [string, string, number, number, number, number, number, number, number, boolean, boolean]
-        >;
-
-        let localPlayerData: PlayerPositionApiData[] = [];
-
-        for (const player of players) {
-          const [steamId, name, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4] = player;
-
-          // Cast to PlayerData interface
-          const playerData: PlayerPositionApiData = {
-            steamId,
-            name,
-            // The server plugin scales our Origin/LookAt floats to integers so that we're not dealing with decimals
-            // Now we need to scale them down
-            originX: ox / 10000,
-            originY: oy / 10000,
-            originZ: oz / 10000,
-            lookAtX: lx / 10000,
-            lookAtY: ly / 10000,
-            lookAtZ: lz / 10000,
-            team,
-            isAlive,
-            spectatingC4,
-          };
-          localPlayerData.push(playerData);
-        }
-        playerPositions = localPlayerData;
-
-        // console.log(playerPositions);
-
         if (!joinedRoom) {
           return;
         }
@@ -405,18 +343,18 @@
         if (!mySocketId) {
           return;
         }
-        if (socketClientMap[mySocketId]) {
-          return;
-        }
 
-        const me = localPlayerData.find((player) => player.steamId === getSteamId());
+        playerPositions = decodePlayerData(data);
+        // console.log(playerPositions);
+
+        const me = playerPositions.find((player) => player.steamId === getSteamId());
 
         let spectatedPlayerPosition: THREE.Vector3 | null;
         let hasSpectatedPosition = false;
 
         // Get the position of the player being spectated
         if (me) {
-          for (const player of localPlayerData) {
+          for (const player of playerPositions) {
             if (player.steamId === getSteamId()) {
               if (!me.isAlive) {
                 const playerOrigin = new THREE.Vector3(
@@ -432,7 +370,7 @@
           }
         }
 
-        for (const player of localPlayerData) {
+        for (const player of playerPositions) {
           const steamId = player.steamId;
           if (!steamId) {
             continue;
@@ -502,64 +440,7 @@
           }
         }
 
-        const start: number = performance.now();
-
-        if (clientCamera) {
-          threejs.render(scene, clientCamera);
-        }
-
-        shouldUpdateSoundFilters++;
-        if (occlusionUpdateRate > 5 || occlusionUpdateRate < 1) {
-          window.api.setSettingsValue('occlusionUpdateRate', 1);
-        }
-        if (
-          getMap() &&
-          // update sound filters at a reduced rate when settings is open to avoid laggy UI
-          // otherwise update sound filters according to occlusionUpdateRate
-          shouldUpdateSoundFilters % Math.floor(settingsOpen ? 5 : occlusionUpdateRate) === 0
-        ) {
-          shouldUpdateSoundFilters = 0;
-          updateSoundFilters();
-
-          // Track how long it takes to render each frame and calculate occlusion
-          const duration: number = performance.now() - start;
-          occlusionUpdateTimes.push(duration);
-          if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
-
-          const averageFrameTime =
-            occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
-
-          if (occlusionAutoQuality) {
-            if (averageFrameTime > DOWNGRADE_THRESHOLD) {
-              badFrameCount++;
-              goodFrameCount = 0;
-            } else if (averageFrameTime < UPGRADE_THRESHOLD) {
-              goodFrameCount++;
-              badFrameCount = 0;
-            } else {
-              goodFrameCount = 0;
-              badFrameCount = 0;
-            }
-
-            if (badFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.LOW) {
-              const next =
-                occlusionQuality === OcclusionQuality.HIGH
-                  ? OcclusionQuality.MEDIUM
-                  : OcclusionQuality.LOW;
-              window.api.setSettingsValue('occlusionQuality', next);
-              badFrameCount = 0;
-            }
-
-            if (goodFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
-              const next =
-                occlusionQuality === OcclusionQuality.LOW
-                  ? OcclusionQuality.MEDIUM
-                  : OcclusionQuality.HIGH;
-              window.api.setSettingsValue('occlusionQuality', next);
-              goodFrameCount = 0;
-            }
-          }
-        }
+        renderFrame(threejs, scene, clientCamera, settingsOpen, updateSoundFilters);
       });
     }
   }
