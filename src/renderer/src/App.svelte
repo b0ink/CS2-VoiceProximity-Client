@@ -22,7 +22,7 @@
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import { OcclusionQuality } from '@shared/types/store/settings';
+  import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
   import store from '@store/client';
   import serverConfigStore from '@store/server-config';
   import settings from '@store/settings';
@@ -84,8 +84,8 @@
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
   $: allowDeadTeamVoice = $serverConfigStore.allowDeadTeamVoice;
   $: allowSpectatorC4Voice = $serverConfigStore.allowSpectatorC4Voice;
-  $: refDistance = $serverConfigStore.refDistance;
-  $: rolloffFactor = $serverConfigStore.rolloffFactor;
+  // $: volumeDropoffFactor = $serverConfigStore.volumeDropoffFactor;
+  // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
   // The API will notify the client if they have joined a CS2 server but have not joined the room yet
   let playerServerRoomCode: string | undefined;
@@ -312,8 +312,8 @@
           deadPlayerMuteDelay: serverConfig.deadPlayerMuteDelay,
           allowDeadTeamVoice: serverConfig.allowDeadTeamVoice,
           allowSpectatorC4Voice: serverConfig.allowSpectatorC4Voice,
-          rolloffFactor: serverConfig.rolloffFactor,
-          refDistance: serverConfig.refDistance,
+          volumeFalloffFactor: serverConfig.volumeFalloffFactor,
+          volumeMaxDistance: serverConfig.volumeMaxDistance,
           occlusionNear: serverConfig.occlusionNear,
           occlusionFar: serverConfig.occlusionFar,
           occlusionEndDist: serverConfig.occlusionEndDist,
@@ -420,7 +420,7 @@
               hasSpectatedPosition && playerOrigin.distanceTo(spectatedPlayerPosition!) <= 10;
 
             if (me && !me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
-              positionalSound.SwitchToMono();
+              positionalSound.SwitchToMono(player.isAlive ?? false);
               positionalSound.setMonoHighPassFilterFrequency(player.isAlive ? 100 : 750);
             } else {
               positionalSound.SwitchToStereo();
@@ -804,13 +804,7 @@
     const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
-        soundData?.updateOcclusion(map, occlusionQuality, $serverConfigStore);
-        if (rolloffFactor !== undefined) {
-          soundData?.setRolloffFactor(rolloffFactor);
-        }
-        if (refDistance !== undefined) {
-          soundData?.setRefDistance(refDistance);
-        }
+        soundData?.updateFilters(map, occlusionQuality, $serverConfigStore);
       }
     }
   };
@@ -822,9 +816,9 @@
   const updateGainFilters = (): void => {
     for (const soundData of remotePlayers.values()) {
       if (soundData?.steamId !== undefined) {
-        const gainAmount = playerVolumes[soundData?.steamId] ?? 250;
+        const gainAmount = playerVolumes[soundData?.steamId] ?? DEFAULT_PLAYER_VOLUME;
         console.log(gainAmount);
-        soundData?.SetGain(Math.floor(gainAmount / 100));
+        soundData?.SetGain(gainAmount / 100);
       }
     }
   };

@@ -49,6 +49,9 @@ export class RemotePlayer {
   private gainFilter?: GainNode;
   private gainAmount: number;
 
+  private distanceGainFilter?: GainNode;
+  private distanceGainAmount: number;
+
   private monoGainFilter?: GainNode;
   private monoHighpassFilter?: BiquadFilterNode;
 
@@ -84,10 +87,12 @@ export class RemotePlayer {
     const playerVoice3D = new THREE.PositionalAudio(listener); // defaults to "inverse" distance model
     playerVoice3D.setMediaStreamSource(remoteStream);
     playerVoice3D.setVolume(1);
-    // TODO: experiment with a larger refDistance (60): https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/refDistance
-    playerVoice3D.setRefDistance(39);
-    // TODO: experiment with a smaller rolloff factor (0.75): https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/rolloffFactor
-    playerVoice3D.setRolloffFactor(1);
+
+    // Disable distance attenuation controlled by native PannerNode
+    playerVoice3D.setDistanceModel('none');
+    // playerVoice3D.setRefDistance(Infinity); // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/refDistance
+    playerVoice3D.setRolloffFactor(0); // https://developer.mozilla.org/en-US/docs/Web/API/PannerNode/rolloffFactor
+
     // playerVoice3D.setMaxDistance(1000); // only used by the "linear" distance model
     playerObject.add(playerVoice3D);
     this.playerVoice3D = playerVoice3D;
@@ -104,6 +109,7 @@ export class RemotePlayer {
     this.Mute(0);
 
     this.gainAmount = 2.5;
+    this.distanceGainAmount = 1;
     this.initStereoFilters();
     this.initMonoFilters();
   }
@@ -147,7 +153,13 @@ export class RemotePlayer {
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
 
-    this.playerVoice3D.setFilters([highpass, filter, gain]);
+    const distanceGain = this.listener_.context.createGain();
+    distanceGain.gain.value = this.distanceGainAmount;
+    distanceGain.gain.setValueAtTime(this.distanceGainAmount, this.listener_.context.currentTime);
+    this.distanceGainFilter = distanceGain;
+    this.distanceGainAmount = 1;
+
+    this.playerVoice3D.setFilters([highpass, filter, gain, distanceGain]);
   }
 
   private initMonoFilters(): void {
@@ -166,12 +178,17 @@ export class RemotePlayer {
     this.playerVoice2D.setVolume(0);
   }
 
-  public SwitchToMono(): void {
+  public SwitchToMono(isAlive: boolean): void {
     if (!this.useMonoAudio) {
       this.useMonoAudio = true;
       const now = this.listener_.context.currentTime;
       this.gainFilter?.gain.linearRampToValueAtTime(0, now + 0.2); // smooth over 200ms
-      this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+      if (isAlive) {
+        // Reduce the volume of alive players while being spectated
+        this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount / 1.5, now + 0.2);
+      } else {
+        this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+      }
       console.log(`Switching ${this.steamId} to mono audio`);
       this.playerVoice2D.setVolume(0.3); // TODO: user setting: "Volume of dead teammates"
     }
@@ -283,25 +300,73 @@ export class RemotePlayer {
     this.monoHighpassFilter!.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
-  public updateOcclusion(
+  public updateFilters(
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
     occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
   ): void {
-    // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
-
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
-    //TODO: we could check if distance >= 2000 to avoid calculating occlusion, but we want to ensure performance everywhere
-    if (distance === null) {
+
+    if (!distance) {
       return;
     }
-    // TODO: increase occlusion for each mesh hit
+
     const { occlusion } = this.calculateOcclusion(
       occlusionMesh,
       this.clientCamera?.position,
       this.playerObject?.position,
       occlusionQuality,
     );
+
+    this.updateOcclusion(distance, occlusion, occlusionConfig);
+    this.updateDistanceVolume(distance, occlusion, occlusionConfig);
+  }
+
+  private updateDistanceVolume(
+    distance: number,
+    occlusion: number,
+    occlusionConfig?: ServerConfigData,
+  ): void {
+    const volumeDropoffFactor =
+      occlusionConfig?.volumeFalloffFactor ?? DEFAULT_SERVER_CONFIG.volumeFalloffFactor;
+    const volumeMaxDistance =
+      occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
+    const t = Math.min(distance / volumeMaxDistance, 1);
+    const gain = 1 - Math.pow(t, volumeDropoffFactor);
+
+    const alwaysAudibleIfVisible = true; // TODO: server config
+
+    const roundedGain = Math.max(
+      Math.round(gain * 1000) / 1000,
+      occlusion <= 1 && alwaysAudibleIfVisible ? 0.05 : 0.0001,
+    );
+
+    // const roundedGain = Math.max(Math.round(gain * 1000) / 1000, 0.0001);
+
+    if (this.distanceGainAmount !== roundedGain) {
+      this.distanceGainAmount = roundedGain;
+      // console.log(`GAIN: ${roundedGain} ${distance}`);
+
+      const now = this.listener_.context.currentTime;
+      this.distanceGainFilter?.gain.cancelScheduledValues(now);
+      this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.01);
+
+      this.playerVoice3D.setVolume(this.distanceGainAmount);
+    }
+  }
+
+  public updateOcclusion(
+    distance: number,
+    occlusion: number,
+    occlusionConfig?: ServerConfigData,
+  ): void {
+    // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
+
+    // TODO: we could check if distance >= 2000 to avoid calculating occlusion, but we want to ensure performance everywhere
+    if (distance === null) {
+      return;
+    }
+    // TODO: increase occlusion for each mesh hit
 
     // "highest" occlusion <=> lower value <=> minimum
     // "lowest" occlusion <=> higher value <=> maximum

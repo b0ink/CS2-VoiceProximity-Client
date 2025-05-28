@@ -1,7 +1,12 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
 import { KeyCodeEvent } from '@shared/types/keycodes';
-import { DEFAULT_SETTINGS, SettingsData } from '@shared/types/store/settings';
+import {
+  ClientVolumeMap,
+  DEFAULT_SETTINGS,
+  MAX_PLAYER_VOLUME,
+  SettingsData,
+} from '@shared/types/store/settings';
 import { setToggleMuteKeybind } from '../keybinds';
 import { getMainWindow } from '../main-window';
 
@@ -37,6 +42,13 @@ for (const key of Object.keys(settingsStore.store) as (keyof SettingsData)[]) {
         settingsStore.set('muteKeybind', []);
         newValue = [];
       }
+    }
+    if (key === 'playerVolumes') {
+      const volumes = newValue as ClientVolumeMap;
+      for (const [id, vol] of Object.entries(volumes)) {
+        volumes[id] = Math.max(0, Math.min(vol, MAX_PLAYER_VOLUME));
+      }
+      newValue = volumes;
     }
     getMainWindow()?.webContents.send('settings:update', { key, newValue });
   });

@@ -3,6 +3,7 @@
   import { cn } from 'flowbite-svelte';
   import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { onMount } from 'svelte';
+  import { DEFAULT_PLAYER_VOLUME, MAX_PLAYER_VOLUME } from '@shared/types/store/settings';
   import settings from '../store/settings';
   import { CsTeam } from '../type';
 
@@ -71,13 +72,13 @@
         size="sm"
         id="range1"
         min="0"
-        max="500"
-        step="20"
+        max={MAX_PLAYER_VOLUME}
+        step="10"
         bind:value={playerVolume}
+        color={playerVolume === 0 ? 'red' : 'blue'}
         oninput={() => {
           const updatedVolumes = { ...playerVolumes };
-          if (playerVolume === 250) {
-            // 250 is default
+          if (playerVolume === DEFAULT_PLAYER_VOLUME) {
             delete updatedVolumes[player.steamId];
           } else {
             updatedVolumes[player.steamId] = playerVolume;

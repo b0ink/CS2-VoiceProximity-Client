@@ -44,8 +44,8 @@ export function decodeServerConfig(data: Buffer): ServerConfigData {
     allowDeadTeamVoice: (raw.AllowDeadTeamVoice as boolean | undefined) ?? cfg.allowDeadTeamVoice,
     allowSpectatorC4Voice:
       (raw.AllowSpectatorC4Voice as boolean | undefined) ?? cfg.allowSpectatorC4Voice,
-    rolloffFactor: (raw.RolloffFactor as number | undefined) ?? cfg.rolloffFactor,
-    refDistance: (raw.RefDistance as number | undefined) ?? cfg.refDistance,
+    volumeFalloffFactor: (raw.VolumeFalloffFactor as number | undefined) ?? cfg.volumeFalloffFactor,
+    volumeMaxDistance: (raw.VolumeMaxDistance as number | undefined) ?? cfg.volumeMaxDistance,
     occlusionNear: (raw.OcclusionNear as number | undefined) ?? cfg.occlusionNear,
     occlusionFar: (raw.OcclusionFar as number | undefined) ?? cfg.occlusionFar,
     occlusionEndDist: (raw.OcclusionEndDist as number | undefined) ?? cfg.occlusionEndDist,

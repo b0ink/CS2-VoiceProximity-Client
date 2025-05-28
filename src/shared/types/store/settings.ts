@@ -1,6 +1,6 @@
 import { KeyCodeEvent } from '../keycodes';
 
-interface ClientVolumeMap {
+export interface ClientVolumeMap {
   [steamId: string]: number;
 }
 export enum OcclusionQuality {
@@ -26,6 +26,9 @@ export interface SettingsData {
   playerVolumes: ClientVolumeMap;
   muteKeybind: KeyCodeEvent[];
 }
+
+export const DEFAULT_PLAYER_VOLUME = 100;
+export const MAX_PLAYER_VOLUME = 200;
 
 export const DEFAULT_SETTINGS: SettingsData = {
   alwaysOnTop: false,
