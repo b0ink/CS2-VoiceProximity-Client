@@ -16,6 +16,7 @@ export interface ServerToClientEvents {
   'user-joined': (socketId: string, client: Client) => void;
   signal: (data: { from: string; data: Peer.SignalData; client: Client }) => void;
   'microphone-state': (socketId: string, isMuted: boolean) => void;
+  'muted-by-server-admin': () => void;
 }
 
 export interface ClientToServerEvents {
@@ -27,6 +28,7 @@ export interface ClientToServerEvents {
   signal: (signal: Signal) => void;
   'microphone-state': (state: { isMuted: boolean }) => void;
   'update-config': (data: { config: ServerConfigData; clientToken: string }) => void;
+  'mute-player': (data: { targetSteamId: string; clientToken: string }) => void;
 }
 
 export type JoinRoomCallback = (response: JoinRoomResponse) => void;

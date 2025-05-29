@@ -20,6 +20,7 @@
   }
   export let playerIsClient: boolean;
   export let player: PlayerData;
+  export let onClick: () => void;
 
   let playerVolume: number;
 
@@ -58,7 +59,7 @@
             ? '#5d79ae'
             : '#0c0f12'}
       />
-      <button class="truncate cursor-pointer hover:text-primary-500">
+      <button class="truncate cursor-pointer hover:text-primary-500" on:click={onClick}>
         {player.name}
       </button>
       {#if player.isMuted}

@@ -154,9 +154,11 @@
 
   const muteMicrophone = (): void => {
     audioConnectionStuff.toggleMute(true);
-    window.api.setSettingsValue('micMuted', true);
-    playSound(micMuteSound);
-    socket?.emit('microphone-state', { isMuted: true });
+    if (!audioConnectionStuff.stream?.getAudioTracks()[0].enabled) {
+      window.api.setSettingsValue('micMuted', true);
+      playSound(micMuteSound);
+      socket?.emit('microphone-state', { isMuted: true });
+    }
   };
 
   async function intialise(): Promise<void> {
@@ -300,6 +302,11 @@
         });
         peerConnectingBandwidth = { ...peerConnectingBandwidth };
       }, 1000);
+
+      socket?.on('muted-by-server-admin', () => {
+        console.log(`socket.on('muted-by-server-admin'):`);
+        muteMicrophone();
+      });
 
       socket?.on('current-map', async (mapName) => {
         console.log(`socket.on('current-map'): ${mapName}`);
@@ -1196,6 +1203,8 @@
         players={playerPositions}
         joinedSocketConnections={socketClientMap}
         {peerConnectingBandwidth}
+        {socket}
+        {clientIsAdmin}
       ></PlayerList>
     {/if}
   {/if}

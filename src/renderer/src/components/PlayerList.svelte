@@ -1,7 +1,11 @@
 <script lang="ts">
   // import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
+  import { Button, Modal } from 'flowbite-svelte';
+  import type { Socket } from 'socket.io-client';
   import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
+  import type { ClientToServerEvents, ServerToClientEvents } from '@shared/types/api';
+  import store from '@store/client';
   import { cn } from '../lib/tailwind';
   import settings from '../store/settings';
   import {
@@ -16,6 +20,8 @@
   export let players: PlayerPositionApiData[];
   export let joinedSocketConnections: SocketClientMap;
   export let peerConnectingBandwidth: PeerConnectionBandwidth;
+  export let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
+  export let clientIsAdmin: boolean = false;
 
   $: micMuted = $settings.micMuted;
   interface PlayerData {
@@ -86,8 +92,6 @@
     });
 
     // Some players could be in the call, but not on the server yet, let's display their steamID instead
-    // TODO: put client's name at the top of the list, then sort players by team (so clients team would be first), then spectators at the bottom
-    // TODO: and teams are sorted alphabetically?
 
     // TODO: i think this list is redundant now because we have our playerApiData array that stores players in there - soon as they get removed they get kicked from the server right?
 
@@ -131,79 +135,16 @@
     console.log(Array.from(map.entries()));
   })();
 
-  // let manageUserModal: boolean = false;
-  // let manageUserSteamId: string | undefined = undefined;
+  let manageUserModal: boolean = false;
+  let manageUser: PlayerData | null = null;
 
   // $: playerLength = joinedPlayers.length;
 
-  let playerListFullscren: boolean = false;
+  // let playerListFullscren: boolean = false;
 
   let DEBUG_PLAYER_LIST: boolean = false;
   // const fakePlayers = [
   //   'boink',
-  //   'NadeKing',
-  //   'zackie',
-  //   'b1ggus',
-  //   'haz',
-  //   'Nebula',
-  //   'Fusion',
-  //   'Zithic',
-  //   'ShadeBlitz',
-  //   'ThornVex',
-  //   'Kragstorm',
-  //   'NexusFlint',
-  //   'Wyrmbite',
-  //   'Drakvolt',
-  //   'Hexlin',
-  //   'GhostRift',
-  //   'PyroShade',
-  //   'Snarefang',
-  //   'ChromaGrim',
-  //   'Jinxhowl',
-  //   'Nightflint',
-  //   'Glitchbeard',
-  //   'Razorwulf',
-  //   'Vortek',
-  //   'Ashlock',
-  //   'Mirebane',
-  //   'Zyrex',
-  //   'Nullfang',
-  //   'Blazedge',
-  //   'Cryptlynx',
-  //   'Toxflare',
-  //   'Steelmaw',
-  //   'Plasmite',
-  //   'Grimnix',
-  //   'PhantomBurn',
-  //   'Skarnyx',
-  //   'Brimwolf',
-  //   'Darkflare',
-  //   'Thrashjaw',
-  //   'Orbclaw',
-  //   'Knoxmaw',
-  //   'Vexlyn',
-  //   'Stormgrin',
-  //   'Fangroot',
-  //   'Dreadthorn',
-  //   'Ignith',
-  //   'CobaltSnare',
-  //   'Fleckburn',
-  //   'Havoktail',
-  //   'Quellfang',
-  //   'Frostgrim',
-  //   'Jaghex',
-  //   'Murktooth',
-  //   'Lazeth',
-  //   'Spineflare',
-  //   'Venomrift',
-  //   'Grawloch',
-  //   'Scarnyx',
-  //   'Driftbane',
-  //   'Fluxraze',
-  //   'Moltraith',
-  //   'Venlyn',
-  //   'Hollowgrit',
-  //   'Nyrvok',
   // ];
 
   // const debugNumPlayers = 64;
@@ -222,10 +163,30 @@
   // }
 
   // playerListFullscren = true;
+
+  const onPlayerNameClick = (player: PlayerData): void => {
+    console.log(`clicked: ${player.steamId}`);
+    manageUser = player;
+    manageUserModal = true;
+  };
+
+  const remotelyMutePlayer = (targetSteamId: string): void => {
+    if (!$store.token) {
+      return;
+    }
+
+    socket?.emit('mute-player', {
+      targetSteamId,
+      clientToken: $store.token,
+    });
+
+    manageUser = null;
+    manageUserModal = false;
+  };
 </script>
 
 <!-- TODO: scrollbar -->
-{#if playerListFullscren}
+<!-- {#if playerListFullscren}
   <div
     class={cn(
       'w-lvw h-lvh absolute top-0 left-0 dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2',
@@ -234,27 +195,46 @@
   >
     hi
   </div>
-{/if}
+{/if} -->
 
 <!-- <div class="text-center mb-2 font-bold text-primary-600 h-full">Joined Players</div> -->
 
-<!-- <Modal title="Login with Steam" bind:open={manageUserModal} autoclose>
-  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    Edit {manageUserSteamId}!!
-  </p>
-
-  <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    Your Steam credentials are never shared with us.
-  </p>
+<Modal title="Manage Player" bind:open={manageUserModal} autoclose>
+  <div class="text-base leading-relaxed text-gray-500 dark:text-gray-400 mb-1">
+    Name: {manageUser?.name}
+  </div>
+  <div class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
+    SteamID: {manageUser?.steamId}
+  </div>
 
   {#snippet footer()}
     <Button
+      tabindex={0}
+      class="cursor-pointer"
       onclick={() => {
         manageUserModal = false;
       }}>Close</Button
     >
   {/snippet}
-</Modal> -->
+
+  {#if clientIsAdmin}
+    <div class="w-full flex justify-end">
+      <Button
+        disabled={manageUser?.isMuted}
+        tabindex={2}
+        class={cn(manageUser?.isMuted ? 'cursor-default' : 'cursor-pointer')}
+        color="red"
+        size="xs"
+        onclick={() => {
+          console.log('mute player');
+          if (manageUser?.steamId) {
+            remotelyMutePlayer(manageUser.steamId);
+          }
+        }}>Mute Player</Button
+      >
+    </div>
+  {/if}
+</Modal>
 
 <div class="text-left w-full overflow-y-scroll h-[200px] scrollbar mt-5">
   {#if !clientIsOnServer && !DEBUG_PLAYER_LIST}
@@ -264,7 +244,11 @@
   {#if players || DEBUG_PLAYER_LIST}
     <div class={cn('text-left justify-between')}>
       {#each Array.from($joinedPlayers).sort( ([, a], [, b]) => a.name.localeCompare(b.name), ) as [steamId, player] (steamId)}
-        <PlayerRow {player} playerIsClient={steamId === mySteamId} />
+        <PlayerRow
+          {player}
+          playerIsClient={steamId === mySteamId}
+          onClick={() => onPlayerNameClick(player)}
+        />
       {/each}
     </div>
   {/if}
