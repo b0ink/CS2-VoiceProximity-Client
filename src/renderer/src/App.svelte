@@ -331,6 +331,7 @@
           occlusionFar: serverConfig.occlusionFar,
           occlusionEndDist: serverConfig.occlusionEndDist,
           occlusionFalloffExponent: serverConfig.occlusionFalloffExponent,
+          alwaysHearVisiblePlayers: serverConfig.alwaysHearVisiblePlayers,
         });
       });
 
