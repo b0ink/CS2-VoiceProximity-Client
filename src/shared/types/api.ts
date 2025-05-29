@@ -26,6 +26,7 @@ export interface ClientToServerEvents {
   'join-room': (data: JoinRoomData, callback: JoinRoomCallback) => void;
   signal: (signal: Signal) => void;
   'microphone-state': (state: { isMuted: boolean }) => void;
+  'update-config': (data: { config: ServerConfigData; clientToken: string }) => void;
 }
 
 export type JoinRoomCallback = (response: JoinRoomResponse) => void;

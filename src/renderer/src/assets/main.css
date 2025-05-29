@@ -41,3 +41,32 @@ body {
 * {
   /* border: 1px solid lime; */
 }
+
+.scrollbar {
+  overflow-y: scroll;
+
+  /* Firefox */
+  /* scrollbar-width: none; */
+
+  /* IE 10+ */
+  /* -ms-overflow-style: none; */
+  padding-right: 10px;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+.scrollbar::-webkit-scrollbar-corner {
+  background: rgba(0, 0, 0, 0);
+}
+.scrollbar::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 6px;
+  border: 4px solid rgba(0, 0, 0, 0);
+  background-clip: content-box;
+  min-width: 32px;
+  min-height: 32px;
+}
+.scrollbar::-webkit-scrollbar-track {
+  background-color: rgba(0, 0, 0, 0);
+}

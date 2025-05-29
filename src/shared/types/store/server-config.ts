@@ -1,7 +1,7 @@
 import { ServerConfigData } from '../api';
 
 export const DEFAULT_SERVER_CONFIG: ServerConfigData = {
-  deadPlayerMuteDelay: 1000,
+  deadPlayerMuteDelay: 1,
   allowDeadTeamVoice: true,
   allowSpectatorC4Voice: true,
   volumeFalloffFactor: 0.5,

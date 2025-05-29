@@ -10,6 +10,8 @@
   import TestMicrophone from './TestMicrophone.svelte';
 
   export let open: boolean;
+  export let serverConfigOpen: boolean;
+  export let serverConfigEnabled: boolean;
 
   $: socketUrl = $settings.socketServer;
   $: clientSteamId = $store.steamId;
@@ -174,8 +176,21 @@
     class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
-      <Heading tag="h1" class="mb-4 text-xl font-extrabold">Settings</Heading>
+      <Heading tag="h1" class="mb-6 text-xl font-extrabold">Settings</Heading>
     </div>
+
+    {#if serverConfigEnabled}
+      <div class="mb-4 w-full flex justify-center">
+        <Button
+          size="xs"
+          class="cursor-pointer"
+          onclick={() => {
+            serverConfigOpen = true;
+            open = false;
+          }}>Server Config</Button
+        >
+      </div>
+    {/if}
 
     <div class="mb-6 grid gap-4 md:grid-cols-2">
       <div>

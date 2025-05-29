@@ -27,6 +27,7 @@ export interface PeerConnectionBandwidth {
 export interface PlayerPositionApiData {
   steamId?: string;
   name?: string;
+  isAdmin?: boolean;
   originX?: number;
   originY?: number;
   originZ?: number;

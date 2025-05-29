@@ -18,6 +18,7 @@
     type ClientToServerEvents,
     type JoinRoomData,
     type JoinRoomResponse,
+    type ServerConfigData,
     type ServerToClientEvents,
     type SocketApiError,
     SocketApiErrorType,
@@ -28,6 +29,7 @@
   import settings from '@store/settings';
   import { RemotePlayer } from './RemotePlayer';
   import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
+  import ServerConfig from './Settings/ServerConfig.svelte';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
@@ -53,6 +55,9 @@
   };
 
   let settingsOpen: boolean;
+
+  let serverConfigOverlayOpen: boolean = false;
+  let clientIsAdmin: boolean = false;
 
   // Settings Store
   $: socketUrl = $settings.socketServer;
@@ -308,6 +313,14 @@
         console.log(`socket.on('server-config'): ${data}`);
         const serverConfig = decodeServerConfig(data);
         console.log(`socket.on('server-config'):`, serverConfig);
+        if (JSON.stringify(serverConfig) !== JSON.stringify($serverConfigStore)) {
+          addNotification({
+            text: `Proximity config updated`,
+            position: 'top-center',
+            removeAfter: 1500,
+            type: 'success',
+          });
+        }
         serverConfigStore.set({
           deadPlayerMuteDelay: serverConfig.deadPlayerMuteDelay,
           allowDeadTeamVoice: serverConfig.allowDeadTeamVoice,
@@ -356,6 +369,7 @@
         if (me) {
           for (const player of playerPositions) {
             if (player.steamId === getSteamId()) {
+              clientIsAdmin = player.isAdmin ?? false;
               if (!me.isAlive) {
                 const playerOrigin = new THREE.Vector3(
                   player.originX,
@@ -409,7 +423,8 @@
                 allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
               (!player.spectatingC4 || !allowSpectatorC4Voice) // and if they're not spectating the c4, and spectators are allowed to communicate from c4
             ) {
-              positionalSound.Mute(deadPlayerMuteDelay);
+              // convert seconds to ms
+              positionalSound.Mute(deadPlayerMuteDelay * 1000);
             } else {
               positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
             }
@@ -809,15 +824,11 @@
     }
   };
 
-  $: if (playerVolumes) {
-    updateGainFilters();
-  }
-
   const updateGainFilters = (): void => {
     for (const soundData of remotePlayers.values()) {
       if (soundData?.steamId !== undefined) {
         const gainAmount = playerVolumes[soundData?.steamId] ?? DEFAULT_PLAYER_VOLUME;
-        console.log(gainAmount);
+        // console.log(gainAmount);
         soundData?.SetGain(gainAmount / 100);
       }
     }
@@ -953,11 +964,47 @@
   // };
 
   // const ipcHandle = (): void => window.electron.ipcRenderer.send('ping');
+
+  function handleKeydown(e: KeyboardEvent): void {
+    if (e.code === 'Escape') {
+      settingsOpen = false;
+      serverConfigOverlayOpen = false;
+    }
+  }
+
+  function saveConfig(cfg: ServerConfigData): void {
+    if (!clientToken) {
+      return;
+    }
+    console.log(`Updating config with: ${JSON.stringify(cfg)}`);
+    socket?.emit('update-config', {
+      config: cfg,
+      clientToken,
+    });
+    serverConfigOverlayOpen = false;
+  }
+
+  window.addEventListener('keydown', handleKeydown);
 </script>
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
+<SettingsOverlay
+  bind:open={settingsOpen}
+  bind:serverConfigOpen={serverConfigOverlayOpen}
+  serverConfigEnabled={isConnected}
+/>
 
-<SettingsOverlay bind:open={settingsOpen} />
+{#if serverConfigOverlayOpen}
+  <div
+    class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
+  >
+    <div class="text-center">
+      <Heading tag="h1" class="mb-4 text-xl font-extrabold">Server Config</Heading>
+    </div>
+    <ServerConfig isDisabled={!clientIsAdmin} {saveConfig} />
+  </div>
+{/if}
+
 <div
   class={cn(
     'p-5',
@@ -1055,6 +1102,7 @@
     <CogSolid
       onclick={() => {
         settingsOpen = !settingsOpen;
+        serverConfigOverlayOpen = false;
       }}
       color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
       class={cn(
@@ -1125,6 +1173,19 @@
           <span>You are currently muted</span>
         </div>
       {/if}
+      <!-- <div class="absolute right-0 top-0 bg-black text-white text-xs p-1 z-5">
+        <UserSettingsSolid
+          onclick={() => {
+            serverConfigOverlayOpen = !serverConfigOverlayOpen;
+          }}
+          color={serverConfigOverlayOpen ? 'var(--color-primary-600)' : 'grey'}
+          class={cn(
+            'cursor-pointer z-20 select-none transition-all duration-300',
+            serverConfigOverlayOpen ? 'rotate-90' : 'rotate-0',
+          )}
+          size="md"
+        />
+      </div> -->
       <div class={cn('dark:bg-gray-900 relative', !isConnected && 'hidden')} id="threejs"></div>
     </div>
 
