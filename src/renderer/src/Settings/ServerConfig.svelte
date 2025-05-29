@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Input, Label, Modal, Toggle } from 'flowbite-svelte';
+  import { Tooltip } from 'flowbite-svelte';
   import { onMount } from 'svelte';
   import type { ServerConfigData } from '@shared/types/api';
   import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
@@ -31,61 +32,65 @@
   let configOptions: ConfigOption[] = [
     {
       key: 'deadPlayerMuteDelay',
-      label: 'How long after dying player is muted (seconds)',
+      label: 'Mute Delay on Death (s)',
+      title: 'Delay before a dead player is muted (in seconds)',
       type: 'number',
       changed: false,
     },
     {
       key: 'volumeFalloffFactor',
       label: 'Volume Falloff Factor',
+      title: 'How quickly volume fades with distance. (1 = Linear drop off)',
       type: 'number',
       changed: false,
     },
     {
       key: 'volumeMaxDistance',
       label: 'Volume Max Distance',
+      title: 'Max distance at which player can be heard',
       type: 'number',
       changed: false,
     },
     {
       key: 'occlusionNear',
       label: 'Occlusion Near',
-      title: 'The maximum occlusion when player is behind a wall',
+      title: 'Max occlusion when player is behind a wall',
       type: 'number',
       changed: false,
     },
     {
       key: 'occlusionFar',
       label: 'Occlusion Far',
-      title: "The maximum occlusion when player's distance reaches Occlusion End Distance",
+      title: 'Max occlusion at the farthest distance (25 and below is inaudible)',
       type: 'number',
       changed: false,
     },
     {
       key: 'occlusionEndDist',
       label: 'Occlusion End Distance',
-      title: "The maximum occlusion when player's distance reaches Occlusion End Distance",
+      title: 'Distance where occlusion reaches OcclusionFar value',
       type: 'number',
       changed: false,
     },
     {
       key: 'occlusionFalloffExponent',
       label: 'Occlusion Falloff Factor',
-      title: "The maximum occlusion when player's distance reaches Occlusion End Distance",
+      title:
+        'How fast occlusion increases with distance (1 = Linear fall off, 2 = Steeper drop at further distance)',
       type: 'number',
       changed: false,
     },
     {
       key: 'allowDeadTeamVoice',
-      label: 'Allow Dead Teammate Comms.',
-      title: "The maximum occlusion when player's distance reaches Occlusion End Distance",
+      label: 'Dead teammates can hear other dead teammates',
+      title: 'Dead players can hear and talk to other dead teammates',
       type: 'checkbox',
       changed: false,
     },
     {
       key: 'allowSpectatorC4Voice',
       label: 'Allow C4 Spectator Comms.',
-      title: "The maximum occlusion when player's distance reaches Occlusion End Distance",
+      title: 'Dead players spectating the C4 can talk to alive players',
       type: 'checkbox',
       changed: false,
     },
@@ -142,13 +147,11 @@
   {#each configOptions as opt (opt)}
     {#if opt.type === 'number'}
       <div class="mb-3 flex justify-between items-center">
-        <Label
-          for={opt.key}
-          title={opt.title}
-          class={cn(isDisabled ? 'opacity-50 cursor-not-allowed' : '')}
-        >
+        <Label for={opt.key} class={cn(isDisabled ? 'opacity-50 cursor-not-allowed' : '')}>
           {opt.label}:
         </Label>
+        <Tooltip>{opt.title}</Tooltip>
+
         <Input
           id={opt.key}
           name={opt.key}
@@ -182,6 +185,7 @@
             {opt.label}
           {/snippet}</Toggle
         >
+        <Tooltip>{opt.title}</Tooltip>
       </div>
     {/if}
   {/each}
