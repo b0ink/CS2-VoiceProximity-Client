@@ -228,24 +228,8 @@ export class RemotePlayer {
     if (this.isMuted || this.playerVoice3D?.getVolume() == 0) {
       clearInterval(this.unmuteTimeout);
       clearTimeout(this.muteTimeout);
-
       this.isMuted = false;
-      // playerVoice3D?.setVolume(0.85); // TODO: use constant for volume (or even the preference of the listener)
-
-      // fade the volume back up (attempt to prevent glitches)
-      const targetVolume = 1;
-      const fadeDuration = 1000;
-      const step = (targetVolume - (this.playerVoice3D?.getVolume() || 0)) / (fadeDuration / 16);
-
-      let currentVolume = this.playerVoice3D?.getVolume() || 0;
-      this.unmuteTimeout = setInterval(() => {
-        currentVolume += step;
-        if (currentVolume >= targetVolume) {
-          currentVolume = targetVolume;
-          clearInterval(this.unmuteTimeout);
-        }
-        this.playerVoice3D?.setVolume(currentVolume);
-      }, 16);
+      // volume will be reset via distance checks
     }
   }
 
@@ -348,11 +332,13 @@ export class RemotePlayer {
       this.distanceGainAmount = roundedGain;
       // console.log(`GAIN: ${roundedGain} ${distance}`);
 
-      const now = this.listener_.context.currentTime;
-      this.distanceGainFilter?.gain.cancelScheduledValues(now);
-      this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.01);
+      if (!this.isMuted) {
+        const now = this.listener_.context.currentTime;
+        this.distanceGainFilter?.gain.cancelScheduledValues(now);
+        this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.01);
 
-      this.playerVoice3D.setVolume(this.distanceGainAmount);
+        this.playerVoice3D.setVolume(this.distanceGainAmount);
+      }
     }
   }
 
