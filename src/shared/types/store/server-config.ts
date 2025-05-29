@@ -10,4 +10,5 @@ export const DEFAULT_SERVER_CONFIG: ServerConfigData = {
   occlusionFar: 25,
   occlusionEndDist: 2000,
   occlusionFalloffExponent: 3,
+  alwaysHearVisiblePlayers: true,
 };

@@ -94,6 +94,13 @@
       type: 'checkbox',
       changed: false,
     },
+    {
+      key: 'alwaysHearVisiblePlayers',
+      label: 'Always Hear Visible Players',
+      title: 'Players are audible if they are within view, regardless of max distance settings',
+      type: 'checkbox',
+      changed: false,
+    },
   ];
 
   let configChanged: boolean;

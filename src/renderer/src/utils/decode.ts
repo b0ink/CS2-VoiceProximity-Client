@@ -82,6 +82,9 @@ export function decodeServerConfig(data: Buffer): ServerConfigData {
     occlusionFalloffExponent:
       ((raw.OcclusionFalloffExponent ?? raw.occlusionFalloffExponent) as number | undefined) ??
       cfg.occlusionFalloffExponent,
+    alwaysHearVisiblePlayers:
+      ((raw.AlwaysHearVisiblePlayers ?? raw.alwaysHearVisiblePlayers) as boolean | undefined) ??
+      cfg.alwaysHearVisiblePlayers,
   };
 
   return decoded;

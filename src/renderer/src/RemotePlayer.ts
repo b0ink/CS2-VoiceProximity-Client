@@ -331,10 +331,11 @@ export class RemotePlayer {
       occlusionConfig?.volumeFalloffFactor ?? DEFAULT_SERVER_CONFIG.volumeFalloffFactor;
     const volumeMaxDistance =
       occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
+    const alwaysAudibleIfVisible =
+      occlusionConfig?.alwaysHearVisiblePlayers ?? DEFAULT_SERVER_CONFIG.alwaysHearVisiblePlayers;
+
     const t = Math.min(distance / volumeMaxDistance, 1);
     const gain = 1 - Math.pow(t, volumeDropoffFactor);
-
-    const alwaysAudibleIfVisible = true; // TODO: server config
 
     const roundedGain = Math.max(
       Math.round(gain * 1000) / 1000,

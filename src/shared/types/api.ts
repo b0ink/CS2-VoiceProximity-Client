@@ -77,4 +77,5 @@ export interface ServerConfigData {
   occlusionFar: number; // The maximum occlusion when player's distance reaches OcclusionEnd
   occlusionEndDist: number; // Distance from player where it fully reaches OcclusionFar
   occlusionFalloffExponent: number; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
+  alwaysHearVisiblePlayers: boolean; // Players are audible if they are within view, regardless of max distance settings
 }
