@@ -114,6 +114,10 @@
   let peerConnections: PeerConnections = {};
   let peerConnectingBandwidth: PeerConnectionBandwidth = {};
 
+  let nextServerRestart: number = 0;
+  let currentTime = Date.now() / 1000;
+  $: timeUntilRestart = nextServerRestart - currentTime;
+
   let roomCodeInput: string = '';
   let roomCode: string | undefined;
   let joinedRoom: boolean = false;
@@ -305,11 +309,11 @@
       }, 1000);
 
       socket?.on('server-restart-warning', (data) => {
-        const minutesRemaining = data.minutes;
+        const secondsRemaining = (data.minutes ?? 1) * 60;
         console.log(
-          `socket.on('server-restart-warning'): Server will restart in ${minutesRemaining * 60} seconds`,
+          `socket.on('server-restart-warning'): Server will restart in ${secondsRemaining} seconds`,
         );
-        // TODO: alert server restart warning
+        nextServerRestart = Date.now() / 1000 + secondsRemaining;
       });
 
       socket?.on('muted-by-server-admin', () => {
@@ -936,9 +940,14 @@
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
     const interval = setInterval(intialise, 10);
 
+    const timeTrackInterval = setInterval(() => {
+      currentTime = Date.now() / 1000;
+    }, 1000);
+
     // Cleanup the interval when the component is destroyed
     onDestroy(() => {
       clearInterval(interval);
+      clearInterval(timeTrackInterval);
     });
 
     checkNotifications();
@@ -1149,7 +1158,7 @@
         <span class="font-medium">Connecting to the backend service...</span>
       </Alert>
     {/if}
-    {#if playerServerRoomCode && !isConnected}
+    {#if playerServerRoomCode && !isConnected && timeUntilRestart <= 0}
       <Alert color="green" class="text-center mb-4 mt-4">
         <span class="font-medium">
           You are connected to a server<br />(Steam ID detected)<br />
@@ -1162,6 +1171,14 @@
               }
             }}>Connect now.</button
           >
+        </span>
+      </Alert>
+    {/if}
+    {#if nextServerRestart > Date.now() / 1000 && timeUntilRestart >= 0}
+      <Alert color="orange" class="text-center mb-4 mt-4">
+        <span class="font-medium">
+          Voice server restarting in {Math.floor(timeUntilRestart)}s. <br />Rooms reconnect
+          automatically.
         </span>
       </Alert>
     {/if}
