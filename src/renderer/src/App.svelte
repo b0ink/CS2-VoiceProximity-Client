@@ -783,7 +783,6 @@
       };
 
       socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
-        // TODO: we should validate there are no duplicate steamIds trying to join
         console.log(`socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
         console.log(JSON.stringify(response));
         if (response.success) {

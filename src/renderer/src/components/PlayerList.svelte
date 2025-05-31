@@ -2,7 +2,6 @@
   // import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { Button, Modal } from 'flowbite-svelte';
   import type { Socket } from 'socket.io-client';
-  import { onMount } from 'svelte';
   import { writable } from 'svelte/store';
   import type { ClientToServerEvents, ServerToClientEvents } from '@shared/types/api';
   import store from '@store/client';
@@ -34,12 +33,6 @@
     bandwidth: number | null;
   }
 
-  onMount(() => {
-    // TODO: fetch all player volumes and store it in a writeable
-  });
-
-  // let joinedPlayers: PlayerData[] = [];
-  // let joinedPlayers: Map<string, PlayerData> = new Map();
   let joinedPlayers = writable<Map<string, PlayerData>>(new Map());
 
   let clientIsOnServer: boolean = false;
@@ -184,18 +177,6 @@
     manageUserModal = false;
   };
 </script>
-
-<!-- TODO: scrollbar -->
-<!-- {#if playerListFullscren}
-  <div
-    class={cn(
-      'w-lvw h-lvh absolute top-0 left-0 dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2',
-      // 'overflow-y-scroll scrollbar',
-    )}
-  >
-    hi
-  </div>
-{/if} -->
 
 <!-- <div class="text-center mb-2 font-bold text-primary-600 h-full">Joined Players</div> -->
 

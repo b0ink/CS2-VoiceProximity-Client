@@ -349,7 +349,6 @@ export class RemotePlayer {
   ): void {
     // TODO: requires a lot of optimisation; mostly based on the number of meshes it has to cycle through per map
 
-    // TODO: we could check if distance >= 2000 to avoid calculating occlusion, but we want to ensure performance everywhere
     if (distance === null) {
       return;
     }
