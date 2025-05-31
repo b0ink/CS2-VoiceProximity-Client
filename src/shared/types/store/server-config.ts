@@ -11,4 +11,5 @@ export const DEFAULT_SERVER_CONFIG: ServerConfigData = {
   occlusionEndDist: 2000,
   occlusionFalloffExponent: 3,
   alwaysHearVisiblePlayers: true,
+  deadVoiceFilterFrequency: 750,
 };

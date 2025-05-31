@@ -81,6 +81,14 @@
       changed: false,
     },
     {
+      key: 'deadVoiceFilterFrequency',
+      label: 'Dead Player Filter Frequency',
+      title:
+        'Applies a high-pass filter to dead player voices to make them sound thinner or more radio-like',
+      type: 'number',
+      changed: false,
+    },
+    {
       key: 'allowDeadTeamVoice',
       label: 'Dead teammates can hear other dead teammates',
       title: 'Dead players can hear and talk to other dead teammates',

@@ -17,6 +17,7 @@ export interface ServerToClientEvents {
   signal: (data: { from: string; data: Peer.SignalData; client: Client }) => void;
   'microphone-state': (socketId: string, isMuted: boolean) => void;
   'muted-by-server-admin': () => void;
+  'server-restart-warning': (data: { minutes: number }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -54,6 +55,7 @@ export enum SocketApiErrorType {
   PlayerDisconnected,
   PluginOutdated,
   InvalidServerIp,
+  ReusedApiKey,
 }
 
 export interface SocketApiError {
@@ -80,4 +82,5 @@ export interface ServerConfigData {
   occlusionEndDist: number; // Distance from player where it fully reaches OcclusionFar
   occlusionFalloffExponent: number; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
   alwaysHearVisiblePlayers: boolean; // Players are audible if they are within view, regardless of max distance settings
+  deadVoiceFilterFrequency: number; // How "thin" or radio-like players sound when dead (0 disables the effect)
 }

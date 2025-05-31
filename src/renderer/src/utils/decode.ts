@@ -85,6 +85,9 @@ export function decodeServerConfig(data: Buffer): ServerConfigData {
     alwaysHearVisiblePlayers:
       ((raw.AlwaysHearVisiblePlayers ?? raw.alwaysHearVisiblePlayers) as boolean | undefined) ??
       cfg.alwaysHearVisiblePlayers,
+    deadVoiceFilterFrequency:
+      ((raw.DeadVoiceFilterFrequency ?? raw.deadVoiceFilterFrequency) as number | undefined) ??
+      cfg.deadVoiceFilterFrequency,
   };
 
   return decoded;

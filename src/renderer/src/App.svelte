@@ -89,6 +89,7 @@
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
   $: allowDeadTeamVoice = $serverConfigStore.allowDeadTeamVoice;
   $: allowSpectatorC4Voice = $serverConfigStore.allowSpectatorC4Voice;
+  $: deadVoiceFilterFrequency = $serverConfigStore.deadVoiceFilterFrequency;
   // $: volumeDropoffFactor = $serverConfigStore.volumeDropoffFactor;
   // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
@@ -303,6 +304,14 @@
         peerConnectingBandwidth = { ...peerConnectingBandwidth };
       }, 1000);
 
+      socket?.on('server-restart-warning', (data) => {
+        const minutesRemaining = data.minutes;
+        console.log(
+          `socket.on('server-restart-warning'): Server will restart in ${minutesRemaining * 60} seconds`,
+        );
+        // TODO: alert server restart warning
+      });
+
       socket?.on('muted-by-server-admin', () => {
         console.log(`socket.on('muted-by-server-admin'):`);
         muteMicrophone();
@@ -339,6 +348,7 @@
           occlusionEndDist: serverConfig.occlusionEndDist,
           occlusionFalloffExponent: serverConfig.occlusionFalloffExponent,
           alwaysHearVisiblePlayers: serverConfig.alwaysHearVisiblePlayers,
+          deadVoiceFilterFrequency: serverConfig.deadVoiceFilterFrequency,
         });
       });
 
@@ -444,7 +454,9 @@
 
             if (me && !me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
               positionalSound.SwitchToMono(player.isAlive ?? false);
-              positionalSound.setMonoHighPassFilterFrequency(player.isAlive ? 100 : 750);
+              positionalSound.setMonoHighPassFilterFrequency(
+                player.isAlive ? 100 : deadVoiceFilterFrequency,
+              );
             } else {
               positionalSound.SwitchToStereo();
             }
