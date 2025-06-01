@@ -25,7 +25,7 @@
   let playerVolume: number;
 
   onMount(() => {
-    playerVolume = playerVolumes[player.steamId] ?? 250;
+    playerVolume = playerVolumes[player.steamId] ?? DEFAULT_PLAYER_VOLUME;
   });
 </script>
 
