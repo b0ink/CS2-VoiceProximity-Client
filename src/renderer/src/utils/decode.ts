@@ -1,6 +1,5 @@
 import { decode } from '@msgpack/msgpack';
-import type { ServerConfigData } from '@shared/types/api';
-import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
+import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
 import type { PlayerPositionApiData } from '../type';
 
 export function decodePlayerData(data: Buffer<ArrayBufferLike>): PlayerPositionApiData[] {
@@ -57,38 +56,23 @@ export function decodeServerConfig(data: Buffer): ServerConfigData {
   // decode server config from either the cs2 plugin or the api that have different casing
 
   const decoded: ServerConfigData = {
-    deadPlayerMuteDelay:
-      ((raw.DeadPlayerMuteDelay ?? raw.deadPlayerMuteDelay) as number | undefined) ??
-      cfg.deadPlayerMuteDelay,
-    allowDeadTeamVoice:
-      ((raw.AllowDeadTeamVoice ?? raw.allowDeadTeamVoice) as boolean | undefined) ??
-      cfg.allowDeadTeamVoice,
-    allowSpectatorC4Voice:
-      ((raw.AllowSpectatorC4Voice ?? raw.allowSpectatorC4Voice) as boolean | undefined) ??
-      cfg.allowSpectatorC4Voice,
-    volumeFalloffFactor:
-      ((raw.VolumeFalloffFactor ?? raw.volumeFalloffFactor) as number | undefined) ??
-      cfg.volumeFalloffFactor,
-    volumeMaxDistance:
-      ((raw.VolumeMaxDistance ?? raw.volumeMaxDistance) as number | undefined) ??
-      cfg.volumeMaxDistance,
-    occlusionNear:
-      ((raw.OcclusionNear ?? raw.occlusionNear) as number | undefined) ?? cfg.occlusionNear,
-    occlusionFar:
-      ((raw.OcclusionFar ?? raw.occlusionFar) as number | undefined) ?? cfg.occlusionFar,
-    occlusionEndDist:
-      ((raw.OcclusionEndDist ?? raw.occlusionEndDist) as number | undefined) ??
-      cfg.occlusionEndDist,
-    occlusionFalloffExponent:
-      ((raw.OcclusionFalloffExponent ?? raw.occlusionFalloffExponent) as number | undefined) ??
-      cfg.occlusionFalloffExponent,
-    alwaysHearVisiblePlayers:
-      ((raw.AlwaysHearVisiblePlayers ?? raw.alwaysHearVisiblePlayers) as boolean | undefined) ??
-      cfg.alwaysHearVisiblePlayers,
-    deadVoiceFilterFrequency:
-      ((raw.DeadVoiceFilterFrequency ?? raw.deadVoiceFilterFrequency) as number | undefined) ??
-      cfg.deadVoiceFilterFrequency,
+    ...DEFAULT_SERVER_CONFIG,
   };
 
+  for (const key of Object.keys(cfg) as Array<keyof ServerConfigData>) {
+    assignDecodedValue(decoded, raw, cfg, key);
+  }
+
   return decoded;
+}
+
+function assignDecodedValue<K extends keyof ServerConfigData>(
+  target: ServerConfigData,
+  raw: Record<string, unknown>,
+  fallback: ServerConfigData,
+  key: K,
+): void {
+  const upper = key[0].toUpperCase() + key.slice(1);
+  const val = raw[upper] ?? raw[key] ?? fallback[key];
+  target[key] = val as ServerConfigData[K];
 }

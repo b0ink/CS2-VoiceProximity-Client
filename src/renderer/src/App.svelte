@@ -18,11 +18,11 @@
     type ClientToServerEvents,
     type JoinRoomData,
     type JoinRoomResponse,
-    type ServerConfigData,
     type ServerToClientEvents,
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
+  import type { ServerConfigData } from '@shared/types/store/server-config';
   import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
   import store from '@store/client';
   import serverConfigStore from '@store/server-config';
@@ -39,6 +39,7 @@
   import { renderFrame } from './render/renderFrame';
   import {
     type AudioConnectionStuff,
+    CsTeam,
     type PeerConnectionBandwidth,
     type PeerConnections,
     type PlayerPositionApiData,
@@ -90,6 +91,7 @@
   $: allowDeadTeamVoice = $serverConfigStore.allowDeadTeamVoice;
   $: allowSpectatorC4Voice = $serverConfigStore.allowSpectatorC4Voice;
   $: deadVoiceFilterFrequency = $serverConfigStore.deadVoiceFilterFrequency;
+  $: spectatorsCanTalk = $serverConfigStore.spectatorsCanTalk;
   // $: volumeDropoffFactor = $serverConfigStore.volumeDropoffFactor;
   // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
@@ -342,17 +344,7 @@
           });
         }
         serverConfigStore.set({
-          deadPlayerMuteDelay: serverConfig.deadPlayerMuteDelay,
-          allowDeadTeamVoice: serverConfig.allowDeadTeamVoice,
-          allowSpectatorC4Voice: serverConfig.allowSpectatorC4Voice,
-          volumeFalloffFactor: serverConfig.volumeFalloffFactor,
-          volumeMaxDistance: serverConfig.volumeMaxDistance,
-          occlusionNear: serverConfig.occlusionNear,
-          occlusionFar: serverConfig.occlusionFar,
-          occlusionEndDist: serverConfig.occlusionEndDist,
-          occlusionFalloffExponent: serverConfig.occlusionFalloffExponent,
-          alwaysHearVisiblePlayers: serverConfig.alwaysHearVisiblePlayers,
-          deadVoiceFilterFrequency: serverConfig.deadVoiceFilterFrequency,
+          ...serverConfig,
         });
       });
 
@@ -443,7 +435,8 @@
               (me.isAlive || // mute if im alive (don't want to hear any dead players)
                 player.team !== me.team || // or if the player is an enemy
                 allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
-              (!player.spectatingC4 || !allowSpectatorC4Voice) // and if they're not spectating the c4, and spectators are allowed to communicate from c4
+              (!player.spectatingC4 || !allowSpectatorC4Voice) && // and if they're not spectating the c4, and spectators are allowed to communicate from c4
+              !(player.team === CsTeam.Spectator && spectatorsCanTalk) // and if they're a spectator and spectators cant talk
             ) {
               // convert seconds to ms
               positionalSound.Mute(deadPlayerMuteDelay * 1000);

@@ -6,8 +6,8 @@ import {
   disposeBatchedBoundsTree,
   disposeBoundsTree,
 } from 'three-mesh-bvh';
-import type { Client, ServerConfigData } from '@shared/types/api';
-import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
+import type { Client } from '@shared/types/api';
+import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
 import { OcclusionQuality } from '@shared/types/store/settings';
 import { transformVector } from './lib/vector';
 

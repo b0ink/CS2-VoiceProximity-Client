@@ -2,8 +2,12 @@
   import { Button, Input, Label, Modal, Toggle } from 'flowbite-svelte';
   import { Tooltip } from 'flowbite-svelte';
   import { onMount } from 'svelte';
-  import type { ServerConfigData } from '@shared/types/api';
-  import { DEFAULT_SERVER_CONFIG } from '@shared/types/store/server-config';
+  import {
+    type ConfigOption,
+    DEFAULT_SERVER_CONFIG,
+    type ServerConfigData,
+    ServerConfigOptions,
+  } from '@shared/types/store/server-config';
   import serverConfigStore from '@store/server-config';
   import { cn } from '../lib/tailwind';
 
@@ -20,96 +24,7 @@
     config = { ...serverConfig };
   }
 
-  interface ConfigOption {
-    key: keyof ServerConfigData;
-    label: string;
-    title?: string;
-    placeholder?: string;
-    type: 'number' | 'checkbox';
-    changed: boolean;
-  }
-
-  let configOptions: ConfigOption[] = [
-    {
-      key: 'deadPlayerMuteDelay',
-      label: 'Mute Delay on Death (s)',
-      title: 'Delay before a dead player is muted (in seconds)',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'volumeFalloffFactor',
-      label: 'Volume Falloff Factor',
-      title: 'How quickly volume fades with distance. (1 = Linear drop off)',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'volumeMaxDistance',
-      label: 'Volume Max Distance',
-      title: 'Max distance at which player can be heard',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'occlusionNear',
-      label: 'Occlusion Near',
-      title: 'Max occlusion when player is behind a wall',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'occlusionFar',
-      label: 'Occlusion Far',
-      title: 'Max occlusion at the farthest distance (25 and below is inaudible)',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'occlusionEndDist',
-      label: 'Occlusion End Distance',
-      title: 'Distance where occlusion reaches OcclusionFar value',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'occlusionFalloffExponent',
-      label: 'Occlusion Falloff Factor',
-      title:
-        'How fast occlusion increases with distance (1 = Linear fall off, 2 = Steeper drop at further distance)',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'deadVoiceFilterFrequency',
-      label: 'Dead Player Filter Frequency',
-      title:
-        'Applies a high-pass filter to dead player voices to make them sound thinner or more radio-like',
-      type: 'number',
-      changed: false,
-    },
-    {
-      key: 'allowDeadTeamVoice',
-      label: 'Dead teammates can hear other dead teammates',
-      title: 'Dead players can hear and talk to other dead teammates',
-      type: 'checkbox',
-      changed: false,
-    },
-    {
-      key: 'allowSpectatorC4Voice',
-      label: 'Allow C4 Spectator Comms.',
-      title: 'Dead players spectating the C4 can talk to alive players',
-      type: 'checkbox',
-      changed: false,
-    },
-    {
-      key: 'alwaysHearVisiblePlayers',
-      label: 'Always Hear Visible Players',
-      title: 'Players are audible if they are within view, regardless of max distance settings',
-      type: 'checkbox',
-      changed: false,
-    },
-  ];
+  let configOptions: ConfigOption[] = [...ServerConfigOptions];
 
   let configChanged: boolean;
 
