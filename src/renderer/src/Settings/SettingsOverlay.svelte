@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button, Heading, Label, Modal, Select, Toggle, cn } from 'flowbite-svelte';
+  import { Tooltip } from 'flowbite-svelte';
   import { onMount } from 'svelte';
   import { OcclusionQuality } from '@shared/types/store/settings';
   import store from '@store/client';
@@ -125,13 +126,14 @@
 
 <Modal title="Confirm" bind:open={confirmDisableNatFix} autoclose>
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    Disabling the NAT fix can improve voice latency by allowing direct connections between users
-    (P2P).
+    Disabling the Voice Relay Server can improve voice latency by allowing direct connections
+    between users (P2P).
   </p>
 
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
     However, this will <span class="font-bold">expose your IP address</span> to other users who also
-    have the NAT fix disabled. Only disable this if you're on a private server with people you trust.
+    have the Voice Relay Server disabled. Only disable this if you're on a private server with people
+    you trust.
   </p>
 
   {#snippet footer()}
@@ -243,9 +245,13 @@
           onclick={toggleNatFix}
         >
           {#snippet offLabel()}
-            NAT Fix
+            Voice Relay Server
           {/snippet}</Toggle
         >
+        <Tooltip
+          >Disabling Voice Relay lowers latency but exposes your IP. Use only with trusted users.</Tooltip
+        >
+
         <Toggle
           id="hq-voice"
           checked={hqVoice}
@@ -256,6 +262,7 @@
             High-Quality Mic
           {/snippet}</Toggle
         >
+        <Tooltip>Enables higher mic quality when transmitting audio, using more bandwidth.</Tooltip>
         <Toggle
           id="noise-supression"
           checked={noiseSuppression}
