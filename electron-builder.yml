@@ -1,4 +1,4 @@
-appId: com.electron.app
+appId: com.boink.cs2.voiceproximity
 productName: CS2 Proximity Voice Chat
 directories:
   buildResources: build
