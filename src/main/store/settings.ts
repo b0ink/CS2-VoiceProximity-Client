@@ -62,7 +62,7 @@ ipcMain.handle('set-settings-value', async (_event, key: string, value: any) => 
   settingsStore.set(key, value);
   const mainWindow = getMainWindow();
   if (key === 'alwaysOnTop' && mainWindow) {
-    mainWindow.setAlwaysOnTop(value);
+    mainWindow.setAlwaysOnTop(value, 'normal');
   }
 });
 
