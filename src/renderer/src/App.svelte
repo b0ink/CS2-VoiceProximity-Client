@@ -591,8 +591,11 @@
         // @ts-ignore line
         iceRestartEnabled: true,
         config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
-        // config: DEFAULT_ICE_CONFIG,
         trickle: true,
+        channelConfig: {
+          maxRetransmits: 0,
+          ordered: false,
+        },
       });
 
       // setPeerConnections((connections) => {
