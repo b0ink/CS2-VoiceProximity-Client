@@ -9,6 +9,7 @@ import {
 import type { Client } from '@shared/types/api';
 import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
 import { OcclusionQuality } from '@shared/types/store/settings';
+import { talkingIndicatorStore } from '@store/talking-indicators';
 import { transformVector } from './lib/vector';
 
 // Add the extension functions
@@ -54,6 +55,16 @@ export class RemotePlayer {
 
   private monoGainFilter?: GainNode;
   private monoHighpassFilter?: BiquadFilterNode;
+
+  // Talking indicators
+  private readonly minUpdateRate = 50;
+  private lastRefreshTime = 0;
+  private processor: ScriptProcessorNode;
+  private src: MediaStreamAudioSourceNode;
+  private ctx: AudioContext;
+  public rms: number = 0;
+  private dummyGain?: GainNode;
+  private occlusionPct: number = 0;
 
   constructor(
     remoteStream: MediaStream,
@@ -112,6 +123,65 @@ export class RemotePlayer {
     this.distanceGainAmount = 1;
     this.initStereoFilters();
     this.initMonoFilters();
+
+    // Talking indicators
+    this.ctx = new AudioContext();
+    this.processor = this.ctx.createScriptProcessor(2048, 1, 1);
+    // this.processor.connect(this.ctx.destination);
+    this.src = this.ctx.createMediaStreamSource(remoteStream);
+    this.src.connect(this.processor);
+    this.processor.addEventListener('audioprocess', this.processMediaStream.bind(this));
+    // this.src.connect(this.ctx.destination);
+    this.dummyGain = this.ctx.createGain();
+    this.dummyGain.gain.value = 0;
+    this.processor.connect(this.dummyGain);
+    this.dummyGain.connect(this.ctx.destination);
+  }
+
+  // Talking indicators
+  private processMediaStream(event: AudioProcessingEvent): void {
+    // limit update frequency
+    if (event.timeStamp - this.lastRefreshTime < this.minUpdateRate) {
+      return;
+    }
+
+    // update last refresh time
+    this.lastRefreshTime = event.timeStamp;
+
+    const input = event.inputBuffer.getChannelData(0);
+    const total = input.reduce((acc, val) => acc + Math.abs(val), 0);
+    this.rms = Math.min(0.5, Math.sqrt(total / input.length));
+
+    const isTalking = this.rms > 0.05; // adjust threshold
+    const steamid = this.steamId;
+    talkingIndicatorStore.update((map) => {
+      if (steamid) {
+        map.set(steamid, {
+          isTalking,
+          volumePct: this.distanceGainAmount,
+          occlusionPct: this.occlusionPct,
+        });
+      }
+      // console.log(steamid, {
+      //   isTalking,
+      //   volumePct: this.distanceGainAmount,
+      //   occlusionPct: this.occlusionPct,
+      // });
+      return map;
+    });
+  }
+
+  public disconnect(): void {
+    this.playerVoice3D.disconnect();
+    this.playerVoice2D.disconnect();
+    this.playerObject?.parent?.remove(this.playerObject);
+
+    // Disconnect volume tracking
+    this.processor?.removeEventListener('audioprocess', this.processMediaStream);
+    this.processor?.disconnect();
+    this.src?.disconnect();
+    this.ctx?.close(); // close AudioContext
+    this.dummyGain?.disconnect();
   }
 
   public setRefDistance(distance: number): void {
@@ -391,6 +461,7 @@ export class RemotePlayer {
 
     const roundedOcclusion = Math.round(finalOcclusion / 5) * 5;
 
+    this.occlusionPct = roundedOcclusion / 11000;
     // console.log(`occlusion: ${roundedOcclusion}`);
 
     this.setLowPassFilterFrequency(roundedOcclusion);

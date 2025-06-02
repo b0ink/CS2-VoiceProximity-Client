@@ -723,10 +723,8 @@
     console.log(`Cleaning up user data for ${client.steamId}`);
     const positionalSound = remotePlayers.get(client.steamId);
     if (positionalSound) {
-      positionalSound.playerVoice3D?.disconnect();
-      positionalSound.playerVoice2D?.disconnect();
-      positionalSound.playerObject?.parent?.remove(positionalSound.playerObject);
       console.log('found sound source removing from scene');
+      positionalSound.disconnect();
       remotePlayers.delete(client.steamId);
     }
 

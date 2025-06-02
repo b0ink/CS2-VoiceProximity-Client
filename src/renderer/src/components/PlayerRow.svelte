@@ -4,6 +4,7 @@
   import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { onMount } from 'svelte';
   import { DEFAULT_PLAYER_VOLUME, MAX_PLAYER_VOLUME } from '@shared/types/store/settings';
+  import { talkingIndicatorStore } from '@store/talking-indicators';
   import settings from '../store/settings';
   import { CsTeam } from '../type';
 
@@ -27,6 +28,8 @@
   onMount(() => {
     playerVolume = playerVolumes[player.steamId] ?? DEFAULT_PLAYER_VOLUME;
   });
+
+  $: talkingIndicator = $talkingIndicatorStore.get(player.steamId) ?? null;
 </script>
 
 {#if player.steamId !== '0'}
@@ -59,8 +62,23 @@
             ? '#5d79ae'
             : '#0c0f12'}
       />
-      <button class="truncate cursor-pointer hover:text-primary-500" on:click={onClick}>
+      <button
+        class="truncate cursor-pointer hover:text-primary-500 flex items-center"
+        on:click={onClick}
+      >
         {player.name}
+        <!-- TODO: fade the talking indicator based on occlusion and distance -->
+        <!-- TODO: darker color for occlusion, opacity for distance (volumes) -->
+        {#if talkingIndicator?.isTalking && talkingIndicator.volumePct > 0.05}<span
+            style="opacity: {talkingIndicator.occlusionPct >= 0.6 &&
+            talkingIndicator.volumePct > 0.35
+              ? 1
+              : Math.round(talkingIndicator.volumePct * 20) * 0.05}"
+            class={cn(
+              'text-green-500 ml-2',
+              // `opacity-${100 - Math.round(talkingIndicator.volumePct * 20) * 5}`,
+            )}>◉</span
+          >{/if}
       </button>
       {#if player.isMuted}
         <MicrophoneSlashSolid color="#e64047" class="ml-1" size="sm" />
