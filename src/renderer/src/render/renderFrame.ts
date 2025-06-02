@@ -79,9 +79,11 @@ export function renderFrame(
 
       if (goodFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
         const next =
-          occlusionQuality === OcclusionQuality.LOW
-            ? OcclusionQuality.MEDIUM
-            : OcclusionQuality.HIGH;
+          occlusionQuality === OcclusionQuality.OFF
+            ? OcclusionQuality.LOW
+            : occlusionQuality === OcclusionQuality.LOW
+              ? OcclusionQuality.MEDIUM
+              : OcclusionQuality.HIGH;
         window.api.setSettingsValue('occlusionQuality', next);
         goodFrameCount = 0;
       }
