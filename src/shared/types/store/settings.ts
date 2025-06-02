@@ -31,7 +31,7 @@ export const DEFAULT_PLAYER_VOLUME = 100;
 export const MAX_PLAYER_VOLUME = 200;
 
 export const DEFAULT_SETTINGS: SettingsData = {
-  alwaysOnTop: false,
+  alwaysOnTop: true,
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
