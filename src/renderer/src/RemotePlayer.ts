@@ -432,8 +432,8 @@ export class RemotePlayer {
     const occlusionWhenClose = occlusionConfig?.occlusionNear ?? cfg.occlusionNear; // Maximum occlusion when player is closest to sound source. The lower the number, the more muffled the player will be at right next to you while behind a wall.
     const occlusionWhenFar = occlusionConfig?.occlusionFar ?? cfg.occlusionFar; // The maximum occlusion when player's distance reaches fadeEnd
     const fadeEnd = occlusionConfig?.occlusionEndDist ?? cfg.occlusionEndDist; // Distance from player where it fully reaches occlusionWhenFar
-    const occlusionFalloffExponent =
-      occlusionConfig?.occlusionFalloffExponent ?? cfg.occlusionFalloffExponent; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
+    const occlusionFalloffFactor =
+      occlusionConfig?.occlusionFalloffFactor ?? cfg.occlusionFalloffFactor; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
 
     let finalOcclusion: number;
     if (occlusion === 0) {
@@ -442,7 +442,7 @@ export class RemotePlayer {
       const t = Math.min(distance / fadeEnd, 1);
 
       /*
-        const occlusionFalloffExponent = 3;
+        const occlusionFalloffFactor = 3;
         https://www.desmos.com/calculator
         Plug in `y=x^{exponent}` and zoom inbetween 0-1 on the X axis. The curve represents the sound occlusion falloff. (1 = furthest away)
 
@@ -452,7 +452,7 @@ export class RemotePlayer {
         Exponent: 0.2 = rapidly drops off at the start, then very slowly drops off at the end
       */
 
-      const eased = Math.pow(t, occlusionFalloffExponent); // exponent < 1 makes it drop off slower at first
+      const eased = Math.pow(t, occlusionFalloffFactor); // exponent < 1 makes it drop off slower at first
       const baseOcclusion = occlusionWhenClose + (occlusionWhenFar - occlusionWhenClose) * eased;
 
       // Mix between 11000 (no occlusion) and baseOcclusion based on occlusion %

@@ -7,7 +7,7 @@ export interface ServerConfigData {
   occlusionNear: number; // The maximum occlusion level for players fully behind a wall at the closest distance (0 is fully occluded)
   occlusionFar: number; // The maximum occlusion when player's distance reaches OcclusionEnd
   occlusionEndDist: number; // Distance from player where it fully reaches OcclusionFar
-  occlusionFalloffExponent: number; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
+  occlusionFalloffFactor: number; // Controls how quickly occlusion drops off with distance (higher = steeper drop near end, lower = more gradual fade)
   alwaysHearVisiblePlayers: boolean; // Players are audible if they are within view, regardless of max distance settings
   deadVoiceFilterFrequency: number; // How "thin" or radio-like players sound when dead (0 disables the effect)
   spectatorsCanTalk: boolean; // Can Ts & CTs hear spectators?
@@ -22,7 +22,7 @@ export const DEFAULT_SERVER_CONFIG: ServerConfigData = {
   occlusionNear: 300,
   occlusionFar: 25,
   occlusionEndDist: 2000,
-  occlusionFalloffExponent: 3,
+  occlusionFalloffFactor: 3,
   alwaysHearVisiblePlayers: true,
   deadVoiceFilterFrequency: 750,
   spectatorsCanTalk: false,
@@ -81,7 +81,7 @@ export const ServerConfigOptions: ConfigOption[] = [
     changed: false,
   },
   {
-    key: 'occlusionFalloffExponent',
+    key: 'occlusionFalloffFactor',
     label: 'Occlusion Falloff Factor',
     title:
       'How fast occlusion increases with distance (1 = Linear fall off, 2 = Steeper drop at further distance)',
