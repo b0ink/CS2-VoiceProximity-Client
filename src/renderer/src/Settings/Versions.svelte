@@ -1,13 +1,21 @@
 <script lang="ts">
   const versions = window.electron.process.versions;
+  let verbose: boolean = false;
 </script>
 
 <ul class="versions">
-  <li class="electron-version">Electron <span class="opacity-50">v{versions.electron}</span></li>
-  <li class="chrome-version">Chromium <span class="opacity-50">v{versions.chrome}</span></li>
-  <li class="node-version">Node <span class="opacity-50">v{versions.node}</span></li>
+  {#if verbose}
+    <li class="electron-version">Electron <span class="opacity-50">v{versions.electron}</span></li>
+    <li class="chrome-version">Chromium <span class="opacity-50">v{versions.chrome}</span></li>
+    <li class="node-version">Node <span class="opacity-50">v{versions.node}</span></li>
+  {/if}
   <br />
   <li class="node-version">
-    Proximity Chat Client <span class="opacity-50">v{window.api.clientVersion()}</span>
+    <button
+      class="opacity-50"
+      on:click={() => {
+        verbose = !verbose;
+      }}>v{window.api.clientVersion()}</button
+    >
   </li>
 </ul>
