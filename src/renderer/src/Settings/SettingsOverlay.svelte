@@ -316,7 +316,7 @@
           class={cn('mb-4', occlusionAutoQuality && 'cursor-not-allowed dark:text-gray-400')}
           disabled={occlusionAutoQuality}
         >
-          <option value={OcclusionQuality.OFF}>Off</option>
+          <option value={OcclusionQuality.OFF}>No Occlusion</option>
           <option value={OcclusionQuality.LOW}>Low</option>
           <option value={OcclusionQuality.MEDIUM}>Medium</option>
           <option value={OcclusionQuality.HIGH}>High</option>
