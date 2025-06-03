@@ -146,15 +146,8 @@ function createDoor(
 ): { group: THREE.Group; mesh: THREE.Mesh } {
   const geometry = new THREE.PlaneGeometry(door.size.width, door.size.height);
   geometry.translate(door.size.width / 2, door.size.height / 2, 0);
-  if (
-    door.offset &&
-    door.offset.x !== undefined &&
-    door.offset.y !== undefined &&
-    door.offset.z !== undefined
-  ) {
-    const offset = transformVector(new THREE.Vector3(door.offset.x, door.offset.y, door.offset.z));
-    geometry.translate(offset.x, offset.y, offset.z);
-  }
+  const offset = transformVector(new THREE.Vector3(door.offset.x, door.offset.y, door.offset.z));
+  geometry.translate(offset.x, offset.y, offset.z);
   const mesh = new THREE.Mesh(
     geometry,
     new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }),
