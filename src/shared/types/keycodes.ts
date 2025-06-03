@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 
-// Date originally sourced from:
+// Data originally sourced from:
 // https://github.com/toptal/keycodes/blob/main/lib/keycodes/with-events.ts
 
 // Modified to map against Electron Accelerator global shortcuts:
