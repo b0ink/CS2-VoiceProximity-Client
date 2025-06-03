@@ -19,6 +19,10 @@ export interface ServerToClientEvents {
   'microphone-state': (socketId: string, isMuted: boolean) => void;
   'muted-by-server-admin': () => void;
   'server-restart-warning': (data: { minutes: number }) => void;
+  'door-rotation': (data: {
+    absorigin: { x: number; y: number; z: number };
+    rotation: number;
+  }) => void;
 }
 
 export interface ClientToServerEvents {
@@ -31,6 +35,7 @@ export interface ClientToServerEvents {
   'microphone-state': (state: { isMuted: boolean }) => void;
   'update-config': (data: { config: ServerConfigData; clientToken: string }) => void;
   'mute-player': (data: { targetSteamId: string; clientToken: string }) => void;
+  'door-rotation': (from: string, origin: string, rotation: number) => void;
 }
 
 export type JoinRoomCallback = (response: JoinRoomResponse) => void;

@@ -355,7 +355,7 @@ export class RemotePlayer {
   }
 
   public updateFilters(
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
     occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
   ): void {
@@ -531,7 +531,7 @@ export class RemotePlayer {
   }
 
   private calculateOcclusion = (
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
     Listener_?: THREE.Vector3,
     playerVoice3D?: THREE.Vector3,
     occlusionQuality: OcclusionQuality = OcclusionQuality.MEDIUM,
@@ -606,7 +606,7 @@ export class RemotePlayer {
   private raycaster = new THREE.Raycaster();
 
   private didIntersect = (
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>,
+    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
     v1: THREE.Vector3,
     v2: THREE.Vector3,
   ): number => {
@@ -618,7 +618,17 @@ export class RemotePlayer {
     this.raycaster.set(v1, dir);
     this.raycaster.firstHitOnly = true;
 
-    const hits = this.raycaster.intersectObject(occlusionMesh, true);
+    const hits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
+    for (const mesh of occlusionMesh) {
+      if (!mesh.visible) {
+        // Skip destroyed doors
+        continue;
+      }
+      // hits = hits +  this.raycaster.intersectObject(mesh, true);
+      const hit = this.raycaster.intersectObject(mesh, true);
+      hits.push(...hit);
+    }
+    // const hits = this.raycaster.intersectObject(occlusionMesh, true);
     const maxDistance = v1.distanceTo(v2);
     const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);
     // return hits.length;

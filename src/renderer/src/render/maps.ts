@@ -7,6 +7,8 @@ import {
   disposeBoundsTree,
 } from 'three-mesh-bvh';
 import { GLTFLoader } from 'three-stdlib';
+import type { MapDoor } from '../../../main/ipc-handlers';
+import { transformVector } from '../lib/vector';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -26,21 +28,20 @@ const mapScale: number = 39.3701;
 
 let map: THREE.Group<THREE.Object3DEventMap> | null = null;
 
-interface MapData {
-  scene: THREE.Scene;
-  mapName: string;
-}
+let mapDoors: MapDoor[] = [];
+let mapDoorMeshes: THREE.Group[] = [];
 
 async function initializeMap(
-  mapData: MapData,
+  scene: THREE.Scene,
+  mapName: string,
 ): Promise<THREE.Group<THREE.Object3DEventMap> | null> {
-  if (!mapList.includes(mapData.mapName)) {
-    console.log(`Failed to load map: '${mapData.mapName}'.glb could not be found.`);
+  if (!mapList.includes(mapName)) {
+    console.log(`Failed to load map: '${mapName}'.glb could not be found.`);
     return null;
   }
 
   // Destroy any previously loaded maps, including its textures
-  if (map && mapData.scene) {
+  if (map && scene) {
     map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         if (child.isMesh) {
@@ -54,13 +55,31 @@ async function initializeMap(
         }
       }
     });
-    mapData.scene.remove(map);
+    scene.remove(map);
     map = null;
   }
 
-  console.log(`[GLTF] Fetching map blob (${mapData.mapName})`);
+  // Destroy any previously loaded doors, including its textures
+  for (const group of mapDoorMeshes) {
+    group.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.geometry.dispose();
+        if (Array.isArray(obj.material)) {
+          obj.material.forEach((mat) => mat.dispose());
+        } else {
+          obj.material.dispose();
+        }
+      }
+    });
+    scene.remove(group);
+  }
 
-  const buffer = await window.api.loadMap(mapData.mapName);
+  mapDoorMeshes = [];
+  mapDoors = [];
+
+  console.log(`[GLTF] Fetching map blob (${mapName})`);
+
+  const { buffer, doors } = await window.api.loadMap(mapName);
   if (!buffer) {
     return null;
   }
@@ -78,8 +97,8 @@ async function initializeMap(
     map.scale.set(mapScale, mapScale, mapScale);
     map.rotation.x = -Math.PI / 2;
 
-    if (mapData.scene) {
-      mapData.scene.add(map);
+    if (scene) {
+      scene.add(map);
     }
 
     // We don't care about textures, but to help see the map, we assign each mesh a random color
@@ -98,13 +117,21 @@ async function initializeMap(
       }
     });
 
-    // const meshes = map.children.filter((c): c is THREE.Mesh => c instanceof THREE.Mesh);
-    // for (const mesh of meshes) {
-    //   mesh.geometry.computeBoundsTree();
-    //   // if (!('boundsTree' in mesh.geometry)) {
-    //   //   (mesh.geometry as any).computeBoundsTree?.({ lazyGeneration: true });
-    //   // }
-    // }
+    for (const door of doors) {
+      const pos = transformVector(
+        new THREE.Vector3(door.absOrigin.x, door.absOrigin.y, door.absOrigin.z),
+      );
+      const { group: doorGroup } = createDoor(
+        pos,
+        { width: door.size.width, height: door.size.height },
+        door.startingRotation.y,
+        0x00ff00,
+      );
+      scene.add(doorGroup);
+      mapDoorMeshes.push(doorGroup);
+    }
+
+    mapDoors = [...doors];
 
     console.log(`returning`, map);
     return map;
@@ -112,6 +139,67 @@ async function initializeMap(
     console.error(`Could not load GLB: ${e}`);
     return null;
   }
+}
+
+function createDoor(
+  position: THREE.Vector3,
+  size: { width: number; height: number },
+  initialRotationDeg: number,
+  color: number = 0x00ff00,
+): { group: THREE.Group; mesh: THREE.Mesh } {
+  const geometry = new THREE.PlaneGeometry(size.width, size.height);
+  geometry.translate(size.width / 2, size.height / 2, 0);
+  const mesh = new THREE.Mesh(
+    geometry,
+    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }),
+  );
+  const group = new THREE.Group();
+  group.add(mesh);
+  group.position.copy(position);
+  mesh.position.set(0, 0, 0);
+  group.rotation.y = THREE.MathUtils.degToRad(initialRotationDeg);
+  return { group, mesh };
+}
+
+export function flipDoor(origin: THREE.Vector3, rotation: number): void {
+  const transformed = transformVector(origin);
+
+  const doorMesh = mapDoorMeshes.find(
+    (d) =>
+      Math.floor(d.position.x) === Math.floor(transformed.x) &&
+      Math.floor(d.position.y) === Math.floor(transformed.y) &&
+      Math.floor(d.position.z) === Math.floor(transformed.z),
+  );
+
+  const doorData = mapDoors.find(
+    (d) =>
+      Math.floor(d.absOrigin.x) === Math.floor(origin.x) &&
+      Math.floor(d.absOrigin.y) === Math.floor(origin.y) &&
+      Math.floor(d.absOrigin.z) === Math.floor(origin.z),
+  );
+
+  if (doorMesh && doorData) {
+    setDoorAngle(doorMesh, rotation, doorData.rotateOffset);
+  } else {
+    console.error(`Couldnt find door mesh or data: ${doorMesh} ${doorData}`);
+  }
+}
+
+function setDoorAngle(group: THREE.Group, degrees: number, offset: number): void {
+  if (degrees === 999) {
+    // Server will emit 999 to either refresh positions (on round start) or indicate door has been destroyed
+    group.visible = false;
+    return;
+  }
+
+  group.visible = true;
+
+  const radians = THREE.MathUtils.degToRad(degrees + offset);
+  group.rotation.y = radians;
+}
+
+export function getMapDoors(): THREE.Group[] {
+  return mapDoorMeshes;
 }
 
 function getMap(): THREE.Group<THREE.Object3DEventMap> | null {

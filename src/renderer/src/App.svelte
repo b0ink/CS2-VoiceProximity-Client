@@ -35,7 +35,7 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { getMap, initializeMap } from './render/maps';
+  import { flipDoor, getMap, getMapDoors, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import {
     type AudioConnectionStuff,
@@ -325,10 +325,7 @@
 
       socket?.on('current-map', async (mapName) => {
         console.log(`socket.on('current-map'): ${mapName}`);
-        await initializeMap({
-          scene: scene,
-          mapName,
-        });
+        await initializeMap(scene, mapName);
       });
 
       socket?.on('server-config', async (data: Buffer) => {
@@ -358,6 +355,12 @@
             `socket.on(microphone-state): Tried to update microphone-state for an unknown socket ${socketId}`,
           );
         }
+      });
+
+      socket?.on('door-rotation', (data) => {
+        // console.log(`socket.on('door-rotation'): ${JSON.stringify(data)}`);
+        const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
+        flipDoor(origin, data.rotation);
       });
 
       // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
@@ -787,10 +790,7 @@
           currentLobby = lobbyCode;
           document.querySelector('#threejs')!.innerHTML = '';
           initializeRenderer();
-          await initializeMap({
-            scene: scene,
-            mapName: response.mapName ?? 'de_dust2',
-          });
+          await initializeMap(scene, response.mapName ?? 'de_dust2');
           if (response.serverConfig) {
             serverConfigStore.set({
               ...response.serverConfig,
@@ -836,7 +836,7 @@
     const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
-        soundData?.updateFilters(map, occlusionQuality, $serverConfigStore);
+        soundData?.updateFilters([map, ...getMapDoors()], occlusionQuality, $serverConfigStore);
       }
     }
   };
@@ -980,6 +980,11 @@
   (window as any).debugRenderer = function () {
     console.log(threejs.info);
   };
+
+  // (window as any).flipDoor = function (x: number, y: number, z: number, rotation: number) {
+  //   const origin = new THREE.Vector3(x, y, z);
+  //   flipDoor(origin, rotation);
+  // };
 
   // (window as any).debugSocket = function () {
   //   console.log(socket);
