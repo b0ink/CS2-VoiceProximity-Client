@@ -35,11 +35,16 @@ export interface MapDoor {
     width: number;
     height: number;
   };
+  offset: {
+    x: number;
+    y: number;
+    z: number;
+  };
 }
 
 export interface Map {
   buffer: Buffer<ArrayBufferLike>;
-  doors: MapDoor[];
+  doors: MapDoor[] | null;
 }
 
 ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
@@ -53,7 +58,7 @@ ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
   const rawMapBuffer = await fsp.readFile(mapPath);
 
   const mapDoors = path.join(basePath, `${map}.json`);
-  let doors: MapDoor[] = [];
+  let doors: MapDoor[] | null = [];
 
   if (fs.existsSync(mapDoors)) {
     try {
@@ -62,6 +67,7 @@ ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
 
       doors = parsed.map((entry: any) => {
         const [x, y, z] = entry.absorigin.split(' ').map(Number);
+        const [ox, oy, oz] = entry.offset.split(' ').map(Number);
         const [rx, ry, rz] = entry.startRotation.split(' ').map(Number);
         const [ax, ay, az] = entry.axis.split(' ').map(Number);
 
@@ -69,6 +75,7 @@ ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
           label: entry.label,
           rotateOffset: Number(entry.rotateOffset),
           absOrigin: { x, y, z },
+          offset: { x: ox, y: oy, z: oz },
           startingRotation: { x: rx, y: ry, z: rz },
           axis: { x: ax, y: ay, z: az },
           size: {
@@ -80,6 +87,7 @@ ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
       });
     } catch (err) {
       console.warn(`[Map] Failed to load doors JSON for ${map}:`, err);
+      doors = null;
     }
   }
   return {

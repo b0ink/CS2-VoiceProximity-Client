@@ -1,0 +1,24 @@
+[
+  {
+    "label": "Portapotty left",
+    "type": "door",
+    "rotateOffset": "0",
+    "absorigin": "-1934 -787 11540.3",
+    "offset": "0 0 -48",
+    "axis": "0 0 1",
+    "startRotation": "0 0 0",
+    "doorWidth": "41",
+    "doorHeight": "108.8"
+  },
+  {
+    "label": "Portapotty right",
+    "type": "door",
+    "rotateOffset": "0",
+    "absorigin": "-1861 -782 11540.3",
+    "offset": "0 0 -48",
+    "axis": "0 0 1",
+    "startRotation": "0 0 0",
+    "doorWidth": "41",
+    "doorHeight": "108.8"
+  }
+]

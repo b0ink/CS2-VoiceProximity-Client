@@ -79,10 +79,17 @@ async function initializeMap(
 
   console.log(`[GLTF] Fetching map blob (${mapName})`);
 
-  const { buffer, doors } = await window.api.loadMap(mapName);
+  const { buffer, doors: doorData } = await window.api.loadMap(mapName);
   if (!buffer) {
     return null;
   }
+  if (doorData === null || !Array.isArray(doorData)) {
+    console.error(
+      `Failed to parse map data from "${mapName}.json". Please check for syntax errors or invalid JSON format.`,
+    );
+  }
+  const doors = doorData ? doorData : [];
+
   const blob = new Blob([buffer], { type: 'model/gltf-binary' });
   const url = URL.createObjectURL(blob);
 
@@ -118,15 +125,7 @@ async function initializeMap(
     });
 
     for (const door of doors) {
-      const pos = transformVector(
-        new THREE.Vector3(door.absOrigin.x, door.absOrigin.y, door.absOrigin.z),
-      );
-      const { group: doorGroup } = createDoor(
-        pos,
-        { width: door.size.width, height: door.size.height },
-        door.startingRotation.y,
-        0x00ff00,
-      );
+      const { group: doorGroup } = createDoor(door, 0x00ff00);
       scene.add(doorGroup);
       mapDoorMeshes.push(doorGroup);
     }
@@ -142,22 +141,29 @@ async function initializeMap(
 }
 
 function createDoor(
-  position: THREE.Vector3,
-  size: { width: number; height: number },
-  initialRotationDeg: number,
+  door: MapDoor,
   color: number = 0x00ff00,
 ): { group: THREE.Group; mesh: THREE.Mesh } {
-  const geometry = new THREE.PlaneGeometry(size.width, size.height);
-  geometry.translate(size.width / 2, size.height / 2, 0);
+  const geometry = new THREE.PlaneGeometry(door.size.width, door.size.height);
+  geometry.translate(door.size.width / 2, door.size.height / 2, 0);
+  if (
+    door.offset &&
+    door.offset.x !== undefined &&
+    door.offset.y !== undefined &&
+    door.offset.z !== undefined
+  ) {
+    const offset = transformVector(new THREE.Vector3(door.offset.x, door.offset.y, door.offset.z));
+    geometry.translate(offset.x, offset.y, offset.z);
+  }
   const mesh = new THREE.Mesh(
     geometry,
     new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }),
   );
   const group = new THREE.Group();
   group.add(mesh);
-  group.position.copy(position);
+  group.position.copy(transformVector(door.absOrigin));
   mesh.position.set(0, 0, 0);
-  group.rotation.y = THREE.MathUtils.degToRad(initialRotationDeg);
+  group.rotation.y = THREE.MathUtils.degToRad(door.startingRotation.y);
   return { group, mesh };
 }
 

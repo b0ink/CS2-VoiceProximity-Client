@@ -4,6 +4,7 @@
     "type": "door",
     "rotateOffset": "0",
     "absorigin": "287.85773 -321.25012 96.00",
+    "offset": "0 0 0",
     "axis": "0 0 1",
     "startRotation": "0 0 0",
     "doorWidth": "55",
