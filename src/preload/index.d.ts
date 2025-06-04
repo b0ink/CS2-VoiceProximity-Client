@@ -1,7 +1,7 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
+import type { MapData } from '@shared/types/maps';
 import { StoreData } from '@shared/types/store/default';
 import { SettingsData } from '@shared/types/store/settings';
-import { Map } from '../main/ipc-handlers';
 
 declare global {
   interface Window {
@@ -12,7 +12,7 @@ declare global {
     setStoreValue: <K extends keyof StoreData>(key: K, value: StoreData[K]) => void;
     setSettingsValue: <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => void;
 
-    loadMap: (map: string) => Promise<Map>;
+    loadMap: (map: string) => Promise<MapData>;
     reloadApp: () => void;
     promptSteamAuthentication: () => void;
     retrieveTurnCredentials: () => void;

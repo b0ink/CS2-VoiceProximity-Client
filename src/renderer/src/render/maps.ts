@@ -7,7 +7,7 @@ import {
   disposeBoundsTree,
 } from 'three-mesh-bvh';
 import { GLTFLoader } from 'three-stdlib';
-import type { MapDoor } from '../../../main/ipc-handlers';
+import type { MapDoor } from '@shared/types/maps';
 import { transformVector } from '../lib/vector';
 
 // Add the extension functions
@@ -22,7 +22,14 @@ THREE.BatchedMesh.prototype.raycast = acceleratedRaycast;
 // Available 3D .glb meshes of maps found in the static folder
 // TODO: validate the mapList in the main process
 // TODO: fetch mapList directly from the static folder, allows for custom maps to be downloaded into the folder and loaded into the app
-const mapList = ['de_dust2', 'de_mirage', 'de_inferno', 'de_nuke', 'de_vertigo', 'de_anubis'];
+export const mapList = [
+  'de_dust2',
+  'de_mirage',
+  'de_inferno',
+  'de_nuke',
+  'de_vertigo',
+  'de_anubis',
+];
 
 const mapScale: number = 39.3701;
 
@@ -31,7 +38,7 @@ let map: THREE.Group<THREE.Object3DEventMap> | null = null;
 let mapDoors: MapDoor[] = [];
 let mapDoorMeshes: THREE.Group[] = [];
 
-async function initializeMap(
+export async function initializeMap(
   scene: THREE.Scene,
   mapName: string,
 ): Promise<THREE.Group<THREE.Object3DEventMap> | null> {
@@ -201,8 +208,6 @@ export function getMapDoors(): THREE.Group[] {
   return mapDoorMeshes;
 }
 
-function getMap(): THREE.Group<THREE.Object3DEventMap> | null {
+export function getMap(): THREE.Group<THREE.Object3DEventMap> | null {
   return map;
 }
-
-export { getMap, initializeMap, mapList };

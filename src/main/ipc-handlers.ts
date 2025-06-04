@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as fsp from 'fs/promises';
 import path from 'path';
 import ping from 'ping';
+import { MapData, MapDoor } from '@shared/types/maps';
 import { DEFAULT_STORE } from '@shared/types/store/default';
 import { getMainWindow } from './main-window';
 import { retrieveTurnCredentials } from './retrieveTurnCredentials';
@@ -12,42 +13,7 @@ ipcMain.handle('get-turn-credentials', async () => {
   return await retrieveTurnCredentials();
 });
 
-// TODO: move these interfaces somewhere appropriate
-export interface MapDoor {
-  label: string;
-  rotateOffset: number;
-  absOrigin: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  startingRotation: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  axis: {
-    x: number;
-    y: number;
-    z: number;
-  };
-  size: {
-    width: number;
-    height: number;
-  };
-  offset: {
-    x: number;
-    y: number;
-    z: number;
-  };
-}
-
-export interface Map {
-  buffer: Buffer<ArrayBufferLike>;
-  doors: MapDoor[] | null;
-}
-
-ipcMain.handle('load-map', async (_event, map: string): Promise<Map> => {
+ipcMain.handle('load-map', async (_event, map: string): Promise<MapData> => {
   const isDev = !app.isPackaged;
 
   const basePath = isDev
