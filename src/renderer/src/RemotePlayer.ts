@@ -580,68 +580,12 @@ export class RemotePlayer {
 
     this.setLowPassFilterFrequency(roundedOcclusion);
 
-    // const distance = calculateDistance(soundData.clientCamera.position, soundData.playerObject.position);
-    // const normalized = THREE.MathUtils.clamp(distance / 1500, 0, 1); // scale to 0–1
-    // const eased2 = Math.pow(normalized, 0.25); // slow start, fast rise
-    // const minimumHighpass = 0;
-    // const highpassAmount = minimumHighpass + eased2 * (24000 - minimumHighpass);
-    // if(distance >= 1500 && occlusion >= 0.9){
-    //   console.log(`setting highpass to ${highpassAmount} (${distance} units away)`)
-    //   soundData.setHighPassFilterFrequency(highpassAmount);
-    // }else{
-    //   console.log(`setting highpass to 0 (${distance} units away)`)
-    //   soundData.setHighPassFilterFrequency(0);
-    // }
-
-    // const maxDistance = 2500;
-    // const fullAudibleDistance = 1500;
-    // const maxHighpass = 24000;
-    // const minHighpass = 0;
-    // const occlusionThreshold = 0.4;
-
     if (!distance) {
       return;
     }
 
-    // const maximumHighpass = 20000;
     const targetHighpass = 100;
-
-    // if (distance > 1000) {
-    //   const clamped = Math.min(Math.max(distance, 500), 3000);
-    //   const t = (clamped - 500) / (3000 - 500);
-    //   targetHighpass = 100 + t * (maximumHighpass - 100);
-    // }
-
-    // if (occlusion < 0.3) {
-    //   targetHighpass /= 2;
-    // }
-
     this.setHighPassFilterFrequency(targetHighpass);
-
-    // const normalized = THREE.MathUtils.clamp(distance / maxDistance, 0, 1);
-    // const easedDistance = Math.pow(normalized, 5);
-
-    //TODO: if i see someone from T spawn -> mid on dust 2 i cant hear them (due to occlusion)
-    // if (distance > fullAudibleDistance) {
-    //   if (occlusion >= 0.9) {
-    //     targetHighpass = maxHighpass; // far & occluded → mute
-    //   } else if (occlusion < occlusionThreshold) {
-    //     targetHighpass = 4000; // far but visible → partially audible
-    //   } else {
-    //     const t = (occlusion - occlusionThreshold) / (0.9 - occlusionThreshold);
-    //     targetHighpass = THREE.MathUtils.lerp(4000, maxHighpass, t);
-    //   }
-    // } else {
-    //   // Close → smoothly fade from clear to partially muffled
-    //   // targetHighpass = THREE.MathUtils.lerp(minHighpass, 4000, easedDistance);
-    // }
-
-    // TODO: refactor the highpass occlusion
-    // - i believe this is what caused the audio glitches
-    // - it was being set 0 -> 24000 -> 0 -> 24000.. on a loop.
-
-    // console.log(`setting highpass to ${targetHighpass}`);
-    // console.log(`setting highpass to ${targetHighpass} (${distance} units away)`)
   }
 
   private calculateOcclusion = (
