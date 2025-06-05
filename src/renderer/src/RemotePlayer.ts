@@ -56,6 +56,10 @@ export class RemotePlayer {
   private monoGainFilter?: GainNode;
   private monoHighpassFilter?: BiquadFilterNode;
 
+  private reverbFilter?: ConvolverNode;
+  private reverbGainFilter?: GainNode;
+  private reverbGainAmount: number;
+
   // Talking indicators
   private readonly minUpdateRate = 50;
   private lastRefreshTime = 0;
@@ -65,6 +69,8 @@ export class RemotePlayer {
   public rms: number = 0;
   private dummyGain?: GainNode;
   private occlusionPct: number = 0;
+
+  private remoteStream: MediaStream;
 
   constructor(
     remoteStream: MediaStream,
@@ -84,6 +90,8 @@ export class RemotePlayer {
     this.listener_ = listener;
     this.playerObject = playerObject;
     this.clientCamera = camera;
+
+    this.remoteStream = remoteStream;
 
     // Debug positions to set the speaker if it's not attached to any real player positions
     playerObject.position.copy(transformVector(new THREE.Vector3(457.5018, 1833.5608, 136.03122))); // banana half wall CT side
@@ -136,6 +144,8 @@ export class RemotePlayer {
     this.dummyGain.gain.value = 0;
     this.processor.connect(this.dummyGain);
     this.dummyGain.connect(this.ctx.destination);
+
+    this.reverbGainAmount = 0;
   }
 
   // Talking indicators
@@ -229,8 +239,61 @@ export class RemotePlayer {
     this.distanceGainFilter = distanceGain;
     this.distanceGainAmount = 1;
 
+    // Reverb
+    const reverb = this.listener_.context.createConvolver();
+    this.reverbGainFilter = this.listener_.context.createGain();
+    this.reverbGainFilter.gain.value = 0;
+    this.reverbGainAmount = 0;
+    reverb.connect(this.reverbGainFilter);
+
+    fetch('reverb/StAndrewsChurch.m4a')
+      // fetch('reverb/PurnodesRailroadTunnel.m4a')
+      // fetch('reverb/StPatricksChurchPatringtonPosition1.m4a')
+      .then((res) => res.arrayBuffer())
+      .then((data) => this.listener_.context.decodeAudioData(data))
+      .then((decoded) => {
+        reverb.buffer = decoded;
+      });
+    // reverb.buffer = this.createImpulseResponse(this.listener_.context, 1, 1);
+    this.reverbFilter = reverb;
+
     this.playerVoice3D.setFilters([highpass, filter, gain, distanceGain]);
+    const source = this.listener_.context.createMediaStreamSource(this.remoteStream);
+
+    source
+      .connect(reverb)
+      .connect(this.reverbGainFilter)
+      // .connect(this.listener_.context.destination);
+      .connect(this.playerVoice3D.context.destination);
   }
+
+  // public setReverb(duration: number, decay: number): void {
+  //   // TODO: for smoother transitions; crossfade between two ConvolverNodes usinwg a GainNode for each
+  //   if (this.reverbFilter) {
+  //     this.reverbFilter.buffer = this.createImpulseResponse(
+  //       this.listener_.context,
+  //       duration,
+  //       decay,
+  //     );
+  //   }
+  // }
+
+  // private createImpulseResponse(
+  //   context: AudioContext,
+  //   duration: number = 2,
+  //   decay: number = 2,
+  // ): AudioBuffer {
+  //   const sampleRate = context.sampleRate;
+  //   const length = sampleRate * duration;
+  //   const impulse = context.createBuffer(2, length, sampleRate);
+  //   for (let channel = 0; channel < 2; channel++) {
+  //     const channelData = impulse.getChannelData(channel);
+  //     for (let i = 0; i < length; i++) {
+  //       channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, decay);
+  //     }
+  //   }
+  //   return impulse;
+  // }
 
   private initMonoFilters(): void {
     // Positional audio is replaced by mono audio when spectating a player or hearing dead teammates
@@ -363,6 +426,32 @@ export class RemotePlayer {
 
     if (!distance) {
       return;
+    }
+
+    // de_mirage palace
+    const box = new THREE.Box3().setFromPoints([
+      transformVector(new THREE.Vector3(109.14417, -2397.9414, 210.67885)),
+      transformVector(new THREE.Vector3(1055.9688, -1768.0321, -71.96875)),
+    ]);
+
+    if (this.clientCamera) {
+      if (box.containsPoint(this.clientCamera?.position)) {
+        if (this.reverbGainAmount !== 1) {
+          this.reverbGainAmount = 1;
+          const now = this.listener_.context.currentTime;
+          this.reverbGainFilter!.gain.cancelScheduledValues(now);
+          this.reverbGainFilter!.gain.setValueAtTime(this.reverbGainFilter!.gain.value, now); // ensure starting at current value
+          this.reverbGainFilter!.gain.linearRampToValueAtTime(0.2, now + 1);
+        }
+      } else {
+        if (this.reverbGainAmount !== 0) {
+          this.reverbGainAmount = 0;
+          const now = this.listener_.context.currentTime;
+          this.reverbGainFilter!.gain.cancelScheduledValues(now);
+          this.reverbGainFilter!.gain.setValueAtTime(this.reverbGainFilter!.gain.value, now); // ensure starting at current value
+          this.reverbGainFilter!.gain.linearRampToValueAtTime(0, now + 1);
+        }
+      }
     }
 
     const { occlusion } = this.calculateOcclusion(
