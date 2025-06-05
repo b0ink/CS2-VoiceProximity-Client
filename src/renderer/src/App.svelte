@@ -35,7 +35,7 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { flipDoor, getMap, getMapDoors, initializeMap } from './render/maps';
+  import { flipDoor, getMap, getMapDoors, getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import {
     type AudioConnectionStuff,
@@ -836,7 +836,12 @@
     const map = getMap();
     if (map) {
       for (const soundData of remotePlayers.values()) {
-        soundData?.updateFilters([map, ...getMapDoors()], occlusionQuality, $serverConfigStore);
+        soundData?.updateFilters(
+          [map, ...getMapDoors()],
+          occlusionQuality,
+          $serverConfigStore,
+          getReverbZones(),
+        );
       }
     }
   };

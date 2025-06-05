@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import {
+  MeshBVH,
   acceleratedRaycast,
   computeBatchedBoundsTree,
   computeBoundsTree,
   disposeBatchedBoundsTree,
   disposeBoundsTree,
 } from 'three-mesh-bvh';
-import { GLTFLoader } from 'three-stdlib';
-import type { MapDoor } from '@shared/types/maps';
+import { ConvexGeometry, GLTFLoader } from 'three-stdlib';
+import type { MapData, MapDoor, ReverbZone } from '@shared/types/maps';
 import { transformVector } from '../lib/vector';
 
 // Add the extension functions
@@ -37,6 +38,11 @@ let map: THREE.Group<THREE.Object3DEventMap> | null = null;
 
 let mapDoors: MapDoor[] = [];
 let mapDoorMeshes: THREE.Group[] = [];
+
+// let mapReverbZones: ReverbZone[] = [];
+// let mapReverbZonesMeshes: THREE.Mesh[] = [];
+
+let mapData: MapData | null = null;
 
 export async function initializeMap(
   scene: THREE.Scene,
@@ -86,16 +92,26 @@ export async function initializeMap(
 
   console.log(`[GLTF] Fetching map blob (${mapName})`);
 
-  const { buffer, doors: doorData } = await window.api.loadMap(mapName);
+  mapData = await window.api.loadMap(mapName);
+  const { buffer, doors: doorData, reverbZones: reverbZonesData } = mapData;
+
+  console.log(mapData);
   if (!buffer) {
     return null;
   }
-  if (doorData === null || !Array.isArray(doorData)) {
+  if (
+    doorData === null ||
+    !Array.isArray(doorData) ||
+    reverbZonesData === null ||
+    !Array.isArray(reverbZonesData)
+  ) {
     console.error(
       `Failed to parse map data from "${mapName}.json". Please check for syntax errors or invalid JSON format.`,
     );
   }
   const doors = doorData ? doorData : [];
+  const reverbZones = reverbZonesData ? reverbZonesData : [];
+  console.log(reverbZonesData);
 
   const blob = new Blob([buffer], { type: 'model/gltf-binary' });
   const url = URL.createObjectURL(blob);
@@ -137,7 +153,17 @@ export async function initializeMap(
       mapDoorMeshes.push(doorGroup);
     }
 
+    for (const reverbZone of reverbZones) {
+      const zone = createReverbZoneGeometry(reverbZone);
+      reverbZone.mesh = zone;
+      const bvh = new MeshBVH(reverbZone.mesh.geometry);
+      reverbZone.mesh.geometry.boundsTree = bvh;
+      scene.add(zone);
+    }
+
+    console.log(reverbZones);
     mapDoors = [...doors];
+    // mapReverbZones = [...reverbZones];
 
     console.log(`returning`, map);
     return map;
@@ -146,6 +172,45 @@ export async function initializeMap(
     return null;
   }
 }
+
+function createReverbZoneGeometry(zone: ReverbZone): THREE.Mesh {
+  const vectors = zone.vertices.map((z) => transformVector(z));
+  const zoneGeometry = new ConvexGeometry(vectors);
+  const zoneMesh = new THREE.Mesh(zoneGeometry, new THREE.MeshBasicMaterial({ wireframe: true }));
+  return zoneMesh;
+}
+
+// function createReverbZoneGeometry(zone: ReverbZone): THREE.Mesh {
+//   const geometry = new THREE.BufferGeometry();
+
+//   const vertices = zone.vertices.map((v) => transformVector(v));
+//   const positions = new Float32Array(vertices.length * 3);
+//   vertices.forEach((v, i) => {
+//     positions[i * 3] = v.x;
+//     positions[i * 3 + 1] = v.y;
+//     positions[i * 3 + 2] = v.z;
+//   });
+//   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+//   // Flatten faces array (assuming faces are arrays of indices, e.g. triangles or quads)
+//   // If quads, you might need to triangulate them first.
+//   const indices: number[] = [];
+//   zone.faces.forEach((face) => {
+//     if (face.length === 3) {
+//       indices.push(...face);
+//     } else if (face.length === 4) {
+//       // Triangulate quad: [0,1,2,3] => two triangles [0,1,2] and [2,3,0]
+//       indices.push(face[0], face[1], face[2], face[2], face[3], face[0]);
+//     }
+//   });
+//   geometry.setIndex(indices);
+
+//   geometry.computeVertexNormals();
+
+//   const material = new THREE.MeshBasicMaterial({ wireframe: true });
+
+//   return new THREE.Mesh(geometry, material);
+// }
 
 function createDoor(
   door: MapDoor,
@@ -206,6 +271,10 @@ function setDoorAngle(group: THREE.Group, degrees: number, offset: number): void
 
 export function getMapDoors(): THREE.Group[] {
   return mapDoorMeshes;
+}
+
+export function getReverbZones(): ReverbZone[] | undefined | null {
+  return mapData?.reverbZones;
 }
 
 export function getMap(): THREE.Group<THREE.Object3DEventMap> | null {

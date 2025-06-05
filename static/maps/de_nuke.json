@@ -1,46 +1,48 @@
-[
-  {
-    "label": "B Double doors right side",
-    "type": "door",
-    "rotateOffset": "90",
-    "absorigin": "1047.00 -920.00 -768.00",
-    "offset": "0 0 0",
-    "axis": "0 0 1",
-    "startRotation": "0 0 0",
-    "doorWidth": "60.5",
-    "doorHeight": "109.5"
-  },
-  {
-    "label": "B Double doors left side",
-    "type": "door",
-    "rotateOffset": "90",
-    "absorigin": "1047.00 -1040.00 -768.00",
-    "offset": "0 0 0",
-    "axis": "0 0 1",
-    "startRotation": "0 180 0",
-    "doorWidth": "60.5",
-    "doorHeight": "109.5"
-  },
-  {
-    "label": "B Squeaky",
-    "type": "door",
-    "rotateOffset": "90",
-    "absorigin": "305.19247 -1350.3822 -767.99",
-    "offset": "0 0 0",
-    "axis": "0 0 1",
-    "startRotation": "0 0 0",
-    "doorWidth": "60.5",
-    "doorHeight": "109.5"
-  },
-  {
-    "label": "A Squeaky",
-    "type": "door",
-    "rotateOffset": "90",
-    "absorigin": "257.00 -1310.00 -416.00",
-    "offset": "0 0 0",
-    "axis": "0 0 1",
-    "startRotation": "0 0 0",
-    "doorWidth": "60.5",
-    "doorHeight": "109.5"
-  }
-]
+{
+  "doors": [
+    {
+      "label": "B Double doors right side",
+      "type": "door",
+      "rotateOffset": "90",
+      "absorigin": "1047.00 -920.00 -768.00",
+      "offset": "0 0 0",
+      "axis": "0 0 1",
+      "startRotation": "0 0 0",
+      "doorWidth": "60.5",
+      "doorHeight": "109.5"
+    },
+    {
+      "label": "B Double doors left side",
+      "type": "door",
+      "rotateOffset": "90",
+      "absorigin": "1047.00 -1040.00 -768.00",
+      "offset": "0 0 0",
+      "axis": "0 0 1",
+      "startRotation": "0 180 0",
+      "doorWidth": "60.5",
+      "doorHeight": "109.5"
+    },
+    {
+      "label": "B Squeaky",
+      "type": "door",
+      "rotateOffset": "90",
+      "absorigin": "305.19247 -1350.3822 -767.99",
+      "offset": "0 0 0",
+      "axis": "0 0 1",
+      "startRotation": "0 0 0",
+      "doorWidth": "60.5",
+      "doorHeight": "109.5"
+    },
+    {
+      "label": "A Squeaky",
+      "type": "door",
+      "rotateOffset": "90",
+      "absorigin": "257.00 -1310.00 -416.00",
+      "offset": "0 0 0",
+      "axis": "0 0 1",
+      "startRotation": "0 0 0",
+      "doorWidth": "60.5",
+      "doorHeight": "109.5"
+    }
+  ]
+}
