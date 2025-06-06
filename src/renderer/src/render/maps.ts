@@ -143,11 +143,10 @@ export async function initializeMap(
 
     // We don't care about textures, but to help see the map, we assign each mesh a random color
     // However we want to re-use textures as much as possible to improve performance
+    const hexColors = ['#1E2838', '#77A1E0', '#6184B8', '#4C678F', '#364966'];
     const materials: THREE.MeshBasicMaterial[] = Array.from({ length: 5 }, () => {
-      const hue = Math.random() * 360;
-      const pastel = new THREE.Color(`hsl(${hue}, 50%, 50%)`);
-      return new THREE.MeshBasicMaterial({ color: pastel, side: THREE.DoubleSide });
-      // return new THREE.MeshBasicMaterial({ color: pastel });
+      const color = hexColors[Math.floor(Math.random() * hexColors.length)];
+      return new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
     });
 
     map.traverse((child) => {
