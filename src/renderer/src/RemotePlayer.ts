@@ -402,8 +402,8 @@ export class RemotePlayer {
 
     const now = this.listener_.context.currentTime;
     filter.frequency.cancelScheduledValues(now);
-    // lowPassFilter_.frequency.setValueAtTime(lowPassFilter_.frequency.value, now);
-    filter.frequency.linearRampToValueAtTime(amount, now + 0.05); // smooth over 200ms
+    filter.frequency.setValueAtTime(filter.frequency.value, now);
+    filter.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
   public setLowPassFilterFrequency(amount: number): void {
@@ -419,9 +419,13 @@ export class RemotePlayer {
   }
 
   public setMonoHighPassFilterFrequency(amount: number): void {
+    if (!this.monoHighpassFilter) {
+      return;
+    }
     const now = this.listener_.context.currentTime;
-    this.monoHighpassFilter!.frequency.cancelScheduledValues(now);
-    this.monoHighpassFilter!.frequency.linearRampToValueAtTime(amount, now + 0.05);
+    this.monoHighpassFilter.frequency.cancelScheduledValues(now);
+    this.monoHighpassFilter.frequency.setValueAtTime(this.monoHighpassFilter.frequency.value, now);
+    this.monoHighpassFilter.frequency.linearRampToValueAtTime(amount, now + 0.05);
   }
 
   public updateFilters(
@@ -550,7 +554,8 @@ export class RemotePlayer {
       if (!this.isMuted) {
         const now = this.listener_.context.currentTime;
         this.distanceGainFilter?.gain.cancelScheduledValues(now);
-        this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.01);
+        this.distanceGainFilter!.gain.setValueAtTime(this.distanceGainFilter!.gain.value, now);
+        this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.02);
 
         this.playerVoice3D.setVolume(this.distanceGainAmount);
       }
