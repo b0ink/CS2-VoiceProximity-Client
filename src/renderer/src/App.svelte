@@ -1209,15 +1209,16 @@
     {#if playerServerRoomCode && !isConnected && timeUntilRestart <= 0 && !autoUpdateState}
       <Alert color="green" class="text-center mb-4 mt-4">
         <span class="font-medium">
-          You are connected to a server<br />(Steam ID detected)<br />
-          <button
-            class="underline cursor-pointer hover:text-black"
+          You are connected to a server.<br />(Steam ID detected)<br />
+          <Button
+            color="lime"
+            class="cursor-pointer mt-2"
             onclick={() => {
               if (playerServerRoomCode) {
                 roomCodeInput = playerServerRoomCode;
                 joinRoom();
               }
-            }}>Connect now.</button
+            }}>Connect Now</Button
           >
         </span>
       </Alert>
