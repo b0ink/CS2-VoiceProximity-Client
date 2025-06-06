@@ -43,7 +43,9 @@ async function checkForUpdates(): Promise<void> {
     }
   } catch (error) {
     console.log('Unable to check for latest update');
-    console.error(error);
+    if (!app.isPackaged) {
+      console.error(error);
+    }
   }
 }
 
@@ -57,6 +59,9 @@ ipcMain.handle('update-app', async () => {
   } catch (e) {
     const autoUpdateState = defaultStore.get('autoUpdateState');
     defaultStore.set('autoUpdateState', { ...autoUpdateState, state: 'error', error: e });
+    if (!app.isPackaged) {
+      console.log(e);
+    }
   }
 });
 
