@@ -1,5 +1,5 @@
 import { BrowserWindow, app, ipcMain, session, shell } from 'electron';
-import { autoUpdater } from 'electron-updater';
+import { ProgressInfo, autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import path from 'node:path';
 import { join } from 'path';
@@ -29,20 +29,60 @@ async function checkForUpdates(): Promise<void> {
   autoUpdater.autoDownload = false;
 
   try {
-    // TODO: auto updates can only work on latest releases (not pre-releases)
-    // const result = await autoUpdater.checkForUpdates();
-    // console.log(result);
+    defaultStore.set('autoUpdateState', null);
+    const result = await autoUpdater.checkForUpdates();
+    if (result === null) {
+      throw new Error('Unable to check for latest update');
+    }
+
+    if (result?.isUpdateAvailable) {
+      defaultStore.set('autoUpdateState', {
+        state: result.isUpdateAvailable ? 'available' : 'unavailable',
+        info: result.updateInfo,
+      });
+    }
   } catch (error) {
     console.log('Unable to check for latest update');
     console.error(error);
   }
 }
 
-function createWindow(): void {
-  if (!app.isPackaged) {
-    checkForUpdates();
+ipcMain.handle('update-app', async () => {
+  console.log(`Updating app...`);
+  const autoUpdateState = defaultStore.get('autoUpdateState');
+  defaultStore.set('autoUpdateState', { ...autoUpdateState, state: 'downloading' });
+
+  try {
+    await autoUpdater.downloadUpdate();
+  } catch (e) {
+    const autoUpdateState = defaultStore.get('autoUpdateState');
+    defaultStore.set('autoUpdateState', { ...autoUpdateState, state: 'error', error: e });
+  }
+});
+
+autoUpdater.on('error', (error: Error) => {
+  const autoUpdateState = defaultStore.get('autoUpdateState');
+  if (autoUpdateState === null) {
+    return;
   }
 
+  defaultStore.set('autoUpdateState', {
+    ...autoUpdateState,
+    state: 'error',
+    error: error.message,
+  });
+});
+
+autoUpdater.on('download-progress', (progress: ProgressInfo) => {
+  const autoUpdateState = defaultStore.get('autoUpdateState');
+  defaultStore.set('autoUpdateState', { ...autoUpdateState, state: 'downloading', progress });
+});
+
+autoUpdater.on('update-downloaded', () => {
+  autoUpdater.quitAndInstall();
+});
+
+function createWindow(): void {
   // avoid automatic rejoins if we're loading up the app for the first time
   defaultStore.set('tryReconnectRoom', false);
 
@@ -64,6 +104,8 @@ function createWindow(): void {
   mainWindow.on('ready-to-show', () => {
     // Reset token and steamid if invalid or expired token
     auth.validateJwtToken();
+
+    checkForUpdates();
 
     const muteKeybind = settingsStore.get('muteKeybind');
     if (muteKeybind) {

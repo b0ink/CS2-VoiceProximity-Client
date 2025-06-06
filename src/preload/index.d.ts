@@ -30,5 +30,7 @@ declare global {
     toggleMuteMicrophone: () => void;
 
     getRegionPings: () => void;
+
+    downloadUpdate: () => void;
   }
 }

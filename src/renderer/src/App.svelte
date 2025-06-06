@@ -1,6 +1,6 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
-  import { Alert, Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
+  import { Alert, Button, ButtonGroup, Heading, Input, Label, Progressbar } from 'flowbite-svelte';
   import {
     CogSolid,
     MicrophoneSlashSolid,
@@ -82,6 +82,7 @@
   $: savedRoomCode = $store.savedRoomCode;
   $: regions = $store.regions;
   $: tryReconnectRoom = $store.tryReconnectRoom;
+  $: autoUpdateState = $store.autoUpdateState;
 
   $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
   $: selectedRegion = regions.find((r) => r.url === socketUrl);
@@ -1045,6 +1046,46 @@
     (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full h-dvh',
   )}
 >
+  {#if autoUpdateState !== null}
+    {#if autoUpdateState.state === 'available' && !!autoUpdateState.info}
+      <Alert color="lime" class="text-center mb-4 mt-4 w-full">
+        <span class="font-medium">
+          An update is available! v{autoUpdateState.info.version}
+          <button
+            class="underline cursor-pointer hover:text-black"
+            onclick={() => {
+              window.api.downloadUpdate();
+            }}>Download now</button
+          >
+        </span>
+      </Alert>
+    {:else if autoUpdateState.state === 'error'}
+      <Alert color="red" class="text-center mb-4 mt-4 w-full">
+        <div class="font-medium">
+          Failed to download update. Please restart the app and try again.
+        </div>
+      </Alert>
+    {:else}
+      <Alert color="lime" class="text-center mb-4 mt-4 w-full">
+        <div class="font-medium mb-2">
+          {autoUpdateState?.state === 'downloading'
+            ? 'Downloading update...'
+            : 'Waiting for download...'}
+          {Math.floor(autoUpdateState.progress?.percent ?? 0)}%
+        </div>
+        <div class="font-medium mb-2">
+          ({Math.round((autoUpdateState.progress?.transferred ?? 0) / 1024 / 1024)}MB /
+          {Math.round((autoUpdateState.progress?.total ?? 0) / 1024 / 1024)}MB)
+        </div>
+        <Progressbar
+          animate
+          progress={autoUpdateState.progress?.percent ?? 0}
+          color={(autoUpdateState.progress?.percent ?? 0 < 100) ? 'blue' : 'lime'}
+        />
+      </Alert>
+    {/if}
+  {/if}
+
   <div class={cn('flex w-full items-center', isConnected ? 'justify-center' : 'justify-between')}>
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId && socketUrl}
@@ -1113,7 +1154,8 @@
                   !socketConnected ||
                   !turnUsername ||
                   !turnPassword ||
-                  !!roomCode}
+                  !!roomCode ||
+                  autoUpdateState?.state === 'downloading'}
               >
                 Join</Button
               >{/if}
@@ -1163,7 +1205,7 @@
         <span class="font-medium">Connecting to the backend service...</span>
       </Alert>
     {/if}
-    {#if playerServerRoomCode && !isConnected && timeUntilRestart <= 0}
+    {#if playerServerRoomCode && !isConnected && timeUntilRestart <= 0 && !autoUpdateState}
       <Alert color="green" class="text-center mb-4 mt-4">
         <span class="font-medium">
           You are connected to a server<br />(Steam ID detected)<br />
@@ -1188,7 +1230,7 @@
       </Alert>
     {/if}
 
-    {#if !playerServerRoomCode && !isConnected && socketConnected}
+    {#if !playerServerRoomCode && !isConnected && socketConnected && !autoUpdateState}
       <div class="text-center text-gray-500 text-xs mt-12">
         Join the CS2 Server to auto-retrieve the room code if Proximity Chat is enabled.
       </div>

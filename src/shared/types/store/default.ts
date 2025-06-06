@@ -1,3 +1,4 @@
+import { ProgressInfo, UpdateInfo } from 'electron-updater';
 import { DefaultNotificationOptions } from 'svelte-notifications';
 
 interface Region {
@@ -9,6 +10,13 @@ interface Region {
   ping: number;
 }
 
+interface AutoUpdateState {
+  state: 'error' | 'available' | 'downloading' | 'downloaded' | 'unavailable';
+  error?: string;
+  progress?: ProgressInfo;
+  info?: UpdateInfo;
+}
+
 export interface StoreData {
   steamId: string | null;
   token: string | null;
@@ -18,7 +26,9 @@ export interface StoreData {
   savedRoomCode: string | null;
   tryReconnectRoom: boolean;
   regions: Region[];
+  autoUpdateState: AutoUpdateState | null;
 }
+
 export const DEFAULT_STORE: StoreData = {
   steamId: null,
   token: null,
@@ -45,4 +55,5 @@ export const DEFAULT_STORE: StoreData = {
       ping: 0,
     },
   ],
+  autoUpdateState: null,
 };
