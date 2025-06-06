@@ -87,6 +87,16 @@ export async function initializeMap(
     scene.remove(group);
   }
 
+  if (mapData?.reverbZones) {
+    for (const zone of mapData.reverbZones) {
+      if (zone.mesh) {
+        scene.remove(zone.mesh);
+        zone.mesh.geometry.dispose();
+        zone.mesh = undefined;
+      }
+    }
+  }
+
   mapDoorMeshes = [];
   mapDoors = [];
 
