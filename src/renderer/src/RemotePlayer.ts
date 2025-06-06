@@ -275,31 +275,10 @@ export class RemotePlayer {
     this.reverbGainFilter = this.listener_.context.createGain();
     this.reverbGainFilter.gain.value = 0;
     this.reverbGainAmount = 0;
-    // reverb.connect(this.reverbGainFilter);
-
     this.reverbFilter = reverb;
 
-    // v2
     const context = this.listener_.context;
     const source = context.createMediaStreamSource(this.remoteStream);
-    // Apply shared filters before split
-    // source.connect(this.highPassFilter_);
-    // this.highPassFilter_.connect(this.lowPassFilter_);
-
-    // // Now split
-    // const splitter = context.createGain();
-    // this.lowPassFilter_.connect(splitter);
-
-    // // Dry path
-    // splitter.connect(this.gainFilter);
-    // this.gainFilter.connect(this.distanceGainFilter);
-    // this.distanceGainFilter.connect(this.playerVoice3D.panner);
-
-    // Wet path
-    // splitter.connect(this.reverbFilter);
-    // this.reverbFilter.connect(this.reverbGainFilter);
-    // this.reverbGainFilter.connect(wetGainFilter);
-    // wetGainFilter.connect(context.destination);
 
     const splitter = context.createGain();
     source.connect(splitter);
@@ -309,11 +288,6 @@ export class RemotePlayer {
     this.reverbFilter.connect(this.reverbGainFilter);
     this.reverbGainFilter.connect(wetGainFilter);
     wetGainFilter.connect(context.destination);
-
-    // splitter.connect(this.reverbFilter);
-    // this.reverbFilter.connect(this.reverbGainFilter);
-    // this.reverbGainFilter.connect(wetGainFilter);
-    // wetGainFilter.connect(context.destination);
 
     this.playerVoice3D.setFilters([highpass, lowpassFilter, gain, distanceGain]);
   }
