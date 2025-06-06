@@ -1115,6 +1115,7 @@
             size={!isConnected ? 'md' : 'sm'}
           >
             <Input
+              class="select-text cursor-text!"
               id="room-code"
               name="room-code"
               disabled={isConnected || !socketConnected}
