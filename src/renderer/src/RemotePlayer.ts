@@ -77,6 +77,8 @@ export class RemotePlayer {
 
   private remoteStream: MediaStream;
 
+  public playerIsAlive: boolean;
+
   constructor(
     remoteStream: MediaStream,
     client: Client,
@@ -84,6 +86,8 @@ export class RemotePlayer {
     scene: THREE.Scene,
     listener: THREE.AudioListener,
   ) {
+    this.playerIsAlive = false;
+
     const playerObject = new THREE.Mesh(
       new THREE.BoxGeometry(4, 8, 4),
       new THREE.MeshStandardMaterial({ color: 0xffffff }),
@@ -316,6 +320,7 @@ export class RemotePlayer {
       if (isAlive) {
         // Reduce the volume of alive players while being spectated
         this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount / 1.5, now + 0.2);
+        this.reverbGainFilter?.gain.linearRampToValueAtTime(0, now + 0.2);
       } else {
         this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       }
@@ -449,6 +454,17 @@ export class RemotePlayer {
 
   private updateReverb(reverbZones: ReverbZone[]): void {
     if (!this.clientCamera || !this.playerObject || !this.reverbFilter) {
+      return;
+    }
+
+    if (!this.playerIsAlive) {
+      if (this.reverbGainAmount !== 0) {
+        this.reverbGainAmount = 0;
+        const now = this.listener_.context.currentTime;
+        this.reverbGainFilter!.gain.cancelScheduledValues(now);
+        this.reverbGainFilter!.gain.setValueAtTime(this.reverbGainFilter!.gain.value, now);
+        this.reverbGainFilter!.gain.linearRampToValueAtTime(0, now + 0.02);
+      }
       return;
     }
 

@@ -432,6 +432,8 @@
               continue;
             }
 
+            positionalSound.playerIsAlive = player.isAlive ?? false;
+
             if (
               me &&
               !player.isAlive && // player is dead
