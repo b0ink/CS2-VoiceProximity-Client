@@ -24,7 +24,12 @@ export class SteamAuth {
     } else {
       try {
         const payload = jwt.decode(token) as JwtAuthPayload | null;
-        if (!payload || !payload.exp || payload.exp < Math.floor(Date.now() / 1000)) {
+        const TOKEN_REAUTH_THRESHOLD = 6 * 60 * 60; // Require re-auth if token expires within 6 hours
+        if (
+          !payload ||
+          !payload.exp ||
+          payload.exp < Math.floor(Date.now() / 1000) + TOKEN_REAUTH_THRESHOLD
+        ) {
           throw new Error('Token is invalid, expired, or missing expiration');
         }
         // Token is valid
