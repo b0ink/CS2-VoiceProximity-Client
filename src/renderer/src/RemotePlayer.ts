@@ -43,12 +43,14 @@ export class RemotePlayer {
 
   // Filters
   private lowPassFilter_?: BiquadFilterNode;
+  private reverbLowpassFilter?: BiquadFilterNode;
   private lowPassAmount?: number;
 
   private highPassFilter_?: BiquadFilterNode;
   private highPassAmount?: number;
 
-  private gainFilter?: GainNode;
+  private gainFilter?: GainNode; // Controls player volume
+  private wetGainFilter?: GainNode;
   private gainAmount: number;
 
   private distanceGainFilter?: GainNode;
@@ -218,11 +220,17 @@ export class RemotePlayer {
   }
 
   private async initStereoFilters(): Promise<void> {
-    const filter = this.listener_.context.createBiquadFilter();
-    filter.type = 'lowpass';
-    filter.Q.value = 0;
+    const lowpassFilter = this.listener_.context.createBiquadFilter();
+    lowpassFilter.type = 'lowpass';
+    lowpassFilter.Q.value = 0;
 
-    this.lowPassFilter_ = filter;
+    this.lowPassFilter_ = lowpassFilter;
+
+    const reverbLowpassFilter = this.listener_.context.createBiquadFilter();
+    reverbLowpassFilter.type = 'lowpass';
+    reverbLowpassFilter.Q.value = 0;
+
+    this.reverbLowpassFilter = reverbLowpassFilter;
 
     const highpass = this.listener_.context.createBiquadFilter();
     highpass.type = 'highpass';
@@ -235,6 +243,11 @@ export class RemotePlayer {
     gain.gain.value = this.gainAmount;
     gain.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
     this.gainFilter = gain;
+
+    const wetGainFilter = this.listener_.context.createGain();
+    wetGainFilter.gain.value = this.gainAmount;
+    wetGainFilter.gain.setValueAtTime(this.gainAmount, this.listener_.context.currentTime);
+    this.wetGainFilter = wetGainFilter;
 
     const distanceGain = this.listener_.context.createGain();
     distanceGain.gain.value = this.distanceGainAmount;
@@ -266,20 +279,43 @@ export class RemotePlayer {
 
     this.reverbFilter = reverb;
 
-    this.playerVoice3D.setFilters([highpass, filter, gain, distanceGain]);
-    const source = this.listener_.context.createMediaStreamSource(this.remoteStream);
+    // v2
+    const context = this.listener_.context;
+    const source = context.createMediaStreamSource(this.remoteStream);
+    // Apply shared filters before split
+    // source.connect(this.highPassFilter_);
+    // this.highPassFilter_.connect(this.lowPassFilter_);
 
-    // TODO: reverb is not affected by lowpass once enabled
-    // TODO: the result works for some scenarios...
-    // TODO: ideally the "dry" voice should still be muffled
-    // TODO: filters, inputs/outputs needs a rework overally
+    // // Now split
+    // const splitter = context.createGain();
+    // this.lowPassFilter_.connect(splitter);
 
-    source
-      // .connect(filter)
-      // .connect(gain)
-      .connect(reverb)
-      .connect(this.reverbGainFilter)
-      .connect(this.playerVoice3D.context.destination);
+    // // Dry path
+    // splitter.connect(this.gainFilter);
+    // this.gainFilter.connect(this.distanceGainFilter);
+    // this.distanceGainFilter.connect(this.playerVoice3D.panner);
+
+    // Wet path
+    // splitter.connect(this.reverbFilter);
+    // this.reverbFilter.connect(this.reverbGainFilter);
+    // this.reverbGainFilter.connect(wetGainFilter);
+    // wetGainFilter.connect(context.destination);
+
+    const splitter = context.createGain();
+    source.connect(splitter);
+
+    splitter.connect(reverbLowpassFilter);
+    reverbLowpassFilter.connect(this.reverbFilter);
+    this.reverbFilter.connect(this.reverbGainFilter);
+    this.reverbGainFilter.connect(wetGainFilter);
+    wetGainFilter.connect(context.destination);
+
+    // splitter.connect(this.reverbFilter);
+    // this.reverbFilter.connect(this.reverbGainFilter);
+    // this.reverbGainFilter.connect(wetGainFilter);
+    // wetGainFilter.connect(context.destination);
+
+    this.playerVoice3D.setFilters([highpass, lowpassFilter, gain, distanceGain]);
   }
 
   private initMonoFilters(): void {
@@ -359,6 +395,7 @@ export class RemotePlayer {
       const now = this.listener_.context.currentTime;
       this.gainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
       this.monoGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
+      this.wetGainFilter?.gain.linearRampToValueAtTime(this.gainAmount, now + 0.2);
     }
   }
 
@@ -370,12 +407,12 @@ export class RemotePlayer {
       return;
     }
 
-    if (filter.type == 'lowpass') {
-      if (this.lowPassAmount == amount) {
-        return;
-      }
-      this.lowPassAmount = amount;
-    }
+    // if (filter.type == 'lowpass') {
+    //   if (this.lowPassAmount == amount) {
+    //     return;
+    //   }
+    //   this.lowPassAmount = amount;
+    // }
 
     if (filter.type == 'highpass') {
       if (this.highPassAmount == amount) {
@@ -391,7 +428,11 @@ export class RemotePlayer {
   }
 
   public setLowPassFilterFrequency(amount: number): void {
+    if (this.lowPassAmount === amount) {
+      return;
+    }
     this.setFilterFrequency(this.lowPassFilter_, amount);
+    this.setFilterFrequency(this.reverbLowpassFilter, amount * 1.5);
   }
 
   public setHighPassFilterFrequency(amount: number): void {
