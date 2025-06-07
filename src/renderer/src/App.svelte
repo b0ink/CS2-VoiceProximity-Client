@@ -398,7 +398,11 @@
             continue;
           }
 
-          positionalSound.playerIsAlive = player.isAlive ?? false;
+          positionalSound.playerIsAlive =
+            player.isAlive &&
+            (player.team === CsTeam.CounterTerrorist || player.team === CsTeam.Terrorist)
+              ? true
+              : false;
           positionalSound.playerTeam = player.team ?? CsTeam.None;
 
           if (
