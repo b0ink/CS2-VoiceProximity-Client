@@ -1,26 +1,19 @@
 <script lang="ts">
   // import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { Button, Modal } from 'flowbite-svelte';
-  import type { Socket } from 'socket.io-client';
   import { writable } from 'svelte/store';
-  import type { ClientToServerEvents, ServerToClientEvents } from '@shared/types/api';
   import store from '@store/client';
+  import { clientIsAdmin } from '@store/playerStore';
+  import { peerConnectingBandwidth, socket, socketClientMap } from '@store/socketStore';
   import { cn } from '../lib/tailwind';
   import settings from '../store/settings';
-  import {
-    CsTeam,
-    type PeerConnectionBandwidth,
-    type PlayerPositionApiData,
-    type SocketClientMap,
-  } from '../type';
+  import { CsTeam, type PlayerPositionApiData } from '../type';
   import PlayerRow from './PlayerRow.svelte';
 
-  export let mySteamId: string;
   export let players: PlayerPositionApiData[];
-  export let joinedSocketConnections: SocketClientMap;
-  export let peerConnectingBandwidth: PeerConnectionBandwidth;
-  export let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
-  export let clientIsAdmin: boolean = false;
+
+  $: mySteamId = $store.steamId;
+  $: joinedSocketConnections = $socketClientMap;
 
   $: micMuted = $settings.micMuted;
   interface PlayerData {
@@ -41,7 +34,7 @@
     players &&
     players.length &&
     joinedSocketConnections &&
-    peerConnectingBandwidth &&
+    $peerConnectingBandwidth &&
     mySteamId
   ) {
     clientIsOnServer = false;
@@ -55,7 +48,7 @@
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           Object.entries(joinedSocketConnections).find(([_, c]) => c.steamId === steamId) || [];
 
-        const bandwidth = playerPeer ? peerConnectingBandwidth[playerPeer] : null;
+        const bandwidth = playerPeer ? $peerConnectingBandwidth[playerPeer] : null;
 
         let isMuted: boolean | undefined = false;
 
@@ -102,7 +95,7 @@
         if (!steamId) continue;
 
         if (!map.has(steamId)) {
-          const bandwidth = _peer ? peerConnectingBandwidth[_peer] : null;
+          const bandwidth = _peer ? $peerConnectingBandwidth[_peer] : null;
 
           map.set(steamId, {
             steamId,
@@ -168,7 +161,7 @@
       return;
     }
 
-    socket?.emit('mute-player', {
+    $socket?.emit('mute-player', {
       targetSteamId,
       clientToken: $store.token,
     });
@@ -198,7 +191,7 @@
     >
   {/snippet}
 
-  {#if clientIsAdmin}
+  {#if $clientIsAdmin}
     <div class="w-full flex justify-end">
       <Button
         disabled={manageUser?.isMuted}

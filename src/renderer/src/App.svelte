@@ -1106,14 +1106,7 @@
     </div>
 
     {#if !!$roomCode && $connectedToRoom}
-      <PlayerList
-        mySteamId={clientSteamId}
-        players={playerPositions}
-        joinedSocketConnections={$socketClientMap}
-        peerConnectingBandwidth={$peerConnectingBandwidth}
-        socket={$socket}
-        clientIsAdmin={$clientIsAdmin}
-      ></PlayerList>
+      <PlayerList players={playerPositions}></PlayerList>
     {/if}
   {/if}
   <div
