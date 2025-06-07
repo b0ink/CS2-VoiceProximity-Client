@@ -36,6 +36,8 @@ const api = {
   toggleMuteMicrophone: () => ipcRenderer.invoke('toggle-mute-microphone'),
 
   downloadUpdate: () => ipcRenderer.invoke('update-app'),
+
+  quitApp: () => ipcRenderer.invoke('quit-app'),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

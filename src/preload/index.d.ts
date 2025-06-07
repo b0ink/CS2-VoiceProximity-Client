@@ -32,5 +32,7 @@ declare global {
     getRegionPings: () => void;
 
     downloadUpdate: () => void;
+
+    quitApp: () => void;
   }
 }

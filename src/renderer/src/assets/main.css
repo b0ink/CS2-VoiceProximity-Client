@@ -70,3 +70,8 @@ body {
 .scrollbar::-webkit-scrollbar-track {
   background-color: rgba(0, 0, 0, 0);
 }
+
+/* Override notification position */
+.position-top-center {
+  margin-top: 50px;
+}

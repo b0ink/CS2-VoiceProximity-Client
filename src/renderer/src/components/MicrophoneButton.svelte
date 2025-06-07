@@ -3,15 +3,16 @@
   import settings from '@store/settings';
   import { cn } from '../lib/tailwind';
 
-  export let unmuteMicrophone: () => void;
-  export let muteMicrophone: () => void;
-
   $: microphoneMuted = $settings.micMuted;
+
+  const toggleMute = (): void => {
+    window.api.toggleMuteMicrophone();
+  };
 </script>
 
 <svelte:component
   this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
-  onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
+  onclick={toggleMute}
   color={microphoneMuted ? 'red' : 'grey'}
   class={cn(
     'cursor-pointer z-20 select-none transition-all duration-300',

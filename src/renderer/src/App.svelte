@@ -41,9 +41,7 @@
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import Alerts from './components/Alerts/Alerts.svelte';
   import JoinRoom from './components/JoinRoom.svelte';
-  import MicrophoneButton from './components/MicrophoneButton.svelte';
   import PlayerList from './components/PlayerList.svelte';
-  import SettingsButton from './components/SettingsButton.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
@@ -887,7 +885,6 @@
 
     Object.defineProperty(document, 'hidden', { value: false, writable: false });
     document.addEventListener('visibilitychange', (e) => e.stopImmediatePropagation(), true);
-
     window.api.onToggleMuteMicrophone(() => {
       console.log('Toggling mute via keybind');
       if (microphoneMuted) {
@@ -956,8 +953,6 @@
   >
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId && socketUrl}
-      <MicrophoneButton {unmuteMicrophone} {muteMicrophone} />
-
       <div
         class={cn(
           'w-full',
@@ -986,7 +981,7 @@
       </div>
     {/if}
 
-    <SettingsButton />
+    <!-- <SettingsButton /> -->
   </div>
   {#if !clientSteamId || !socketUrl}
     <Heading tag="h1" class="mb-4 text-xl font-extrabold z-5">CS2 Proximity Chat</Heading>

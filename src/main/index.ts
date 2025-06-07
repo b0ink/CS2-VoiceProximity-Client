@@ -230,6 +230,16 @@ ipcMain.handle('reload-app', async () => {
   mainWindow.reload();
 });
 
+ipcMain.handle('quit-app', async () => {
+  try {
+    mainWindow?.close();
+    mainWindow?.destroy();
+  } catch (e) {
+    console.log(e);
+  }
+  app.quit();
+});
+
 ipcMain.handle('prompt-steam-authentication', async () => {
   checkSteamAuthentication();
 });
