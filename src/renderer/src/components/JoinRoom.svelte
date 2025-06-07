@@ -14,8 +14,11 @@
 </script>
 
 <ButtonGroup
-  class={cn('w-full ', $connectedToRoom && 'max-w-54 ml-4 mr-4')}
-  size={!$connectedToRoom ? 'md' : 'sm'}
+  class={cn(
+    'w-full max-w-64',
+    // $connectedToRoom && 'max-w-54 ml-4 mr-4'
+  )}
+  size={!$connectedToRoom ? 'md' : 'md'}
 >
   <Input
     class="select-text cursor-text!"

@@ -945,9 +945,18 @@
 <div
   class={cn(
     'p-5',
-    (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full h-dvh',
+    (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full',
   )}
 >
+  <div
+    class={cn(
+      !$connectedToRoom && 'min-h-40 flex flex-col justify-center',
+      !$connectedToRoom && !clientSteamId && 'min-h-35',
+    )}
+  >
+    <Alerts joinRoomCallback={joinRoom} />
+  </div>
+
   <div
     class={cn('flex w-full items-center', $connectedToRoom ? 'justify-center' : 'justify-between')}
   >
@@ -955,21 +964,23 @@
     {#if clientSteamId && socketUrl}
       <div
         class={cn(
-          'w-full',
-          !$connectedToRoom &&
-            'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
+          'w-full text-center',
+          // !$connectedToRoom &&
+          // 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
         )}
       >
-        {#if !$connectedToRoom && socketUrl}
-          <Label class="mb-2">Server IP:</Label>
-        {/if}
+        <div class="max-w-64 m-auto">
+          {#if !$connectedToRoom && socketUrl}
+            <Label class="mb-2 text-left">Server IP:</Label>
+          {/if}
 
-        {#if socketUrl}
-          <JoinRoom joinRoomCallback={joinRoom} disconnectRoomCallback={disconnectRoom} />
-        {/if}
+          {#if socketUrl}
+            <JoinRoom joinRoomCallback={joinRoom} disconnectRoomCallback={disconnectRoom} />
+          {/if}
+        </div>
 
         {#if !$connectedToRoom && socketUrl}
-          <div class={cn('w-full text-center text-gray-400 text-sm p-2')}>
+          <div class={cn('text-center text-gray-400 text-sm p-2')}>
             Region: <button
               class="text-gray-500 cursor-pointer hover:text-primary-600"
               onclick={() => {
@@ -993,7 +1004,6 @@
   {/if}
 
   {#if clientSteamId && socketUrl}
-    <Alerts joinRoomCallback={joinRoom} />
     <div class="m-2 overflow-hidden relative">
       {#if $roomCode}
         <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
