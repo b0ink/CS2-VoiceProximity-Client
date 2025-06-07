@@ -3,7 +3,6 @@ import { ServerConfigData } from './store/server-config';
 
 export interface Client {
   steamId: string;
-  clientId: string;
   isMuted: boolean;
 }
 
@@ -49,8 +48,6 @@ export interface JoinRoomData {
   token: string;
   roomCode: string;
   steamId: string;
-  clientId: string;
-  isHost: boolean;
   isMuted: boolean;
 }
 

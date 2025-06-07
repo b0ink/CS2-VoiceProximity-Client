@@ -492,10 +492,8 @@
       inStream.getAudioTracks()[0].enabled = false;
     }
 
-    // audioElements = {};
-    // TODO: call connect() when our lobby room code has been provided
-    // connect(currentLobby, )
-    connect($roomCode!, getSteamId()!, getSteamId()!, false);
+    // TODO: separate getUserMedia() and connect()
+    connect();
 
     // useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
 
@@ -706,31 +704,22 @@
     $socketClientMap = { ...$socketClientMap };
   };
 
-  const connect = (
-    lobbyCode: string,
-    playerId: string,
-    clientId: string,
-    isHost: boolean,
-  ): void => {
-    if (!clientToken) {
+  const connect = (): void => {
+    if (!clientToken || !clientSteamId) {
       window.api.reloadApp();
       return;
     }
 
-    console.log(`Connecting to ${lobbyCode} as ${clientId}`);
+    console.log(`Connecting to ${$roomCode} as ${clientSteamId}`);
 
     // $socket?.emit('leave');
-    // $socket?.emit('id', playerId, clientId);
+    // $socket?.emit('id', playerId);
 
     const joinRoomPayload: JoinRoomData = {
       token: clientToken,
-      roomCode: lobbyCode,
-      // TODO: combine steamid, clientid, ismuted with the Client object
-      steamId: playerId,
-      clientId: clientId, // TODO: deprecate clientId (only use steamId)
+      roomCode: $roomCode,
+      steamId: clientSteamId,
       isMuted: microphoneMuted,
-
-      isHost: isHost, // TODO: remove this
     };
 
     $socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
