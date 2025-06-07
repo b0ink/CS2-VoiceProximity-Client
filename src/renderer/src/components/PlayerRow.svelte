@@ -4,6 +4,7 @@
   import { MicrophoneSlashSolid, UserSolid } from 'flowbite-svelte-icons';
   import { onMount } from 'svelte';
   import { DEFAULT_PLAYER_VOLUME, MAX_PLAYER_VOLUME } from '@shared/types/store/settings';
+  import store from '@store/client';
   import { talkingIndicatorStore } from '@store/talking-indicators';
   import settings from '../store/settings';
   import { CsTeam } from '../type';
@@ -19,9 +20,11 @@
     team?: CsTeam;
     bandwidth: number | null;
   }
-  export let playerIsClient: boolean;
   export let player: PlayerData;
   export let onClick: () => void;
+
+  $: clientSteamId = $store.steamId;
+  $: playerIsClient = player.steamId === clientSteamId;
 
   let playerVolume: number;
 
