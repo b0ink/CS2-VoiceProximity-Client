@@ -1,7 +1,6 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
   import { Heading, Label } from 'flowbite-svelte';
-  import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
   import 'hacktimer';
   import Peer from 'simple-peer';
   import { io } from 'socket.io-client';
@@ -42,7 +41,9 @@
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import Alerts from './components/Alerts/Alerts.svelte';
   import JoinRoom from './components/JoinRoom.svelte';
+  import MicrophoneButton from './components/MicrophoneButton.svelte';
   import PlayerList from './components/PlayerList.svelte';
+  import SettingsButton from './components/SettingsButton.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
@@ -955,16 +956,8 @@
   >
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId && socketUrl}
-      <svelte:component
-        this={microphoneMuted ? MicrophoneSlashSolid : MicrophoneSolid}
-        onclick={() => (microphoneMuted ? unmuteMicrophone() : muteMicrophone())}
-        color={microphoneMuted ? 'red' : 'grey'}
-        class={cn(
-          'cursor-pointer z-20 select-none transition-all duration-300',
-          // 'absolute top-5.5 left-4',
-        )}
-        size="lg"
-      />
+      <MicrophoneButton {unmuteMicrophone} {muteMicrophone} />
+
       <div
         class={cn(
           'w-full',
@@ -993,20 +986,7 @@
       </div>
     {/if}
 
-    <CogSolid
-      onclick={() => {
-        $settingsOpen = !$settingsOpen;
-        $serverConfigOverlayOpen = false;
-      }}
-      color={$settingsOpen ? 'var(--color-primary-600)' : 'grey'}
-      class={cn(
-        'cursor-pointer z-20 select-none transition-all duration-300',
-        // clientSteamId || $settingsOpen ? 'top-7' : 'bottom-5.5',
-        !clientSteamId ? 'absolute top-7.5 right-5.5' : '',
-        $settingsOpen ? 'rotate-90' : 'rotate-0',
-      )}
-      size="lg"
-    />
+    <SettingsButton />
   </div>
   {#if !clientSteamId || !socketUrl}
     <Heading tag="h1" class="mb-4 text-xl font-extrabold z-5">CS2 Proximity Chat</Heading>
