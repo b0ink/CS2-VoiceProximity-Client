@@ -637,6 +637,13 @@ export class RemotePlayer {
       };
     }
 
+    if (occlusionQuality == OcclusionQuality.OFF) {
+      return {
+        occlusion: 0,
+        totalExtraHits: 0,
+      };
+    }
+
     // Ensure our widening isnt bigger than our playermodel (64; 32 from middle), otherwise itll pass through walls
     const SndOcclusonWidening = 31;
 
