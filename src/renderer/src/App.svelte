@@ -1032,7 +1032,7 @@
       ></div>
     </div>
 
-    {#if !!$roomCode && $connectedToRoom}
+    {#if $connectedToRoom}
       <PlayerList players={playerPositions}></PlayerList>
     {/if}
   {/if}

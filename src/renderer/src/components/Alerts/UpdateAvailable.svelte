@@ -6,7 +6,7 @@
 </script>
 
 {#if autoUpdateState !== null}
-  {#if autoUpdateState.state === 'available' && !!autoUpdateState.info}
+  {#if autoUpdateState.state === 'available' && autoUpdateState.info}
     <Alert color="lime" class="text-center mb-4 mt-4 w-full">
       <span class="font-medium">
         An update is available! v{autoUpdateState.info.version}
