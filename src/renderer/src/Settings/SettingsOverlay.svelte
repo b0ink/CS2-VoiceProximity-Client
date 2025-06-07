@@ -3,16 +3,14 @@
   import { Tooltip } from 'flowbite-svelte';
   import { onMount } from 'svelte';
   import { OcclusionQuality } from '@shared/types/store/settings';
+  import { serverConfigOverlayOpen, settingsOpen } from '@store/appStore';
   import store from '@store/client';
+  import { connectedToRoom } from '@store/playerStore';
   import settings from '@store/settings';
   import ChangeSocketServer from './ChangeSocketServer.svelte';
   import ClientInfo from './ClientInfo.svelte';
   import MuteShortcut from './MuteShortcut.svelte';
   import TestMicrophone from './TestMicrophone.svelte';
-
-  export let open: boolean;
-  export let serverConfigOpen: boolean;
-  export let serverConfigEnabled: boolean;
 
   $: socketUrl = $settings.socketServer;
   $: clientSteamId = $store.steamId;
@@ -173,7 +171,7 @@
   {/snippet}
 </Modal>
 
-{#if open}
+{#if $settingsOpen}
   <div
     class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
   >
@@ -181,14 +179,14 @@
       <Heading tag="h1" class="mb-6 text-xl font-extrabold">Settings</Heading>
     </div>
 
-    {#if serverConfigEnabled}
+    {#if $connectedToRoom}
       <div class="mb-4 w-full flex justify-center">
         <Button
           size="xs"
           class="cursor-pointer"
           onclick={() => {
-            serverConfigOpen = true;
-            open = false;
+            $serverConfigOverlayOpen = true;
+            $settingsOpen = false;
           }}>Server Config</Button
         >
       </div>
@@ -378,7 +376,7 @@
             await window.api.setStoreValue('steamId', null);
             await window.api.setStoreValue('token', null);
             window.api.reloadApp();
-            open = false;
+            $settingsOpen = false;
           }}>Sign Out</Button
         >
       {/if}

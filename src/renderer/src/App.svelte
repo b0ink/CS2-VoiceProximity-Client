@@ -20,7 +20,6 @@
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import type { ServerConfigData } from '@shared/types/store/server-config';
   import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
   import {
     currentTime,
@@ -944,38 +943,11 @@
     }
   }
 
-  function saveConfig(cfg: ServerConfigData): void {
-    if (!clientToken) {
-      return;
-    }
-    console.log(`Updating config with: ${JSON.stringify(cfg)}`);
-    $socket?.emit('update-config', {
-      config: cfg,
-      clientToken,
-    });
-    $serverConfigOverlayOpen = false;
-  }
-
   window.addEventListener('keydown', handleKeydown);
 </script>
 
-<!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
-<SettingsOverlay
-  bind:open={$settingsOpen}
-  bind:serverConfigOpen={$serverConfigOverlayOpen}
-  serverConfigEnabled={$connectedToRoom}
-/>
-
-{#if $serverConfigOverlayOpen}
-  <div
-    class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
-  >
-    <div class="text-center">
-      <Heading tag="h1" class="mb-4 text-xl font-extrabold">Server Config</Heading>
-    </div>
-    <ServerConfig isDisabled={!$clientIsAdmin} {saveConfig} />
-  </div>
-{/if}
+<SettingsOverlay />
+<ServerConfig />
 
 <div
   class={cn(
