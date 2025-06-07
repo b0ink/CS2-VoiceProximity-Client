@@ -1,6 +1,6 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
-  import { Alert, Button, ButtonGroup, Heading, Input, Label, Progressbar } from 'flowbite-svelte';
+  import { Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
   import {
     CogSolid,
     MicrophoneSlashSolid,
@@ -27,7 +27,6 @@
     nextServerRestart,
     serverConfigOverlayOpen,
     settingsOpen,
-    timeUntilRestart,
   } from '@store/appStore';
   import store from '@store/client';
   import { clientIsAdmin, connectedToRoom, detectedRoomCode, roomCode } from '@store/playerStore';
@@ -47,6 +46,7 @@
   import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
   import ServerConfig from './Settings/ServerConfig.svelte';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
+  import Alerts from './components/Alerts/Alerts.svelte';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
@@ -983,46 +983,6 @@
     (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full h-dvh',
   )}
 >
-  {#if autoUpdateState !== null}
-    {#if autoUpdateState.state === 'available' && !!autoUpdateState.info}
-      <Alert color="lime" class="text-center mb-4 mt-4 w-full">
-        <span class="font-medium">
-          An update is available! v{autoUpdateState.info.version}
-          <button
-            class="underline cursor-pointer hover:text-black"
-            onclick={() => {
-              window.api.downloadUpdate();
-            }}>Download now</button
-          >
-        </span>
-      </Alert>
-    {:else if autoUpdateState.state === 'error'}
-      <Alert color="red" class="text-center mb-4 mt-4 w-full">
-        <div class="font-medium">
-          Failed to download update. Please restart the app and try again.
-        </div>
-      </Alert>
-    {:else}
-      <Alert color="lime" class="text-center mb-4 mt-4 w-full">
-        <div class="font-medium mb-2">
-          {autoUpdateState?.state === 'downloading'
-            ? 'Downloading update...'
-            : 'Waiting for download...'}
-          {Math.floor(autoUpdateState.progress?.percent ?? 0)}%
-        </div>
-        <div class="font-medium mb-2">
-          ({Math.round((autoUpdateState.progress?.transferred ?? 0) / 1024 / 1024)}MB /
-          {Math.round((autoUpdateState.progress?.total ?? 0) / 1024 / 1024)}MB)
-        </div>
-        <Progressbar
-          animate
-          progress={autoUpdateState.progress?.percent ?? 0}
-          color={(autoUpdateState.progress?.percent ?? 0 < 100) ? 'blue' : 'lime'}
-        />
-      </Alert>
-    {/if}
-  {/if}
-
   <div
     class={cn('flex w-full items-center', $connectedToRoom ? 'justify-center' : 'justify-between')}
   >
@@ -1139,50 +1099,7 @@
   {/if}
 
   {#if clientSteamId && socketUrl}
-    {#if !$socketConnected}
-      <Alert color="yellow" class="text-center mb-4 mt-4">
-        <span class="font-medium">Connecting to the backend service...</span>
-      </Alert>
-    {/if}
-    {#if $detectedRoomCode && !$connectedToRoom && $timeUntilRestart <= 0 && !autoUpdateState}
-      <Alert color="green" class="text-center mb-4 mt-4">
-        <span class="font-medium">
-          You are connected to a server.<br />(Steam ID detected)<br />
-          <Button
-            color="lime"
-            class="cursor-pointer mt-2"
-            onclick={() => {
-              if ($detectedRoomCode) {
-                $roomCode = $detectedRoomCode;
-                joinRoom();
-              }
-            }}>Connect Now</Button
-          >
-        </span>
-      </Alert>
-    {/if}
-    {#if $nextServerRestart > Date.now() / 1000 && $timeUntilRestart >= 0}
-      <Alert color="orange" class="text-center mb-4 mt-4">
-        <span class="font-medium">
-          Voice server restarting in {Math.floor($timeUntilRestart)}s. <br />Rooms reconnect
-          automatically.
-        </span>
-      </Alert>
-    {/if}
-
-    {#if !$detectedRoomCode && !$connectedToRoom && $socketConnected && !autoUpdateState}
-      <div class="text-center text-gray-500 text-xs mt-12">
-        Join the CS2 Server to auto-retrieve the room code if Proximity Chat is enabled.
-      </div>
-    {/if}
-
-    {#if !turnUsername || !turnPassword}
-      <Alert color="orange" class="text-center mb-4 mt-4">
-        <span class="font-medium">Failed to fetch TURN credentials.</span>
-        <p>Please try logging out and back in, restarting the app, or try again later.</p>
-      </Alert>
-    {/if}
-
+    <Alerts joinRoomCallback={joinRoom} />
     <div class="m-2 overflow-hidden relative">
       {#if $roomCode}
         <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
