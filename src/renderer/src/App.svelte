@@ -9,24 +9,40 @@
   } from 'flowbite-svelte-icons';
   import 'hacktimer';
   import Peer from 'simple-peer';
-  import { Socket, io } from 'socket.io-client';
+  import { io } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
   import { type DefaultNotificationOptions, getNotificationsContext } from 'svelte-notifications';
   import * as THREE from 'three';
   import {
     type Client,
-    type ClientToServerEvents,
     type JoinRoomData,
     type JoinRoomResponse,
-    type ServerToClientEvents,
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
   import type { ServerConfigData } from '@shared/types/store/server-config';
   import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
+  import {
+    currentTime,
+    nextServerRestart,
+    serverConfigOverlayOpen,
+    settingsOpen,
+    timeUntilRestart,
+  } from '@store/appStore';
   import store from '@store/client';
+  import { clientIsAdmin, connectedToRoom, detectedRoomCode, roomCode } from '@store/playerStore';
   import serverConfigStore from '@store/server-config';
   import settings from '@store/settings';
+  import {
+    lastSocketException,
+    peerConnectingBandwidth,
+    peerConnections,
+    socket,
+    socketClientMap,
+    socketConnected,
+    steamIdSocketMap,
+  } from '@store/socketStore';
+  import { clientCamera, clientListener, remotePlayers, scene, threejs } from '@store/threeStore';
   import { RemotePlayer } from './RemotePlayer';
   import ChangeSocketServer from './Settings/ChangeSocketServer.svelte';
   import ServerConfig from './Settings/ServerConfig.svelte';
@@ -37,15 +53,7 @@
   import { transformVector } from './lib/vector';
   import { flipDoor, getMap, getMapDoors, getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
-  import {
-    type AudioConnectionStuff,
-    CsTeam,
-    type PeerConnectionBandwidth,
-    type PeerConnections,
-    type PlayerPositionApiData,
-    type SocketClientMap,
-    type SteamIdSocketMap,
-  } from './type';
+  import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
   import { decodePlayerData, decodeServerConfig } from './utils/decode';
   import { getUserAudio } from './utils/getUserAudio';
 
@@ -54,11 +62,6 @@
   const queueNotification = (options: DefaultNotificationOptions): void => {
     window.api.setStoreValue('notification', options);
   };
-
-  let settingsOpen: boolean;
-
-  let serverConfigOverlayOpen: boolean = false;
-  let clientIsAdmin: boolean = false;
 
   // Settings Store
   $: socketUrl = $settings.socketServer;
@@ -96,35 +99,7 @@
   // $: volumeDropoffFactor = $serverConfigStore.volumeDropoffFactor;
   // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
-  // The API will notify the client if they have joined a CS2 server but have not joined the room yet
-  let playerServerRoomCode: string | undefined;
-
-  // THREE
-  let clientCamera: THREE.PerspectiveCamera | undefined;
-  let scene: THREE.Scene;
-  let threejs: THREE.WebGLRenderer;
-  let clientListener: THREE.AudioListener;
-  let remotePlayers: Map<string, RemotePlayer | undefined> = new Map<string, RemotePlayer>();
-
-  let lastSocketException: number = 0;
-
   let playerPositions: PlayerPositionApiData[] = [];
-
-  let socket: Socket<ServerToClientEvents, ClientToServerEvents> | undefined;
-  let socketConnected = false;
-  let socketClientMap: SocketClientMap = {};
-  let steamIdSocketMap: SteamIdSocketMap = {};
-  let peerConnections: PeerConnections = {};
-  let peerConnectingBandwidth: PeerConnectionBandwidth = {};
-
-  let nextServerRestart: number = 0;
-  let currentTime = Date.now() / 1000;
-  $: timeUntilRestart = nextServerRestart - currentTime;
-
-  let roomCodeInput: string = '';
-  let roomCode: string | undefined;
-  let joinedRoom: boolean = false;
-  let currentLobby: string | undefined = '';
 
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
@@ -157,7 +132,7 @@
     audioConnectionStuff.toggleMute(false);
     window.api.setSettingsValue('micMuted', false);
     playSound(micUnmuteSound);
-    socket?.emit('microphone-state', { isMuted: false });
+    $socket?.emit('microphone-state', { isMuted: false });
   };
 
   const muteMicrophone = (): void => {
@@ -165,322 +140,318 @@
     if (!audioConnectionStuff.stream?.getAudioTracks()[0].enabled) {
       window.api.setSettingsValue('micMuted', true);
       playSound(micMuteSound);
-      socket?.emit('microphone-state', { isMuted: true });
+      $socket?.emit('microphone-state', { isMuted: true });
     }
   };
 
+  let initialised: boolean = false;
   async function intialise(): Promise<void> {
-    if (clientSteamId && socketUrl && !scene && clientToken) {
-      const threeJsDom = document.querySelector('#threejs');
-      // Ensure dom is available
-      if (!threeJsDom) {
+    if (!clientSteamId || !socketUrl || !clientToken) {
+      return;
+    }
+
+    // Ensure dom is available
+    const threeJsDom = document.querySelector('#threejs');
+    if (!threeJsDom) {
+      return;
+    }
+
+    if (initialised) {
+      return;
+    }
+
+    initialised = true;
+
+    $clientCamera.add($clientListener);
+
+    initializeRenderer();
+
+    await window.api.retrieveTurnCredentials();
+    console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
+
+    $socket = io(socketUrl, {
+      auth: {
+        token: clientToken,
+      },
+    });
+
+    $socket.on('exception', (error: SocketApiError) => {
+      $lastSocketException = Date.now() / 1000;
+
+      queueNotification({
+        text: error.message || 'An error occurred.',
+        position: 'top-center',
+        removeAfter: 5000,
+        type: 'error',
+      });
+
+      if (error.code === SocketApiErrorType.AuthExpired) {
+        window.api.setStoreValue('steamId', null);
+        window.api.setStoreValue('token', null);
+        window.api.reloadApp();
+      }
+    });
+
+    $socket.on('connect', () => {
+      $socketConnected = true;
+      console.log(`$socket.on('connect'): my socket id is ${$socket?.id}`);
+      if (tryReconnectRoom && savedRoomCode && $roomCode === savedRoomCode) {
+        setTimeout(() => {
+          // We just hope that the plugin on the CS2 server has connected before we do to ensure the room is active
+          joinRoom();
+          removeNotification('lost-connection');
+        }, 1000);
+      }
+      window.api.setStoreValue('tryReconnectRoom', false);
+    });
+
+    $socket.on('disconnect', async () => {
+      console.log(`$socket.on('disconnect') Lost connection to the socket server`);
+
+      const timeSinceLastSocketException: number = Date.now() / 1000 - $lastSocketException;
+
+      const notification = (await window.api.getStore()).notification;
+      if (!notification || timeSinceLastSocketException > 5) {
+        queueNotification({
+          id: 'lost-connection',
+          text: 'Lost connection to the socket server. Application restarted.',
+          position: 'top-center',
+          removeAfter: 2500,
+          type: 'warning',
+        });
+      }
+
+      // attempt to reconnect to the room if we havent had any other exceptions from the socket
+      if (timeSinceLastSocketException > 5 && $connectedToRoom && $socketConnected) {
+        window.api.setStoreValue('tryReconnectRoom', true);
+      }
+
+      $socketConnected = false;
+
+      window.api.reloadApp();
+    });
+
+    // eslint-disable-next-line no-undef
+    let clearDetectedRoomCodeTimeout: NodeJS.Timeout;
+
+    $socket.on('player-on-server', (data) => {
+      console.log(`$socket.on('player-on-server', ${JSON.stringify(data)})`);
+      $detectedRoomCode = data.roomCode;
+      clearTimeout(clearDetectedRoomCodeTimeout);
+
+      // The server will notify the user every 5 seconds, we clear the room code if no subsequent updates after 6 seconds
+      clearDetectedRoomCodeTimeout = setTimeout(() => {
+        $detectedRoomCode = undefined;
+        clearTimeout(clearDetectedRoomCodeTimeout);
+      }, 6000);
+    });
+
+    // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
+    // uiScene_ = new THREE.Scene();
+
+    // const axesHelper = new THREE.AxesHelper(50);
+    // $scene.add(axesHelper);
+
+    // TODO: one time notification when logging in for the first time
+    // addNotification({
+    //   text: 'Successfully authenticated',
+    //   position: 'top-center',
+    //   removeAfter: 2500,
+    //   type: 'success',
+    // });
+
+    // Log if we're receiving packets from remote stream
+    setInterval(() => {
+      Object.entries($peerConnections).forEach(([id, pc]) => {
+        const rtcPeer = (pc as any)._pc;
+        if (!rtcPeer) return;
+
+        rtcPeer.getStats().then((stats) => {
+          stats.forEach((report) => {
+            if (report.type === 'inbound-rtp' && report.kind === 'audio') {
+              // console.log(
+              //   `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
+              // );
+              if (!$peerConnectingBandwidth[id]) {
+                $peerConnectingBandwidth[id] = 0;
+              }
+              $peerConnectingBandwidth[id] = report.bytesReceived;
+            }
+          });
+        });
+      });
+      $peerConnectingBandwidth = { ...$peerConnectingBandwidth };
+    }, 1000);
+
+    $socket?.on('server-restart-warning', (data) => {
+      const secondsRemaining = (data.minutes ?? 1) * 60;
+      console.log(
+        `$socket.on('server-restart-warning'): Server will restart in ${secondsRemaining} seconds`,
+      );
+      $nextServerRestart = Date.now() / 1000 + secondsRemaining;
+    });
+
+    $socket?.on('muted-by-server-admin', () => {
+      console.log(`$socket.on('muted-by-server-admin'):`);
+      muteMicrophone();
+    });
+
+    $socket?.on('current-map', async (mapName) => {
+      console.log(`$socket.on('current-map'): ${mapName}`);
+      await initializeMap($scene, mapName);
+    });
+
+    $socket?.on('server-config', async (data: Buffer) => {
+      console.log(`$socket.on('server-config'): ${data}`);
+      const serverConfig = decodeServerConfig(data);
+      console.log(`$socket.on('server-config'):`, serverConfig);
+      if (JSON.stringify(serverConfig) !== JSON.stringify($serverConfigStore)) {
+        addNotification({
+          text: `Proximity config updated`,
+          position: 'top-center',
+          removeAfter: 1500,
+          type: 'success',
+        });
+      }
+      serverConfigStore.set({
+        ...serverConfig,
+      });
+    });
+
+    $socket?.on('microphone-state', (socketId: string, isMuted: boolean) => {
+      console.log(`$socket.on(microphone-state): ${socketId}  isMuted: ${isMuted}`);
+      const client = $socketClientMap[socketId];
+      if (client) {
+        client.isMuted = isMuted;
+      } else {
+        console.error(
+          `$socket.on(microphone-state): Tried to update microphone-state for an unknown socket ${socketId}`,
+        );
+      }
+    });
+
+    $socket?.on('door-rotation', (data) => {
+      // console.log(`$socket.on('door-rotation'): ${JSON.stringify(data)}`);
+      const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
+      flipDoor(origin, data.rotation);
+    });
+
+    // $socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
+    $socket?.on('player-positions', (data) => {
+      if (!$connectedToRoom) {
         return;
       }
 
-      threejs = new THREE.WebGLRenderer({
-        antialias: false,
-      });
-      scene = new THREE.Scene();
-      clientListener = new THREE.AudioListener();
+      const mySocketId = $socket?.id;
+      if (!mySocketId) {
+        return;
+      }
 
-      const fov = 60;
-      const aspect = 1920 / 1080;
-      const near = 1.0;
-      const far = 650.0;
-      clientCamera = new THREE.PerspectiveCamera(fov, aspect, near, far);
-      clientCamera.position.set(-30, 2, 0);
+      playerPositions = decodePlayerData(data);
+      // console.log(playerPositions);
 
-      clientCamera.add(clientListener);
+      const me = playerPositions.find((player) => player.steamId === getSteamId());
 
-      initializeRenderer();
+      let spectatedPlayerPosition: THREE.Vector3 | null;
+      let hasSpectatedPosition = false;
 
-      await window.api.retrieveTurnCredentials();
-      console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
-
-      socket = io(socketUrl, {
-        auth: {
-          token: clientToken,
-        },
-      });
-
-      socket!.on('exception', (error: SocketApiError) => {
-        lastSocketException = Date.now() / 1000;
-
-        queueNotification({
-          text: error.message || 'An error occurred.',
-          position: 'top-center',
-          removeAfter: 5000,
-          type: 'error',
-        });
-
-        if (error.code === SocketApiErrorType.AuthExpired) {
-          window.api.setStoreValue('steamId', null);
-          window.api.setStoreValue('token', null);
-          window.api.reloadApp();
-        }
-      });
-
-      socket.on('connect', () => {
-        socketConnected = true;
-        console.log(`socket.on('connect'): my socket id is ${socket?.id}`);
-        if (tryReconnectRoom && savedRoomCode && roomCodeInput === savedRoomCode) {
-          setTimeout(() => {
-            // We just hope that the plugin on the CS2 server has connected before we do to ensure the room is active
-            joinRoom();
-            removeNotification('lost-connection');
-          }, 1000);
-        }
-        window.api.setStoreValue('tryReconnectRoom', false);
-      });
-
-      socket.on('disconnect', async () => {
-        console.log(`socket.on('disconnect') Lost connection to the socket server`);
-
-        const timeSinceLastSocketException: number = Date.now() / 1000 - lastSocketException;
-
-        const notification = (await window.api.getStore()).notification;
-        if (!notification || timeSinceLastSocketException > 5) {
-          queueNotification({
-            id: 'lost-connection',
-            text: 'Lost connection to the socket server. Application restarted.',
-            position: 'top-center',
-            removeAfter: 2500,
-            type: 'warning',
-          });
-        }
-
-        // attempt to reconnect to the room if we havent had any other exceptions from the socket
-        if (timeSinceLastSocketException > 5 && joinedRoom && socketConnected) {
-          window.api.setStoreValue('tryReconnectRoom', true);
-        }
-
-        socketConnected = false;
-
-        window.api.reloadApp();
-      });
-
-      // eslint-disable-next-line no-undef
-      let clearPlayerServerRoomCode: NodeJS.Timeout;
-
-      socket.on('player-on-server', (data: { roomCode: string }) => {
-        console.log(`socket.on('player-on-server', ${JSON.stringify(data)})`);
-        playerServerRoomCode = data.roomCode;
-        clearTimeout(clearPlayerServerRoomCode);
-
-        // The server will notify the user every 5 seconds, we clear the room code if no subsequent updates after 6 seconds
-        clearPlayerServerRoomCode = setTimeout(() => {
-          playerServerRoomCode = undefined;
-          clearTimeout(clearPlayerServerRoomCode);
-        }, 6000);
-      });
-
-      // uiCamera_ = new THREE.OrthographicCamera(-1, 1, 1 * aspect, -1 * aspect, 1, 1000);
-      // uiScene_ = new THREE.Scene();
-
-      // const axesHelper = new THREE.AxesHelper(50);
-      // scene.add(axesHelper);
-
-      // TODO: one time notification when logging in for the first time
-      // addNotification({
-      //   text: 'Successfully authenticated',
-      //   position: 'top-center',
-      //   removeAfter: 2500,
-      //   type: 'success',
-      // });
-
-      // Log if we're receiving packets from remote stream
-      setInterval(() => {
-        Object.entries(peerConnections).forEach(([id, pc]) => {
-          const rtcPeer = (pc as any)._pc;
-          if (!rtcPeer) return;
-
-          rtcPeer.getStats().then((stats) => {
-            stats.forEach((report) => {
-              if (report.type === 'inbound-rtp' && report.kind === 'audio') {
-                // console.log(
-                //   `Peer ${id} - packetsReceived: ${report.packetsReceived}, bytesReceived: ${report.bytesReceived}, jitter: ${report.jitter}`,
-                // );
-                if (!peerConnectingBandwidth[id]) {
-                  peerConnectingBandwidth[id] = 0;
-                }
-                peerConnectingBandwidth[id] = report.bytesReceived;
-              }
-            });
-          });
-        });
-        peerConnectingBandwidth = { ...peerConnectingBandwidth };
-      }, 1000);
-
-      socket?.on('server-restart-warning', (data) => {
-        const secondsRemaining = (data.minutes ?? 1) * 60;
-        console.log(
-          `socket.on('server-restart-warning'): Server will restart in ${secondsRemaining} seconds`,
-        );
-        nextServerRestart = Date.now() / 1000 + secondsRemaining;
-      });
-
-      socket?.on('muted-by-server-admin', () => {
-        console.log(`socket.on('muted-by-server-admin'):`);
-        muteMicrophone();
-      });
-
-      socket?.on('current-map', async (mapName) => {
-        console.log(`socket.on('current-map'): ${mapName}`);
-        await initializeMap(scene, mapName);
-      });
-
-      socket?.on('server-config', async (data: Buffer) => {
-        console.log(`socket.on('server-config'): ${data}`);
-        const serverConfig = decodeServerConfig(data);
-        console.log(`socket.on('server-config'):`, serverConfig);
-        if (JSON.stringify(serverConfig) !== JSON.stringify($serverConfigStore)) {
-          addNotification({
-            text: `Proximity config updated`,
-            position: 'top-center',
-            removeAfter: 1500,
-            type: 'success',
-          });
-        }
-        serverConfigStore.set({
-          ...serverConfig,
-        });
-      });
-
-      socket?.on('microphone-state', (socketId: string, isMuted: boolean) => {
-        console.log(`socket.on(microphone-state): ${socketId}  isMuted: ${isMuted}`);
-        const client = socketClientMap[socketId];
-        if (client) {
-          client.isMuted = isMuted;
-        } else {
-          console.error(
-            `socket.on(microphone-state): Tried to update microphone-state for an unknown socket ${socketId}`,
-          );
-        }
-      });
-
-      socket?.on('door-rotation', (data) => {
-        // console.log(`socket.on('door-rotation'): ${JSON.stringify(data)}`);
-        const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
-        flipDoor(origin, data.rotation);
-      });
-
-      // socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
-      socket?.on('player-positions', (data) => {
-        if (!joinedRoom) {
-          return;
-        }
-
-        const mySocketId = socket?.id;
-        if (!mySocketId) {
-          return;
-        }
-
-        playerPositions = decodePlayerData(data);
-        // console.log(playerPositions);
-
-        const me = playerPositions.find((player) => player.steamId === getSteamId());
-
-        let spectatedPlayerPosition: THREE.Vector3 | null;
-        let hasSpectatedPosition = false;
-
-        // Get the position of the player being spectated
-        if (me) {
-          for (const player of playerPositions) {
-            if (player.steamId === getSteamId()) {
-              clientIsAdmin = player.isAdmin ?? false;
-              if (!me.isAlive) {
-                const playerOrigin = new THREE.Vector3(
-                  player.originX,
-                  player.originY,
-                  player.originZ,
-                );
-                spectatedPlayerPosition = playerOrigin;
-                hasSpectatedPosition = true;
-                break;
-              }
+      // Get the position of the player being spectated
+      if (me) {
+        for (const player of playerPositions) {
+          if (player.steamId === getSteamId()) {
+            $clientIsAdmin = player.isAdmin ?? false;
+            if (!me.isAlive) {
+              const playerOrigin = new THREE.Vector3(
+                player.originX,
+                player.originY,
+                player.originZ,
+              );
+              spectatedPlayerPosition = playerOrigin;
+              hasSpectatedPosition = true;
+              break;
             }
           }
         }
+      }
 
-        for (const player of playerPositions) {
-          const steamId = player.steamId;
-          if (!steamId) {
+      for (const player of playerPositions) {
+        const steamId = player.steamId;
+        if (!steamId) {
+          continue;
+        }
+        const playerOrigin = new THREE.Vector3(player.originX, player.originY, player.originZ);
+        const playerLookAt = new THREE.Vector3(player.lookAtX, player.lookAtY, player.lookAtZ);
+
+        const transformedOrigin = transformVector(playerOrigin);
+        const transformedLookAt = transformVector(playerLookAt);
+
+        // TODO: will tweening the camera to the next position smooth out the audio glitches?
+        // new TWEEN.Tween(camera_.position)
+        //   .to(position, 1)
+        //   .easing(TWEEN.Easing.Cubic)
+        //   .start();
+
+        if (steamId === getSteamId()) {
+          $clientCamera?.position.set(
+            transformedOrigin.x,
+            transformedOrigin.y,
+            transformedOrigin.z,
+          );
+          $clientCamera?.lookAt(transformedLookAt);
+        } else {
+          const positionalSound = $remotePlayers.get(steamId);
+
+          if (!positionalSound) {
             continue;
           }
-          const playerOrigin = new THREE.Vector3(player.originX, player.originY, player.originZ);
-          const playerLookAt = new THREE.Vector3(player.lookAtX, player.lookAtY, player.lookAtZ);
 
-          const transformedOrigin = transformVector(playerOrigin);
-          const transformedLookAt = transformVector(playerLookAt);
+          positionalSound.playerIsAlive = player.isAlive ?? false;
 
-          // TODO: will tweening the camera to the next position smooth out the audio glitches?
-          // new TWEEN.Tween(camera_.position)
-          //   .to(position, 1)
-          //   .easing(TWEEN.Easing.Cubic)
-          //   .start();
+          if (
+            me &&
+            !player.isAlive && // player is dead
+            (me.isAlive || // mute if im alive (don't want to hear any dead players)
+              player.team !== me.team || // or if the player is an enemy
+              allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
+            (!player.spectatingC4 || !allowSpectatorC4Voice) && // and if they're not spectating the c4, and spectators are allowed to communicate from c4
+            !(player.team === CsTeam.Spectator && spectatorsCanTalk) // and if they're a spectator and spectators cant talk
+          ) {
+            // convert seconds to ms
+            positionalSound.Mute(deadPlayerMuteDelay * 1000);
+          } else {
+            positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
+          }
 
-          if (steamId === getSteamId()) {
-            clientCamera?.position.set(
+          const sameTeamAndDead = !player.isAlive && player.team === me?.team;
+
+          const playerIsBeingSpectated =
+            hasSpectatedPosition && playerOrigin.distanceTo(spectatedPlayerPosition!) <= 10;
+
+          if (me && !me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
+            positionalSound.SwitchToMono(player.isAlive ?? false);
+            positionalSound.setMonoHighPassFilterFrequency(
+              player.isAlive ? 100 : deadVoiceFilterFrequency,
+            );
+          } else {
+            positionalSound.SwitchToStereo();
+          }
+
+          if (positionalSound.playerObject) {
+            positionalSound.playerObject?.position.set(
               transformedOrigin.x,
               transformedOrigin.y,
               transformedOrigin.z,
             );
-            clientCamera?.lookAt(transformedLookAt);
+            positionalSound.playerObject?.lookAt(transformedLookAt);
           } else {
-            const positionalSound = remotePlayers.get(steamId);
-
-            if (!positionalSound) {
-              continue;
-            }
-
-            positionalSound.playerIsAlive = player.isAlive ?? false;
-
-            if (
-              me &&
-              !player.isAlive && // player is dead
-              (me.isAlive || // mute if im alive (don't want to hear any dead players)
-                player.team !== me.team || // or if the player is an enemy
-                allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
-              (!player.spectatingC4 || !allowSpectatorC4Voice) && // and if they're not spectating the c4, and spectators are allowed to communicate from c4
-              !(player.team === CsTeam.Spectator && spectatorsCanTalk) // and if they're a spectator and spectators cant talk
-            ) {
-              // convert seconds to ms
-              positionalSound.Mute(deadPlayerMuteDelay * 1000);
-            } else {
-              positionalSound.Unmute(); // unmute if player is alive, or we're both dead and on the same team
-            }
-
-            const sameTeamAndDead = !player.isAlive && player.team === me?.team;
-
-            const playerIsBeingSpectated =
-              hasSpectatedPosition && playerOrigin.distanceTo(spectatedPlayerPosition!) <= 10;
-
-            if (me && !me.isAlive && (playerIsBeingSpectated || sameTeamAndDead)) {
-              positionalSound.SwitchToMono(player.isAlive ?? false);
-              positionalSound.setMonoHighPassFilterFrequency(
-                player.isAlive ? 100 : deadVoiceFilterFrequency,
-              );
-            } else {
-              positionalSound.SwitchToStereo();
-            }
-
-            if (positionalSound.playerObject) {
-              positionalSound.playerObject?.position.set(
-                transformedOrigin.x,
-                transformedOrigin.y,
-                transformedOrigin.z,
-              );
-              positionalSound.playerObject?.lookAt(transformedLookAt);
-            } else {
-              console.warn(`No soundObjSource for steam ${steamId}`);
-            }
-            // break;
+            console.warn(`No soundObjSource for steam ${steamId}`);
           }
+          // break;
         }
+      }
 
-        renderFrame(threejs, scene, clientCamera, settingsOpen, updateSoundFilters);
-      });
-    }
+      renderFrame($threejs, $scene, $clientCamera, $settingsOpen, updateSoundFilters);
+    });
   }
 
   const getSteamId = (): string | null => {
@@ -530,7 +501,7 @@
     // audioElements = {};
     // TODO: call connect() when our lobby room code has been provided
     // connect(currentLobby, )
-    connect(roomCode!, getSteamId()!, getSteamId()!, false);
+    connect($roomCode!, getSteamId()!, getSteamId()!, false);
 
     // useTurnConfig = await window.api.getSettingsValue('natFixEnabled', true);
 
@@ -553,8 +524,8 @@
 
       // Cleanup any leftover data from this steamid first before initialising it again
       const incomingClient = client;
-      if (incomingClient.steamId && steamIdSocketMap[incomingClient.steamId]) {
-        const oldSocketId = steamIdSocketMap[incomingClient.steamId];
+      if (incomingClient.steamId && $steamIdSocketMap[incomingClient.steamId]) {
+        const oldSocketId = $steamIdSocketMap[incomingClient.steamId];
         cleanupUser(oldSocketId, incomingClient);
       }
       // disconnectClient(client); // TODO:
@@ -609,14 +580,14 @@
       //   return connections;
       // });
 
-      socketClientMap[peer] = client;
-      peerConnections[peer] = connection;
-      steamIdSocketMap[client.steamId] = peer;
+      $socketClientMap[peer] = client;
+      $peerConnections[peer] = connection;
+      $steamIdSocketMap[client.steamId] = peer;
 
       // Trigger reactive state
-      peerConnections = { ...peerConnections };
-      socketClientMap = { ...socketClientMap };
-      steamIdSocketMap = { ...steamIdSocketMap };
+      $peerConnections = { ...$peerConnections };
+      $socketClientMap = { ...$socketClientMap };
+      $steamIdSocketMap = { ...$steamIdSocketMap };
 
       console.log(`Assigning ${peer} to ${client.steamId}`);
 
@@ -639,7 +610,7 @@
 
       connection.on('signal', (data) => {
         console.log(`connection.on('signal'): ${JSON.stringify(data)}`);
-        socket?.emit('signal', {
+        $socket?.emit('signal', {
           data,
           to: peer,
         });
@@ -654,8 +625,8 @@
 
       connection.on('error', (error: Error) => {
         console.log(`connection.on('error'): ${JSON.stringify(error)}`);
-        peerConnectingBandwidth[peer] = 0;
-        // cleanupUser(peer, socketClientMap[peer]);
+        $peerConnectingBandwidth[peer] = 0;
+        // cleanupUser(peer, $socketClientMap[peer]);
 
         if ('code' in error && error.code !== 'ERR_DATA_CHANNEL') {
           // TODO: play a disconnect sound effect so that user is aware mid game
@@ -672,76 +643,73 @@
       return connection;
     };
 
-    socket?.on('user-joined', async (peer: string, client: Client) => {
-      console.log(`socket.on('user-joined') ${peer} ${JSON.stringify(client)}`);
+    $socket?.on('user-joined', async (peer: string, client: Client) => {
+      console.log(`$socket.on('user-joined') ${peer} ${JSON.stringify(client)}`);
 
       // TODO: validate turn credentials on the front end to make sure they're not expired, only fetch from main process when necessary
       // await window.api.retrieveTurnCredentials();
       playSound(userJoinSound);
 
-      socketClientMap[peer] = client;
-      socketClientMap = { ...socketClientMap };
+      $socketClientMap[peer] = client;
+      $socketClientMap = { ...$socketClientMap };
 
       createPeerConnection(peer, true, client);
     });
 
-    socket?.on('user-left', async (peer: string, client: Client) => {
+    $socket?.on('user-left', async (peer: string, client: Client) => {
       playSound(userLeftSound);
 
-      console.log(`socket.on('user-left') ${peer} ${client.steamId}`);
+      console.log(`$socket.on('user-left') ${peer} ${client.steamId}`);
       cleanupUser(peer, client);
     });
 
-    socket?.on(
-      'signal',
-      ({ data, from, client }: { data: Peer.SignalData; from: string; client: Client }) => {
-        console.log(`1. socket.on('signal') ${client.steamId} ${from} ${JSON.stringify(data)}`);
-        console.log(`2. socket.on('signal') ${JSON.stringify(data)}`);
-        let connection: Peer.Instance;
-        if (!socketClientMap[from]) {
+    $socket?.on('signal', ({ data, from, client }) => {
+      console.log(`1. $socket.on('signal') ${client.steamId} ${from} ${JSON.stringify(data)}`);
+      console.log(`2. $socket.on('signal') ${JSON.stringify(data)}`);
+      let connection: Peer.Instance;
+      if (!$socketClientMap[from]) {
+        console.error(
+          `$socket.on('signal'): (unknown socket) peer: ${from} - ${$socketClientMap[from]}`,
+        );
+        return;
+      }
+      if (Object.prototype.hasOwnProperty.call(data, 'type')) {
+        if ($peerConnections[from] && data.type !== 'offer') {
+          connection = $peerConnections[from];
+        } else {
+          connection = createPeerConnection(from, false, client);
+        }
+        if (connection && !connection.destroyed) {
+          connection.signal(data);
+        } else {
+          addNotification({
+            text: `Failed to crete peer connection with ${client.steamId}`,
+            position: 'top-center',
+            removeAfter: 5000,
+            type: 'warning',
+          });
           console.error(
-            `socket.on('signal'): (unknown socket) peer: ${from} - ${socketClientMap[from]}`,
+            `$socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
           );
-          return;
         }
-        if (Object.prototype.hasOwnProperty.call(data, 'type')) {
-          if (peerConnections[from] && data.type !== 'offer') {
-            connection = peerConnections[from];
-          } else {
-            connection = createPeerConnection(from, false, client);
-          }
-          if (connection && !connection.destroyed) {
-            connection.signal(data);
-          } else {
-            addNotification({
-              text: `Failed to crete peer connection with ${client.steamId}`,
-              position: 'top-center',
-              removeAfter: 5000,
-              type: 'warning',
-            });
-            console.error(
-              `socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
-            );
-          }
-        }
-      },
-    );
+      }
+    });
   };
 
   const cleanupUser = (peer: string, client: Client): void => {
     console.log(`Cleaning up user data for ${client.steamId}`);
-    const positionalSound = remotePlayers.get(client.steamId);
+    const positionalSound = $remotePlayers.get(client.steamId);
     if (positionalSound) {
-      console.log('found sound source removing from scene');
+      console.log('found sound source removing from $scene');
       positionalSound.disconnect();
-      remotePlayers.delete(client.steamId);
+      $remotePlayers.delete(client.steamId);
     }
 
-    peerConnections[peer]?.destroy();
-    delete peerConnections[peer];
-    delete socketClientMap[peer];
-    peerConnections = { ...peerConnections };
-    socketClientMap = { ...socketClientMap };
+    $peerConnections[peer]?.destroy();
+    delete $peerConnections[peer];
+    delete $socketClientMap[peer];
+    $peerConnections = { ...$peerConnections };
+    $socketClientMap = { ...$socketClientMap };
   };
 
   const connect = (
@@ -755,90 +723,76 @@
       return;
     }
 
-    // setOtherVAD({});
-    // setOtherTalking({}); // probably used for talking indicators?
-    if (lobbyCode === 'MENU') {
-      console.log('lobby code is menu?');
-      // Object.keys(peerConnections).forEach((k) => {
-      //   disconnectPeer(k);
-      // });
-      // setSocketClients({});
-      socketClientMap = {};
-      currentLobby = lobbyCode;
-    } else if (currentLobby !== lobbyCode) {
-      console.log(`Connecting to ${lobbyCode} as ${clientId}`);
+    console.log(`Connecting to ${lobbyCode} as ${clientId}`);
 
-      // socket?.emit('leave');
-      // socket?.emit('id', playerId, clientId);
+    // $socket?.emit('leave');
+    // $socket?.emit('id', playerId, clientId);
 
-      const joinRoomPayload: JoinRoomData = {
-        token: clientToken,
-        roomCode: lobbyCode,
-        // TODO: combine steamid, clientid, ismuted with the Client object
-        steamId: playerId,
-        clientId: clientId, // TODO: deprecate clientId (only use steamId)
-        isMuted: microphoneMuted,
+    const joinRoomPayload: JoinRoomData = {
+      token: clientToken,
+      roomCode: lobbyCode,
+      // TODO: combine steamid, clientid, ismuted with the Client object
+      steamId: playerId,
+      clientId: clientId, // TODO: deprecate clientId (only use steamId)
+      isMuted: microphoneMuted,
 
-        isHost: isHost, // TODO: remove this
-      };
+      isHost: isHost, // TODO: remove this
+    };
 
-      socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
-        console.log(`socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
-        console.log(JSON.stringify(response));
-        if (response.success) {
-          socketClientMap = {
-            ...socketClientMap,
-            ...response.joinedClients,
-          };
-          currentLobby = lobbyCode;
-          document.querySelector('#threejs')!.innerHTML = '';
-          initializeRenderer();
-          await initializeMap(scene, response.mapName ?? 'de_dust2');
-          if (response.serverConfig) {
-            serverConfigStore.set({
-              ...response.serverConfig,
-            });
-          }
-          playSound(userJoinSound);
-          joinedRoom = true;
-        } else {
-          roomCode = undefined;
-          currentLobby = undefined;
-          // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
-
-          if (
-            response.message.indexOf('Token has expired') !== -1 ||
-            response.message.indexOf('Invalid steamId') !== -1 ||
-            response.message.indexOf('Invalid token') !== -1
-          ) {
-            window.api.setStoreValue('steamId', null);
-            window.api.setStoreValue('token', null);
-            queueNotification({
-              text: 'Authentication expired',
-              position: 'top-center',
-              removeAfter: 5000,
-              type: 'error',
-            });
-          } else {
-            queueNotification({
-              text: response.message,
-              position: 'top-center',
-              removeAfter: 2500,
-              type: 'error',
-            });
-          }
-          // TODO: so if you try joining a room that doesnt exist, and then join a room that does exist, the receiving peers will receive an error saying that our peer is already destroyed
-          // TODO: reloading the app is a hotfix, but will need to be addressed once we refactor how and when we call getUserMedia
-          window.api.reloadApp();
+    $socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
+      console.log(`$socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
+      console.log(JSON.stringify(response));
+      if (response.success) {
+        $socketClientMap = {
+          ...$socketClientMap,
+          ...response.joinedClients,
+        };
+        document.querySelector('#threejs')!.innerHTML = '';
+        initializeRenderer();
+        await initializeMap($scene, response.mapName ?? 'de_dust2');
+        if (response.serverConfig) {
+          serverConfigStore.set({
+            ...response.serverConfig,
+          });
         }
-      });
-    }
+        playSound(userJoinSound);
+        $connectedToRoom = true;
+      } else {
+        $connectedToRoom = false;
+        // TODO: check for error codes, reload the app if not authenticated, only give error if room doesn't exist etc
+
+        if (
+          response.message.indexOf('Token has expired') !== -1 ||
+          response.message.indexOf('Invalid steamId') !== -1 ||
+          response.message.indexOf('Invalid token') !== -1
+        ) {
+          window.api.setStoreValue('steamId', null);
+          window.api.setStoreValue('token', null);
+          queueNotification({
+            text: 'Authentication expired',
+            position: 'top-center',
+            removeAfter: 5000,
+            type: 'error',
+          });
+        } else {
+          queueNotification({
+            text: response.message,
+            position: 'top-center',
+            removeAfter: 2500,
+            type: 'error',
+          });
+        }
+        // TODO: so if you try joining a room that doesnt exist, and then join a room that does exist, the receiving peers will receive an error saying that our peer is already destroyed
+        // TODO: reloading the app is a hotfix, but will need to be addressed once we refactor how and when we call getUserMedia
+        window.api.reloadApp();
+      }
+    });
   };
 
   const updateSoundFilters = (): void => {
     const map = getMap();
     if (map) {
-      for (const soundData of remotePlayers.values()) {
+      for (const soundData of $remotePlayers.values()) {
         soundData?.updateFilters(
           [map, ...getMapDoors()],
           occlusionQuality,
@@ -850,7 +804,7 @@
   };
 
   const updateGainFilters = (): void => {
-    for (const soundData of remotePlayers.values()) {
+    for (const soundData of $remotePlayers.values()) {
       if (soundData?.steamId !== undefined) {
         const gainAmount = playerVolumes[soundData?.steamId] ?? DEFAULT_PLAYER_VOLUME;
         // console.log(gainAmount);
@@ -863,21 +817,21 @@
     const remotePlayer = new RemotePlayer(
       remoteStream,
       client,
-      clientCamera!,
-      scene,
-      clientListener,
+      $clientCamera!,
+      $scene,
+      $clientListener,
     );
-    remotePlayers.set(client.steamId, remotePlayer);
+    $remotePlayers.set(client.steamId, remotePlayer);
     updateGainFilters();
     console.log(`Creating remote player: ${client.steamId}`);
   };
 
   const initializeRenderer = (): void => {
-    if (!threejs) {
+    if (!$threejs) {
       console.error(`threeJs is not available yet.`);
       return;
     }
-    threejs.autoClear = true;
+    $threejs.autoClear = true;
 
     const threeJsDom = document.querySelector('#threejs');
     if (!threeJsDom) {
@@ -885,25 +839,24 @@
       return;
     }
 
-    threeJsDom.appendChild(threejs.domElement);
+    threeJsDom.appendChild($threejs.domElement);
   };
 
   const joinRoom = (): void => {
-    if (roomCode && socketUrl && clientSteamId && clientToken) {
+    if ($connectedToRoom && socketUrl && clientSteamId && clientToken) {
       return;
     }
-    playerServerRoomCode = undefined;
 
-    // const roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
-    const code = roomCodeInput;
-    console.log(`Attempting to join room code ${code}`);
+    $detectedRoomCode = undefined;
 
-    if (code) {
-      roomCode = code;
+    // const $roomCode = (document.getElementById('room-code') as HTMLInputElement).value;
+    console.log(`Attempting to join room code ${$roomCode}`);
+
+    if ($roomCode) {
       initUserMedia();
-      window.api.setStoreValue('savedRoomCode', roomCode);
+      window.api.setStoreValue('savedRoomCode', $roomCode);
     } else {
-      roomCode = undefined;
+      $connectedToRoom = false;
       console.log('invalid room code');
       addNotification({
         text: 'Invalid room code',
@@ -914,27 +867,11 @@
     }
   };
 
-  // let mapName: string = 'de_dust2';
-  // const onMapChange = async (): Promise<void> => {
-  //   console.log(mapName);
-  //   if (!isConnected) {
-  //     console.log('Waiting for room connection before loading map.');
-  //     return;
-  //   }
-  //   map = await initializeMap({
-  //     map: map,
-  //     scene: scene,
-  //     mapName,
-  //   });
+  // const checkConnection = (): void => {
+  //   $connectedToRoom = $connectedToRoom;
   // };
 
-  let isConnected = false;
-
-  const checkConnection = (): void => {
-    isConnected = joinedRoom;
-  };
-
-  setInterval(checkConnection, 500);
+  // setInterval(checkConnection, 500);
 
   onMount(() => {
     // intialise();
@@ -942,7 +879,7 @@
     const interval = setInterval(intialise, 10);
 
     const timeTrackInterval = setInterval(() => {
-      currentTime = Date.now() / 1000;
+      $currentTime = Date.now() / 1000;
     }, 1000);
 
     // Cleanup the interval when the component is destroyed
@@ -967,7 +904,7 @@
   });
 
   $: if (savedRoomCode) {
-    roomCodeInput = savedRoomCode;
+    $roomCode = savedRoomCode;
   }
 
   async function checkNotifications(): Promise<void> {
@@ -986,7 +923,7 @@
   };
 
   (window as any).debugRenderer = function () {
-    console.log(threejs.info);
+    console.log($threejs.info);
   };
 
   // (window as any).flipDoor = function (x: number, y: number, z: number, rotation: number) {
@@ -1002,8 +939,8 @@
 
   function handleKeydown(e: KeyboardEvent): void {
     if (e.code === 'Escape') {
-      settingsOpen = false;
-      serverConfigOverlayOpen = false;
+      $settingsOpen = false;
+      $serverConfigOverlayOpen = false;
     }
   }
 
@@ -1012,11 +949,11 @@
       return;
     }
     console.log(`Updating config with: ${JSON.stringify(cfg)}`);
-    socket?.emit('update-config', {
+    $socket?.emit('update-config', {
       config: cfg,
       clientToken,
     });
-    serverConfigOverlayOpen = false;
+    $serverConfigOverlayOpen = false;
   }
 
   window.addEventListener('keydown', handleKeydown);
@@ -1024,19 +961,19 @@
 
 <!-- <a target="_blank" rel="noreferrer" on:click={ipcHandle}>Send IPC</a> -->
 <SettingsOverlay
-  bind:open={settingsOpen}
-  bind:serverConfigOpen={serverConfigOverlayOpen}
-  serverConfigEnabled={isConnected}
+  bind:open={$settingsOpen}
+  bind:serverConfigOpen={$serverConfigOverlayOpen}
+  serverConfigEnabled={$connectedToRoom}
 />
 
-{#if serverConfigOverlayOpen}
+{#if $serverConfigOverlayOpen}
   <div
     class="w-full h-lvh absolute dark:bg-gray-900/90 backdrop-blur-xl z-10 p-5 p2-2 overflow-y-scroll scrollbar"
   >
     <div class="text-center">
       <Heading tag="h1" class="mb-4 text-xl font-extrabold">Server Config</Heading>
     </div>
-    <ServerConfig isDisabled={!clientIsAdmin} {saveConfig} />
+    <ServerConfig isDisabled={!$clientIsAdmin} {saveConfig} />
   </div>
 {/if}
 
@@ -1086,7 +1023,9 @@
     {/if}
   {/if}
 
-  <div class={cn('flex w-full items-center', isConnected ? 'justify-center' : 'justify-between')}>
+  <div
+    class={cn('flex w-full items-center', $connectedToRoom ? 'justify-center' : 'justify-between')}
+  >
     <!-- <Label for="room-code" class="mb-2">Room Code:</Label> -->
     {#if clientSteamId && socketUrl}
       <svelte:component
@@ -1102,39 +1041,38 @@
       <div
         class={cn(
           'w-full',
-          !isConnected && 'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
+          !$connectedToRoom &&
+            'absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-64',
         )}
       >
-        {#if !isConnected && socketUrl}
+        {#if !$connectedToRoom && socketUrl}
           <Label class="mb-2">Server IP:</Label>
         {/if}
 
         {#if socketUrl}
           <ButtonGroup
-            class={cn('w-full ', isConnected && 'max-w-54 ml-4 mr-4')}
-            size={!isConnected ? 'md' : 'sm'}
+            class={cn('w-full ', $connectedToRoom && 'max-w-54 ml-4 mr-4')}
+            size={!$connectedToRoom ? 'md' : 'sm'}
           >
             <Input
               class="select-text cursor-text!"
               id="room-code"
               name="room-code"
-              disabled={isConnected || !socketConnected}
-              bind:value={roomCodeInput}
+              disabled={$connectedToRoom || !$socketConnected}
+              bind:value={$roomCode}
               placeholder="Room code"
             />
-            {#if isConnected && socketConnected}
+            {#if $connectedToRoom && $socketConnected}
               <Button
                 color="red"
                 class="cursor-pointer"
                 type="submit"
                 onclick={() => {
                   playSound(userLeftSound);
-                  Object.keys(peerConnections).forEach((k) => {
-                    cleanupUser(k, socketClientMap[k]);
+                  Object.keys($peerConnections).forEach((k) => {
+                    cleanupUser(k, $socketClientMap[k]);
                   });
-                  isConnected = false;
-                  joinedRoom = false;
-                  roomCode = undefined;
+                  $connectedToRoom = false;
                   setTimeout(() => {
                     window.api.reloadApp();
                   }, 350);
@@ -1151,11 +1089,11 @@
                 class="cursor-pointer"
                 type="submit"
                 onclick={joinRoom}
-                disabled={isConnected ||
-                  !socketConnected ||
+                disabled={$connectedToRoom ||
+                  !$socketConnected ||
                   !turnUsername ||
                   !turnPassword ||
-                  !!roomCode ||
+                  !$roomCode ||
                   autoUpdateState?.state === 'downloading'}
               >
                 Join</Button
@@ -1163,12 +1101,12 @@
           </ButtonGroup>
         {/if}
 
-        {#if !isConnected && socketUrl}
+        {#if !$connectedToRoom && socketUrl}
           <div class={cn('w-full text-center text-gray-400 text-sm p-2')}>
             Region: <button
               class="text-gray-500 cursor-pointer hover:text-primary-600"
               onclick={() => {
-                settingsOpen = true;
+                $settingsOpen = true;
               }}>{socketServerLabel}</button
             >
           </div>
@@ -1178,15 +1116,15 @@
 
     <CogSolid
       onclick={() => {
-        settingsOpen = !settingsOpen;
-        serverConfigOverlayOpen = false;
+        $settingsOpen = !$settingsOpen;
+        $serverConfigOverlayOpen = false;
       }}
-      color={settingsOpen ? 'var(--color-primary-600)' : 'grey'}
+      color={$settingsOpen ? 'var(--color-primary-600)' : 'grey'}
       class={cn(
         'cursor-pointer z-20 select-none transition-all duration-300',
-        // clientSteamId || settingsOpen ? 'top-7' : 'bottom-5.5',
+        // clientSteamId || $settingsOpen ? 'top-7' : 'bottom-5.5',
         !clientSteamId ? 'absolute top-7.5 right-5.5' : '',
-        settingsOpen ? 'rotate-90' : 'rotate-0',
+        $settingsOpen ? 'rotate-90' : 'rotate-0',
       )}
       size="lg"
     />
@@ -1201,12 +1139,12 @@
   {/if}
 
   {#if clientSteamId && socketUrl}
-    {#if !socketConnected}
+    {#if !$socketConnected}
       <Alert color="yellow" class="text-center mb-4 mt-4">
         <span class="font-medium">Connecting to the backend service...</span>
       </Alert>
     {/if}
-    {#if playerServerRoomCode && !isConnected && timeUntilRestart <= 0 && !autoUpdateState}
+    {#if $detectedRoomCode && !$connectedToRoom && $timeUntilRestart <= 0 && !autoUpdateState}
       <Alert color="green" class="text-center mb-4 mt-4">
         <span class="font-medium">
           You are connected to a server.<br />(Steam ID detected)<br />
@@ -1214,8 +1152,8 @@
             color="lime"
             class="cursor-pointer mt-2"
             onclick={() => {
-              if (playerServerRoomCode) {
-                roomCodeInput = playerServerRoomCode;
+              if ($detectedRoomCode) {
+                $roomCode = $detectedRoomCode;
                 joinRoom();
               }
             }}>Connect Now</Button
@@ -1223,16 +1161,16 @@
         </span>
       </Alert>
     {/if}
-    {#if nextServerRestart > Date.now() / 1000 && timeUntilRestart >= 0}
+    {#if $nextServerRestart > Date.now() / 1000 && $timeUntilRestart >= 0}
       <Alert color="orange" class="text-center mb-4 mt-4">
         <span class="font-medium">
-          Voice server restarting in {Math.floor(timeUntilRestart)}s. <br />Rooms reconnect
+          Voice server restarting in {Math.floor($timeUntilRestart)}s. <br />Rooms reconnect
           automatically.
         </span>
       </Alert>
     {/if}
 
-    {#if !playerServerRoomCode && !isConnected && socketConnected && !autoUpdateState}
+    {#if !$detectedRoomCode && !$connectedToRoom && $socketConnected && !autoUpdateState}
       <div class="text-center text-gray-500 text-xs mt-12">
         Join the CS2 Server to auto-retrieve the room code if Proximity Chat is enabled.
       </div>
@@ -1246,7 +1184,7 @@
     {/if}
 
     <div class="m-2 overflow-hidden relative">
-      {#if roomCode}
+      {#if $roomCode}
         <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
           <span>Occlusion Detail:</span>
           {OcclusionQuality[occlusionQuality]}
@@ -1262,34 +1200,37 @@
       <!-- <div class="absolute right-0 top-0 bg-black text-white text-xs p-1 z-5">
         <UserSettingsSolid
           onclick={() => {
-            serverConfigOverlayOpen = !serverConfigOverlayOpen;
+            $serverConfigOverlayOpen = !$serverConfigOverlayOpen;
           }}
-          color={serverConfigOverlayOpen ? 'var(--color-primary-600)' : 'grey'}
+          color={$serverConfigOverlayOpen ? 'var(--color-primary-600)' : 'grey'}
           class={cn(
             'cursor-pointer z-20 select-none transition-all duration-300',
-            serverConfigOverlayOpen ? 'rotate-90' : 'rotate-0',
+            $serverConfigOverlayOpen ? 'rotate-90' : 'rotate-0',
           )}
           size="md"
         />
       </div> -->
-      <div class={cn('dark:bg-gray-900 relative', !isConnected && 'hidden')} id="threejs"></div>
+      <div
+        class={cn('dark:bg-gray-900 relative', !$connectedToRoom && 'hidden')}
+        id="threejs"
+      ></div>
     </div>
 
-    {#if !!roomCode && isConnected}
+    {#if !!$roomCode && $connectedToRoom}
       <PlayerList
         mySteamId={clientSteamId}
         players={playerPositions}
-        joinedSocketConnections={socketClientMap}
-        {peerConnectingBandwidth}
-        {socket}
-        {clientIsAdmin}
+        joinedSocketConnections={$socketClientMap}
+        peerConnectingBandwidth={$peerConnectingBandwidth}
+        socket={$socket}
+        clientIsAdmin={$clientIsAdmin}
       ></PlayerList>
     {/if}
   {/if}
   <div
     class={cn(
       ' absolute bottom-0 text-center text-xs left-1/2  -translate-x-1/2 ',
-      !isConnected ? 'mb-6.5 text-gray-400' : 'mb-1 text-gray-500',
+      !$connectedToRoom ? 'mb-6.5 text-gray-400' : 'mb-1 text-gray-500',
     )}
   >
     <div>v{window.api.clientVersion()}</div>
@@ -1298,7 +1239,7 @@
         Region: <button
           class="text-gray-500 cursor-pointer hover:text-primary-600"
           onclick={() => {
-            settingsOpen = true;
+            $settingsOpen = true;
           }}>{socketServerLabel}</button
         >
       </div>
