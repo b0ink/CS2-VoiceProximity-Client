@@ -399,6 +399,7 @@
           }
 
           positionalSound.playerIsAlive = player.isAlive ?? false;
+          positionalSound.playerTeam = player.team ?? CsTeam.None;
 
           if (
             me &&

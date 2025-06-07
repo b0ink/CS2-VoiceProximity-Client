@@ -12,6 +12,7 @@ import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/stor
 import { OcclusionQuality } from '@shared/types/store/settings';
 import { talkingIndicatorStore } from '@store/talking-indicators';
 import { transformVector } from './lib/vector';
+import { CsTeam } from './type';
 
 // Add the extension functions
 THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
@@ -78,6 +79,7 @@ export class RemotePlayer {
   private remoteStream: MediaStream;
 
   public playerIsAlive: boolean;
+  public playerTeam: CsTeam;
 
   constructor(
     remoteStream: MediaStream,
@@ -87,6 +89,7 @@ export class RemotePlayer {
     listener: THREE.AudioListener,
   ) {
     this.playerIsAlive = false;
+    this.playerTeam = CsTeam.None;
 
     const playerObject = new THREE.Mesh(
       new THREE.BoxGeometry(4, 8, 4),
@@ -452,7 +455,9 @@ export class RemotePlayer {
       occlusionQuality,
     );
 
-    this.updateOcclusion(distance, occlusion, occlusionConfig);
+    if (this.playerTeam !== CsTeam.None) {
+      this.updateOcclusion(distance, occlusion, occlusionConfig);
+    }
     this.updateDistanceVolume(distance, occlusion, occlusionConfig);
   }
 
