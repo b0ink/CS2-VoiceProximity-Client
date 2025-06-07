@@ -1,12 +1,7 @@
 <script lang="ts">
   // import TWEEN from '@tweenjs/tween.js';
-  import { Button, ButtonGroup, Heading, Input, Label } from 'flowbite-svelte';
-  import {
-    CogSolid,
-    MicrophoneSlashSolid,
-    MicrophoneSolid,
-    PhoneHangupSolid,
-  } from 'flowbite-svelte-icons';
+  import { Heading, Label } from 'flowbite-svelte';
+  import { CogSolid, MicrophoneSlashSolid, MicrophoneSolid } from 'flowbite-svelte-icons';
   import 'hacktimer';
   import Peer from 'simple-peer';
   import { io } from 'socket.io-client';
@@ -46,6 +41,7 @@
   import ServerConfig from './Settings/ServerConfig.svelte';
   import SettingsOverlay from './Settings/SettingsOverlay.svelte';
   import Alerts from './components/Alerts/Alerts.svelte';
+  import JoinRoom from './components/JoinRoom.svelte';
   import PlayerList from './components/PlayerList.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
@@ -84,7 +80,6 @@
   $: savedRoomCode = $store.savedRoomCode;
   $: regions = $store.regions;
   $: tryReconnectRoom = $store.tryReconnectRoom;
-  $: autoUpdateState = $store.autoUpdateState;
 
   $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
   $: selectedRegion = regions.find((r) => r.url === socketUrl);
@@ -841,6 +836,17 @@
     threeJsDom.appendChild($threejs.domElement);
   };
 
+  const disconnectRoom = (): void => {
+    playSound(userLeftSound);
+    Object.keys($peerConnections).forEach((k) => {
+      cleanupUser(k, $socketClientMap[k]);
+    });
+    $connectedToRoom = false;
+    setTimeout(() => {
+      window.api.reloadApp();
+    }, 350);
+  };
+
   const joinRoom = (): void => {
     if ($connectedToRoom && socketUrl && clientSteamId && clientToken) {
       return;
@@ -982,55 +988,7 @@
         {/if}
 
         {#if socketUrl}
-          <ButtonGroup
-            class={cn('w-full ', $connectedToRoom && 'max-w-54 ml-4 mr-4')}
-            size={!$connectedToRoom ? 'md' : 'sm'}
-          >
-            <Input
-              class="select-text cursor-text!"
-              id="room-code"
-              name="room-code"
-              disabled={$connectedToRoom || !$socketConnected}
-              bind:value={$roomCode}
-              placeholder="Room code"
-            />
-            {#if $connectedToRoom && $socketConnected}
-              <Button
-                color="red"
-                class="cursor-pointer"
-                type="submit"
-                onclick={() => {
-                  playSound(userLeftSound);
-                  Object.keys($peerConnections).forEach((k) => {
-                    cleanupUser(k, $socketClientMap[k]);
-                  });
-                  $connectedToRoom = false;
-                  setTimeout(() => {
-                    window.api.reloadApp();
-                  }, 350);
-                }}
-              >
-                <PhoneHangupSolid
-                  color="white"
-                  class={cn('cursor-pointer select-none transition-all duration-300')}
-                /></Button
-              >
-            {:else}
-              <Button
-                color="primary"
-                class="cursor-pointer"
-                type="submit"
-                onclick={joinRoom}
-                disabled={$connectedToRoom ||
-                  !$socketConnected ||
-                  !turnUsername ||
-                  !turnPassword ||
-                  !$roomCode ||
-                  autoUpdateState?.state === 'downloading'}
-              >
-                Join</Button
-              >{/if}
-          </ButtonGroup>
+          <JoinRoom joinRoomCallback={joinRoom} disconnectRoomCallback={disconnectRoom} />
         {/if}
 
         {#if !$connectedToRoom && socketUrl}
