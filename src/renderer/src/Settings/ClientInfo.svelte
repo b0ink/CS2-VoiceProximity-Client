@@ -1,8 +1,10 @@
 <script lang="ts">
+  import store from '@store/client';
+  import settings from '@store/settings';
   import Versions from './Versions.svelte';
 
-  export let clientSteamId;
-  export let socketUrl;
+  $: socketUrl = $settings.socketServer;
+  $: clientSteamId = $store.steamId;
 </script>
 
 <div class="bottom-1 left-0 right-0 text-xs text-center text-white opacity-50">

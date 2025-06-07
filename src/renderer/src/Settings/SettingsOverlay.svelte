@@ -12,7 +12,6 @@
   import MuteShortcut from './MuteShortcut.svelte';
   import TestMicrophone from './TestMicrophone.svelte';
 
-  $: socketUrl = $settings.socketServer;
   $: clientSteamId = $store.steamId;
   $: storedDeviceId = $settings.inputDeviceId;
   $: natFixEnabled = $settings.natFixEnabled;
@@ -381,6 +380,6 @@
         >
       {/if}
     </div>
-    <ClientInfo {clientSteamId} {socketUrl} />
+    <ClientInfo />
   </div>
 {/if}
