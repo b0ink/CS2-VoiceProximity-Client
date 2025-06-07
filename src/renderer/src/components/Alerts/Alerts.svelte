@@ -26,7 +26,7 @@
     <span class="font-medium">
       You are connected to a server.<br />(Steam ID detected)<br />
       <Button
-        color="lime"
+        color="green"
         class="cursor-pointer mt-2"
         onclick={() => {
           if ($detectedRoomCode) {
