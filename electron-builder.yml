@@ -42,7 +42,7 @@ appImage:
 npmRebuild: false
 publish:
   provider: generic
-  url: https://example.com/auto-updates
+  url: https://github.com/b0ink/CS2-VoiceProximity-Client/releases/latest/download
   channel: latest
 electronDownload:
   mirror: https://npmmirror.com/mirrors/electron/
