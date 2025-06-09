@@ -448,17 +448,22 @@ export class RemotePlayer {
       this.updateReverb(reverbZones);
     }
 
-    const { occlusion } = this.calculateOcclusion(
-      occlusionMesh,
-      this.clientCamera?.position,
-      this.playerObject?.position,
-      occlusionQuality,
-    );
+    if (this.isMuted) {
+      // Skip occlusion and distance calculations for players we cant even hear... (dead players, spectators, etc.)
+      return;
+    }
+    // TODO: also ignore occlusion on players that have their microphone muted
 
     if (this.playerTeam !== CsTeam.None) {
+      const { occlusion } = this.calculateOcclusion(
+        occlusionMesh,
+        this.clientCamera?.position,
+        this.playerObject?.position,
+        occlusionQuality,
+      );
       this.updateOcclusion(distance, occlusion, occlusionConfig);
+      this.updateDistanceVolume(distance, occlusion, occlusionConfig);
     }
-    this.updateDistanceVolume(distance, occlusion, occlusionConfig);
   }
 
   private updateReverb(reverbZones: ReverbZone[]): void {
