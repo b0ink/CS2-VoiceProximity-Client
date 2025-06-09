@@ -73,7 +73,7 @@
 </script>
 
 <div>
-  <Label for="mic" class="mb-2 ">Mute Keybind:</Label>
+  <Label for="mic" class="mb-2 ">Toggle Mute Keybind:</Label>
   <ButtonGroup class="w-full border-none content ">
     <div class="content w-full" bind:this={container}>
       <Input class="select-none !rounded-e-none" readonly placeholder="No Keybind Set" />
