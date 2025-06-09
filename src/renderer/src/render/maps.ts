@@ -94,6 +94,7 @@ export async function initializeMap(
         zone.mesh.geometry.dispose();
         zone.mesh = undefined;
       }
+      zone.box = undefined;
     }
   }
 
@@ -170,11 +171,13 @@ export async function initializeMap(
     }
 
     for (const reverbZone of reverbZones) {
-      const zone = createReverbZoneGeometry(reverbZone);
-      reverbZone.mesh = zone;
+      const zoneMesh = createReverbZoneGeometry(reverbZone);
+      reverbZone.mesh = zoneMesh;
       const bvh = new MeshBVH(reverbZone.mesh.geometry);
       reverbZone.mesh.geometry.boundsTree = bvh;
-      scene.add(zone);
+      const box = new THREE.Box3().setFromObject(zoneMesh);
+      reverbZone.box = box;
+      scene.add(zoneMesh);
     }
 
     console.log(reverbZones);

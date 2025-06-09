@@ -484,12 +484,11 @@ export class RemotePlayer {
 
     // We can divide an area into multiple zones as long as the labels match
     for (const zone of reverbZones) {
-      if (!zone.mesh) {
+      if (!zone.mesh || !zone.box) {
         continue;
       }
-      const zoneBox = new THREE.Box3().setFromObject(zone.mesh);
 
-      if (zoneBox.containsPoint(this.playerObject?.position)) {
+      if (zone.box.containsPoint(this.playerObject?.position)) {
         zoneLabel = zone.label;
         break;
       }
@@ -498,17 +497,15 @@ export class RemotePlayer {
     const zonesPlayerIsIn: ReverbZone[] = reverbZones.filter((z) => z.label === zoneLabel);
 
     for (const zone of zonesPlayerIsIn) {
-      if (!zone.mesh) {
+      if (!zone.mesh || !zone.box) {
         continue;
       }
 
-      const zoneBox = new THREE.Box3().setFromObject(zone.mesh);
-
-      const dist = zoneBox.distanceToPoint(this.clientCamera.position);
+      const dist = zone.box.distanceToPoint(this.clientCamera.position);
       const fadeStart = zone.fadeDistance;
       fadeTime = zone.fadeTime;
       zoneType = zone.type;
-      if (zoneBox.containsPoint(this.clientCamera.position)) {
+      if (zone.box.containsPoint(this.clientCamera.position)) {
         gain = zone.strength;
         break;
       } else if (dist <= fadeStart) {

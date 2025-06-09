@@ -82,6 +82,7 @@ export interface ReverbZone {
     z: number;
   }[];
   mesh?: THREE.Mesh;
+  box?: THREE.Box3;
 }
 export interface MapData {
   buffer: Buffer<ArrayBufferLike>;
