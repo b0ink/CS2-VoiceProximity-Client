@@ -199,38 +199,6 @@ function createReverbZoneGeometry(zone: ReverbZone): THREE.Mesh {
   return zoneMesh;
 }
 
-// function createReverbZoneGeometry(zone: ReverbZone): THREE.Mesh {
-//   const geometry = new THREE.BufferGeometry();
-
-//   const vertices = zone.vertices.map((v) => transformVector(v));
-//   const positions = new Float32Array(vertices.length * 3);
-//   vertices.forEach((v, i) => {
-//     positions[i * 3] = v.x;
-//     positions[i * 3 + 1] = v.y;
-//     positions[i * 3 + 2] = v.z;
-//   });
-//   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-
-//   // Flatten faces array (assuming faces are arrays of indices, e.g. triangles or quads)
-//   // If quads, you might need to triangulate them first.
-//   const indices: number[] = [];
-//   zone.faces.forEach((face) => {
-//     if (face.length === 3) {
-//       indices.push(...face);
-//     } else if (face.length === 4) {
-//       // Triangulate quad: [0,1,2,3] => two triangles [0,1,2] and [2,3,0]
-//       indices.push(face[0], face[1], face[2], face[2], face[3], face[0]);
-//     }
-//   });
-//   geometry.setIndex(indices);
-
-//   geometry.computeVertexNormals();
-
-//   const material = new THREE.MeshBasicMaterial({ wireframe: true });
-
-//   return new THREE.Mesh(geometry, material);
-// }
-
 function createDoor(
   door: MapDoor,
   color: number = 0x00ff00,
