@@ -92,6 +92,8 @@
   // $: volumeDropoffFactor = $serverConfigStore.volumeDropoffFactor;
   // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
+  let occlusionCalcComplete: Map<string, boolean> = new Map<string, boolean>();
+
   let playerPositions: PlayerPositionApiData[] = [];
 
   let audioConnectionStuff: AudioConnectionStuff = {
@@ -156,6 +158,7 @@
     initialised = true;
 
     $clientCamera.add($clientListener);
+    // $threejs.domElement.transferControlToOffscreen();
 
     initializeRenderer();
 
@@ -291,7 +294,15 @@
 
     $socket?.on('current-map', async (mapName) => {
       console.log(`$socket.on('current-map'): ${mapName}`);
-      await initializeMap($scene, mapName);
+      const map = await initializeMap($scene, mapName);
+      if (occlusionWorker && map) {
+        const mapData = {
+          type: 'init',
+          map: map?.toJSON(),
+        };
+        console.log(`sending map!`);
+        occlusionWorker.postMessage(JSON.stringify(mapData));
+      }
     });
 
     $socket?.on('server-config', async (data: Buffer) => {
@@ -443,6 +454,34 @@
             positionalSound.playerObject?.lookAt(transformedLookAt);
           } else {
             console.warn(`No soundObjSource for steam ${steamId}`);
+          }
+
+          if (occlusionWorker && positionalSound.playerObject) {
+            const lastCalcComplete = occlusionCalcComplete.get(player.steamId!);
+            if (lastCalcComplete === false) {
+              console.log('last calc not complete yet!');
+              window.api.setSettingsValue('occlusionQuality', OcclusionQuality.LOW);
+              return;
+            }
+            const data = {
+              // occlusionMesh: [getMap(), ...getMapDoors()],
+              clientPosition: {
+                x: $clientCamera.position.x,
+                y: $clientCamera.position.y,
+                z: $clientCamera.position.z,
+              },
+              playerPosition: {
+                x: transformedOrigin.x,
+                y: transformedOrigin.y,
+                z: transformedOrigin.z,
+              },
+              occlusionQuality: occlusionQuality,
+              steamId: player.steamId,
+            };
+            // console.log(data);
+            // const asdffff = JSON.parse(JSON.stringify(data));
+            occlusionCalcComplete.set(player.steamId!, false);
+            occlusionWorker.postMessage(JSON.stringify(data));
           }
           // break;
         }
@@ -736,7 +775,17 @@
         };
         document.querySelector('#threejs')!.innerHTML = '';
         initializeRenderer();
-        await initializeMap($scene, response.mapName ?? 'de_dust2');
+        const map = await initializeMap($scene, response.mapName ?? 'de_dust2');
+        if (occlusionWorker && map) {
+          // map.updateMatrixWorld(true);
+          const mapData = {
+            type: 'init',
+            map: map?.toJSON(),
+          };
+          console.log(`sending map!`);
+          occlusionWorker.postMessage(JSON.stringify(mapData));
+        }
+
         if (response.serverConfig) {
           serverConfigStore.set({
             ...response.serverConfig,
@@ -871,7 +920,25 @@
 
   // setInterval(checkConnection, 500);
 
+  let occlusionWorker: Worker | undefined;
   onMount(() => {
+    occlusionWorker = new Worker(new URL('./render/occlusionWorker.ts', import.meta.url), {
+      type: 'module',
+    });
+
+    occlusionWorker.onmessage = (e) => {
+      const steamId = e.data.steamId;
+      const occlusion = e.data.occlusion;
+      const distance = e.data.distance;
+      const positionalSound = $remotePlayers.get(steamId);
+      if (occlusion !== 0) {
+        // console.log(`occlusionWorker on message: ${JSON.stringify(e.data)}`);
+      }
+      if (positionalSound) {
+        positionalSound.updateOcclusion(distance, occlusion, $serverConfigStore);
+      }
+      occlusionCalcComplete.set(steamId, true);
+    };
     // intialise();
     //TODO: can fire an event from main -> renderer? instead of checking every few seconds
     const interval = setInterval(intialise, 10);

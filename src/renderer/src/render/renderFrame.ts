@@ -14,13 +14,15 @@ settings.subscribe(($settings) => {
 });
 
 const occlusionUpdateTimes: number[] = [];
-const DOWNGRADE_THRESHOLD = 90; // must be consistently above this to decrease occlusion detail
-const UPGRADE_THRESHOLD = 40; // must be consistently below this to increase occlusion detail
+const DOWNGRADE_THRESHOLD = 50; // must be consistently above this to decrease occlusion detail
+const UPGRADE_THRESHOLD = 25; // must be consistently below this to increase occlusion detail
 const REQUIRED_FRAMES = 30;
 let goodFrameCount = 0;
 let badFrameCount = 0;
 
 let shouldUpdateSoundFilters: number = 0;
+
+let processingRender: boolean = false;
 
 export function renderFrame(
   threejs: THREE.WebGLRenderer,
@@ -29,6 +31,10 @@ export function renderFrame(
   settingsOpen: boolean,
   updateSoundFilters: () => void,
 ): void {
+  if (processingRender) {
+    console.log(`Skipping frame because previous render has not completed yet.`);
+    return;
+  }
   const start: number = performance.now();
 
   if (clientCamera) {
@@ -45,11 +51,17 @@ export function renderFrame(
     // otherwise update sound filters according to occlusionUpdateRate
     shouldUpdateSoundFilters % Math.floor(settingsOpen ? 5 : occlusionUpdateRate) === 0
   ) {
+    processingRender = true;
+
     shouldUpdateSoundFilters = 0;
     updateSoundFilters();
 
     // Track how long it takes to render each frame and calculate occlusion
     const duration: number = performance.now() - start;
+
+    processingRender = false;
+
+    // console.log(`duration ${duration}`);
     occlusionUpdateTimes.push(duration);
     if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
 

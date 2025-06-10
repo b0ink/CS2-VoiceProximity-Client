@@ -432,8 +432,8 @@ export class RemotePlayer {
   }
 
   public updateFilters(
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
-    occlusionQuality: OcclusionQuality,
+    _occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
+    _occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
     reverbZones?: ReverbZone[] | null,
   ): void {
@@ -455,14 +455,15 @@ export class RemotePlayer {
     // TODO: also ignore occlusion on players that have their microphone muted
 
     if (this.playerTeam !== CsTeam.None) {
-      const { occlusion } = this.calculateOcclusion(
-        occlusionMesh,
-        this.clientCamera?.position,
-        this.playerObject?.position,
-        occlusionQuality,
-      );
-      this.updateOcclusion(distance, occlusion, occlusionConfig);
-      this.updateDistanceVolume(distance, occlusion, occlusionConfig);
+      // const { occlusion } = this.calculateOcclusion(
+      //   occlusionMesh,
+      //   this.clientCamera?.position,
+      //   this.playerObject?.position,
+      //   occlusionQuality,
+      // );
+      // this.updateOcclusion(distance, occlusion, occlusionConfig);
+      // this.updateDistanceVolume(distance, occlusion, occlusionConfig);
+      this.updateDistanceVolume(distance, 0, occlusionConfig);
     }
   }
 
