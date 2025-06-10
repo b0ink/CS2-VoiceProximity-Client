@@ -558,10 +558,11 @@ export class RemotePlayer {
     // const roundedGain = Math.max(Math.round(gain * 1000) / 1000, 0.0001);
 
     if (this.distanceGainAmount !== roundedGain) {
-      this.distanceGainAmount = roundedGain;
       // console.log(`GAIN: ${roundedGain} ${distance}`);
 
       if (!this.isMuted) {
+        this.distanceGainAmount = roundedGain;
+
         const now = this.listener_.context.currentTime;
         this.distanceGainFilter?.gain.cancelScheduledValues(now);
         this.distanceGainFilter!.gain.setValueAtTime(this.distanceGainFilter!.gain.value, now);
