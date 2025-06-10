@@ -453,17 +453,20 @@ export class RemotePlayer {
       return;
     }
     // TODO: also ignore occlusion on players that have their microphone muted
-
-    if (this.playerTeam !== CsTeam.None) {
+    let occlusionFinal: number | undefined = undefined;
+    const maxDistance =
+      occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
+    if (this.playerTeam !== CsTeam.None && distance <= maxDistance) {
       const { occlusion } = this.calculateOcclusion(
         occlusionMesh,
         this.clientCamera?.position,
         this.playerObject?.position,
         occlusionQuality,
       );
+      occlusionFinal = occlusion;
       this.updateOcclusion(distance, occlusion, occlusionConfig);
-      this.updateDistanceVolume(distance, occlusion, occlusionConfig);
     }
+    this.updateDistanceVolume(distance, occlusionFinal, occlusionConfig);
   }
 
   private updateReverb(reverbZones: ReverbZone[]): void {
@@ -534,7 +537,7 @@ export class RemotePlayer {
 
   private updateDistanceVolume(
     distance: number,
-    occlusion: number,
+    occlusion?: number,
     occlusionConfig?: ServerConfigData,
   ): void {
     const volumeDropoffFactor =
@@ -549,7 +552,7 @@ export class RemotePlayer {
 
     const roundedGain = Math.max(
       Math.round(gain * 1000) / 1000,
-      occlusion <= 1 && alwaysAudibleIfVisible ? 0.05 : 0.0001,
+      occlusion !== undefined && occlusion <= 1 && alwaysAudibleIfVisible ? 0.05 : 0.0001,
     );
 
     // const roundedGain = Math.max(Math.round(gain * 1000) / 1000, 0.0001);

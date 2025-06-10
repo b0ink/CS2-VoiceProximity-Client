@@ -14,9 +14,10 @@ settings.subscribe(($settings) => {
 });
 
 const occlusionUpdateTimes: number[] = [];
-const DOWNGRADE_THRESHOLD = 90; // must be consistently above this to decrease occlusion detail
-const UPGRADE_THRESHOLD = 40; // must be consistently below this to increase occlusion detail
-const REQUIRED_FRAMES = 30;
+const DOWNGRADE_THRESHOLD = 75; // must be consistently above this to decrease occlusion detail
+const UPGRADE_THRESHOLD = 30; // must be consistently below this to increase occlusion detail
+const REQUIRED_GOOD_FRAMES = 100;
+const REQUIRED_BAD_FRAMES = 1;
 let goodFrameCount = 0;
 let badFrameCount = 0;
 
@@ -49,12 +50,13 @@ export function renderFrame(
     updateSoundFilters();
 
     // Track how long it takes to render each frame and calculate occlusion
-    const duration: number = performance.now() - start;
-    occlusionUpdateTimes.push(duration);
+    const frameTime: number = performance.now() - start;
+    occlusionUpdateTimes.push(frameTime);
     if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
 
-    const averageFrameTime =
-      occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
+    const averageFrameTime = frameTime;
+    // const averageFrameTime =
+    // occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
 
     if (occlusionAutoQuality) {
       if (averageFrameTime > DOWNGRADE_THRESHOLD) {
@@ -68,7 +70,7 @@ export function renderFrame(
         badFrameCount = 0;
       }
 
-      if (badFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.LOW) {
+      if (badFrameCount >= REQUIRED_BAD_FRAMES && occlusionQuality !== OcclusionQuality.LOW) {
         const next =
           occlusionQuality === OcclusionQuality.HIGH
             ? OcclusionQuality.MEDIUM
@@ -77,7 +79,7 @@ export function renderFrame(
         badFrameCount = 0;
       }
 
-      if (goodFrameCount >= REQUIRED_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
+      if (goodFrameCount >= REQUIRED_GOOD_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
         const next =
           occlusionQuality === OcclusionQuality.OFF
             ? OcclusionQuality.LOW
