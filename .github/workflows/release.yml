@@ -29,7 +29,7 @@ jobs:
       - run: npm run build:win
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.2.2
         with:
           tag_name: ${{ github.event.inputs.version }}
           token: ${{ secrets.GH_TOKEN }}
