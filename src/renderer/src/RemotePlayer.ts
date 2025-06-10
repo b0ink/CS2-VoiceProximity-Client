@@ -715,7 +715,9 @@ export class RemotePlayer {
 
     // return hits / 11;
   };
+
   private raycaster = new THREE.Raycaster();
+  private raycasterHits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
 
   private didIntersect = (
     occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
@@ -730,19 +732,20 @@ export class RemotePlayer {
     this.raycaster.set(v1, dir);
     this.raycaster.firstHitOnly = true;
 
-    const hits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
+    // const hits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
+    this.raycasterHits.length = 0;
     for (const mesh of occlusionMesh) {
       if (!mesh.visible) {
         // Skip destroyed doors
         continue;
       }
       // hits = hits +  this.raycaster.intersectObject(mesh, true);
-      const hit = this.raycaster.intersectObject(mesh, true);
-      hits.push(...hit);
+      this.raycaster.intersectObject(mesh, true, this.raycasterHits);
+      // hits.push(...hit);
     }
     // const hits = this.raycaster.intersectObject(occlusionMesh, true);
     const maxDistance = v1.distanceTo(v2);
-    const filteredHits = hits.filter((hit) => hit.distance <= maxDistance);
+    const filteredHits = this.raycasterHits.filter((hit) => hit.distance <= maxDistance);
     // return hits.length;
     // const hits = this.raycaster.intersectObject(occlusionMesh, true);
 
