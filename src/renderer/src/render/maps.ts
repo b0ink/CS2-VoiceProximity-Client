@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {
+  AVERAGE,
   MeshBVH,
   acceleratedRaycast,
   computeBatchedBoundsTree,
@@ -157,12 +158,22 @@ export async function initializeMap(
       return new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
     });
 
+    console.time('computing bvh tree');
     map.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.material = materials[Math.floor(Math.random() * materials.length)];
-        child.geometry.computeBoundsTree({ lazyGeneration: false });
+        if (child.geometry instanceof THREE.BufferGeometry) {
+          child.geometry.computeBoundsTree({
+            maxLeafTris: 1,
+            strategy: AVERAGE,
+            maxDepth: 40,
+            setBoundingBox: true,
+          });
+        }
+        child.geometry.boundsTree.splitStrategy = AVERAGE;
       }
     });
+    console.timeEnd('computing bvh tree');
 
     for (const door of doors) {
       const { group: doorGroup } = createDoor(door, 0x00ff00);
