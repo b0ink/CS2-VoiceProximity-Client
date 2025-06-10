@@ -14,7 +14,7 @@ settings.subscribe(($settings) => {
 });
 
 const occlusionUpdateTimes: number[] = [];
-const DOWNGRADE_THRESHOLD = 75; // must be consistently above this to decrease occlusion detail
+const DOWNGRADE_THRESHOLD = 60; // must be consistently above this to decrease occlusion detail
 const UPGRADE_THRESHOLD = 30; // must be consistently below this to increase occlusion detail
 const REQUIRED_GOOD_FRAMES = 100;
 const REQUIRED_BAD_FRAMES = 1;
@@ -44,7 +44,7 @@ export function renderFrame(
     getMap() &&
     // update sound filters at a reduced rate when settings is open to avoid laggy UI
     // otherwise update sound filters according to occlusionUpdateRate
-    shouldUpdateSoundFilters % Math.floor(settingsOpen ? 5 : occlusionUpdateRate) === 0
+    shouldUpdateSoundFilters % Math.floor(settingsOpen ? 2 : occlusionUpdateRate) === 0
   ) {
     shouldUpdateSoundFilters = 0;
     updateSoundFilters();
