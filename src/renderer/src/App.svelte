@@ -291,6 +291,9 @@
 
     $socket?.on('current-map', async (mapName) => {
       console.log(`$socket.on('current-map'): ${mapName}`);
+      if ($settings.occlusionAutoQuality) {
+        window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
+      }
       await initializeMap($scene, mapName);
     });
 
@@ -736,6 +739,9 @@
         };
         document.querySelector('#threejs')!.innerHTML = '';
         initializeRenderer();
+        if ($settings.occlusionAutoQuality) {
+          window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
+        }
         await initializeMap($scene, response.mapName ?? 'de_dust2');
         if (response.serverConfig) {
           serverConfigStore.set({
