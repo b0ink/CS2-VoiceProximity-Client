@@ -677,7 +677,7 @@ export class RemotePlayer {
       lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
     }
 
-    // Not reccommended on maps with high mesh/face count, unless occlusionUpdateRate has a larger value (less frequent updates)
+    // Not recommended on maps with high mesh/face count
     if (occlusionQuality >= OcclusionQuality.HIGH) {
       lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));

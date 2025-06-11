@@ -21,7 +21,6 @@ export interface SettingsData {
   globalGainAmount: number;
   occlusionQuality: OcclusionQuality;
   occlusionAutoQuality: boolean;
-  occlusionUpdateRate: number;
   noiseSuppression: boolean;
   echoCancellation: boolean;
   playerVolumes: ClientVolumeMap;
@@ -41,7 +40,6 @@ export const DEFAULT_SETTINGS: SettingsData = {
   globalGainAmount: 2.5,
   occlusionQuality: OcclusionQuality.HIGH,
   occlusionAutoQuality: true,
-  occlusionUpdateRate: 2,
   noiseSuppression: true,
   echoCancellation: true,
   playerVolumes: {},

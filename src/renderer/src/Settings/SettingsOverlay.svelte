@@ -21,7 +21,6 @@
   $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
-  // $: occlusionUpdateRate = $settings.occlusionUpdateRate;
   $: occlusionAutoQuality = $settings.occlusionAutoQuality;
 
   let selectedDeviceId: string | null;
@@ -66,12 +65,6 @@
 
   // $: if (globalGainAmount) {
   //   gainAmountRangeValue = globalGainAmount;
-  // }
-
-  // let occlusionUpdateRateValue: number;
-
-  // $: if (occlusionUpdateRate) {
-  //   occlusionUpdateRateValue = occlusionUpdateRate;
   // }
 
   let occlusionQualitySelectValue: number;
@@ -322,30 +315,7 @@
 
         <MuteShortcut />
 
-        <!-- <Label>
-          Sound occlusion update delay: {occlusionUpdateIntervalValue === 1
-            ? 'Every frame'
-            : `Every ${occlusionUpdateIntervalValue} frames`}
-        </Label> -->
-        <!-- <Label>
-          Sound occlusion update rate: {occlusionUpdateRateValue * 100}ms
-        </Label>
-
-        <p class="text-xs text-gray-400 mb-2">
-          Controls how often audio occlusion is recalculated. Increasing the delay can improve
-          performance but may cause a brief lag before players become audible.
-        </p>
-        <Range
-          class="mb-4"
-          id="range1"
-          min="1"
-          max="5"
-          step="1"
-          bind:value={occlusionUpdateRateValue}
-          oninput={() => {
-            window.api.setSettingsValue('occlusionUpdateRate', occlusionUpdateRateValue);
-          }}
-        /> -->
+        <!-- TODO: SFX volume and overall volume sliders -->
         <!-- <Label>Player volume boost: {Math.floor(gainAmountRangeValue * 100)}%</Label>
         <p class="text-xs text-gray-400 mb-2">Adjusts the overall volume level for all players.</p>
         <Range
