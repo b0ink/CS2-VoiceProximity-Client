@@ -5,6 +5,7 @@ export interface ClientVolumeMap {
 }
 export enum OcclusionQuality {
   OFF = 0,
+  VERYLOW,
   LOW,
   MEDIUM,
   HIGH,

@@ -4,12 +4,10 @@ import settings from '@store/settings';
 import { getMap } from './maps';
 
 let occlusionAutoQuality: boolean;
-let occlusionUpdateRate: number;
 let occlusionQuality: number;
 
 settings.subscribe(($settings) => {
   occlusionAutoQuality = $settings.occlusionAutoQuality;
-  occlusionUpdateRate = $settings.occlusionUpdateRate;
   occlusionQuality = $settings.occlusionQuality;
 });
 
@@ -36,10 +34,12 @@ export function renderFrame(
     threejs.render(scene, clientCamera);
   }
 
+  // Reduce update rate if settings is open or occlusion quality is at very low
+  // (Slightly increases latency when player walks out from behind a wall, but allows for a bigger buffer if computation is taking too long)
+  const occlusionUpdateRate = settingsOpen || occlusionQuality === OcclusionQuality.VERYLOW ? 2 : 1;
+
   shouldUpdateSoundFilters++;
-  if (occlusionUpdateRate > 5 || occlusionUpdateRate < 1) {
-    window.api.setSettingsValue('occlusionUpdateRate', 1);
-  }
+
   if (
     getMap() &&
     // update sound filters at a reduced rate when settings is open to avoid laggy UI
@@ -70,22 +70,14 @@ export function renderFrame(
         badFrameCount = 0;
       }
 
-      if (badFrameCount >= REQUIRED_BAD_FRAMES && occlusionQuality !== OcclusionQuality.LOW) {
-        const next =
-          occlusionQuality === OcclusionQuality.HIGH
-            ? OcclusionQuality.MEDIUM
-            : OcclusionQuality.LOW;
+      if (badFrameCount >= REQUIRED_BAD_FRAMES && occlusionQuality > OcclusionQuality.VERYLOW) {
+        const next: OcclusionQuality = Math.max(occlusionQuality - 1, OcclusionQuality.VERYLOW);
         window.api.setSettingsValue('occlusionQuality', next);
         badFrameCount = 0;
       }
 
-      if (goodFrameCount >= REQUIRED_GOOD_FRAMES && occlusionQuality !== OcclusionQuality.HIGH) {
-        const next =
-          occlusionQuality === OcclusionQuality.OFF
-            ? OcclusionQuality.LOW
-            : occlusionQuality === OcclusionQuality.LOW
-              ? OcclusionQuality.MEDIUM
-              : OcclusionQuality.HIGH;
+      if (goodFrameCount >= REQUIRED_GOOD_FRAMES && occlusionQuality < OcclusionQuality.HIGH) {
+        const next: OcclusionQuality = Math.min(occlusionQuality + 1, OcclusionQuality.HIGH);
         window.api.setSettingsValue('occlusionQuality', next);
         goodFrameCount = 0;
       }

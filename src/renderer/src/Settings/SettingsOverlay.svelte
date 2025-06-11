@@ -314,6 +314,7 @@
           disabled={occlusionAutoQuality}
         >
           <option value={OcclusionQuality.OFF}>No Occlusion</option>
+          <option value={OcclusionQuality.VERYLOW}>Very Low</option>
           <option value={OcclusionQuality.LOW}>Low</option>
           <option value={OcclusionQuality.MEDIUM}>Medium</option>
           <option value={OcclusionQuality.HIGH}>High</option>

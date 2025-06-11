@@ -666,7 +666,7 @@ export class RemotePlayer {
 
     const lines: number[] = [];
 
-    if (occlusionQuality >= OcclusionQuality.LOW) {
+    if (occlusionQuality >= OcclusionQuality.VERYLOW) {
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, Listener_));
     }
 
