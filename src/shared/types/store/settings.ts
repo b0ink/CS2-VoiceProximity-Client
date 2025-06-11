@@ -9,6 +9,8 @@ export enum OcclusionQuality {
   LOW,
   MEDIUM,
   HIGH,
+  VERYHIGH,
+  ULTRA,
 }
 
 export interface SettingsData {

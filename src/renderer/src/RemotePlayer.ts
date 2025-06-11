@@ -672,16 +672,22 @@ export class RemotePlayer {
 
     if (occlusionQuality >= OcclusionQuality.MEDIUM) {
       lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerLeft));
-      lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
-      lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
       lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
     }
 
-    // Not recommended on maps with high mesh/face count
     if (occlusionQuality >= OcclusionQuality.HIGH) {
-      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
+      lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
+      lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
+    }
+
+    // Not recommended on maps with high mesh/face count
+    if (occlusionQuality >= OcclusionQuality.VERYHIGH) {
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));
       lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight));
+    }
+
+    if (occlusionQuality >= OcclusionQuality.ULTRA) {
+      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
       lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerLeft));
     }
 

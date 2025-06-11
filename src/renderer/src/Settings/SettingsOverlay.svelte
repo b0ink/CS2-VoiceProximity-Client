@@ -311,6 +311,8 @@
           <option value={OcclusionQuality.LOW}>Low</option>
           <option value={OcclusionQuality.MEDIUM}>Medium</option>
           <option value={OcclusionQuality.HIGH}>High</option>
+          <option value={OcclusionQuality.VERYHIGH}>Very High</option>
+          <option value={OcclusionQuality.ULTRA}>Ultra</option>
         </Select>
 
         <MuteShortcut />

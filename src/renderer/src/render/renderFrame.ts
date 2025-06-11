@@ -55,6 +55,7 @@ export function renderFrame(
     if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
 
     const averageFrameTime = frameTime;
+    console.log(averageFrameTime);
     // const averageFrameTime =
     // occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
 
@@ -70,14 +71,18 @@ export function renderFrame(
         badFrameCount = 0;
       }
 
+      if (occlusionQuality === OcclusionQuality.OFF) {
+        window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
+      }
+
       if (badFrameCount >= REQUIRED_BAD_FRAMES && occlusionQuality > OcclusionQuality.VERYLOW) {
         const next: OcclusionQuality = Math.max(occlusionQuality - 1, OcclusionQuality.VERYLOW);
         window.api.setSettingsValue('occlusionQuality', next);
         badFrameCount = 0;
       }
 
-      if (goodFrameCount >= REQUIRED_GOOD_FRAMES && occlusionQuality < OcclusionQuality.HIGH) {
-        const next: OcclusionQuality = Math.min(occlusionQuality + 1, OcclusionQuality.HIGH);
+      if (goodFrameCount >= REQUIRED_GOOD_FRAMES && occlusionQuality < OcclusionQuality.ULTRA) {
+        const next: OcclusionQuality = Math.min(occlusionQuality + 1, OcclusionQuality.ULTRA);
         window.api.setSettingsValue('occlusionQuality', next);
         goodFrameCount = 0;
       }
