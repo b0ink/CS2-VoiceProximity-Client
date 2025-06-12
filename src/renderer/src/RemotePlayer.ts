@@ -456,12 +456,13 @@ export class RemotePlayer {
     let occlusionFinal: number | undefined = undefined;
     const maxDistance =
       occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
-    if (this.playerTeam !== CsTeam.None && distance <= maxDistance) {
+
+    if (this.playerTeam !== CsTeam.None) {
       const { occlusion } = this.calculateOcclusion(
         occlusionMesh,
         this.clientCamera?.position,
         this.playerObject?.position,
-        occlusionQuality,
+        distance <= maxDistance ? occlusionQuality : OcclusionQuality.VERYLOW,
       );
       occlusionFinal = occlusion;
       this.updateOcclusion(distance, occlusion, occlusionConfig);
