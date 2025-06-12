@@ -358,6 +358,7 @@ export class RemotePlayer {
 
       this.muteTimeout = setTimeout(() => {
         this.playerVoice3D?.setVolume(0);
+        this.isMuted = true;
       }, delay);
     }
   }
@@ -367,7 +368,9 @@ export class RemotePlayer {
       clearInterval(this.unmuteTimeout);
       clearTimeout(this.muteTimeout);
       this.isMuted = false;
-      // volume will be reset via distance checks
+      console.log(`Unmuting ${this.steamId}`);
+      this.playerVoice3D.setVolume(this.distanceGainAmount);
+      this.updateDistanceVolume();
     }
   }
 
@@ -467,7 +470,7 @@ export class RemotePlayer {
       occlusionFinal = occlusion;
       this.updateOcclusion(distance, occlusion, occlusionConfig);
     }
-    this.updateDistanceVolume(distance, occlusionFinal, occlusionConfig);
+    this.updateDistanceVolume(occlusionFinal, occlusionConfig);
   }
 
   private updateReverb(reverbZones: ReverbZone[]): void {
@@ -536,17 +539,19 @@ export class RemotePlayer {
     }
   }
 
-  private updateDistanceVolume(
-    distance: number,
-    occlusion?: number,
-    occlusionConfig?: ServerConfigData,
-  ): void {
+  private updateDistanceVolume(occlusion?: number, occlusionConfig?: ServerConfigData): void {
     const volumeDropoffFactor =
       occlusionConfig?.volumeFalloffFactor ?? DEFAULT_SERVER_CONFIG.volumeFalloffFactor;
     const volumeMaxDistance =
       occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
     const alwaysAudibleIfVisible =
       occlusionConfig?.alwaysHearVisiblePlayers ?? DEFAULT_SERVER_CONFIG.alwaysHearVisiblePlayers;
+
+    const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
+
+    if (!distance) {
+      return;
+    }
 
     const t = Math.min(distance / volumeMaxDistance, 1);
     const gain = 1 - Math.pow(t, volumeDropoffFactor);
@@ -558,17 +563,16 @@ export class RemotePlayer {
 
     // const roundedGain = Math.max(Math.round(gain * 1000) / 1000, 0.0001);
 
-    if (this.distanceGainAmount !== roundedGain) {
-      // console.log(`GAIN: ${roundedGain} ${distance}`);
+    if (!this.isMuted) {
+      this.distanceGainAmount = roundedGain;
 
-      if (!this.isMuted) {
-        this.distanceGainAmount = roundedGain;
-
+      if (this.distanceGainFilter?.gain.value !== this.distanceGainAmount) {
         const now = this.listener_.context.currentTime;
         this.distanceGainFilter?.gain.cancelScheduledValues(now);
         this.distanceGainFilter!.gain.setValueAtTime(this.distanceGainFilter!.gain.value, now);
         this.distanceGainFilter?.gain.linearRampToValueAtTime(this.distanceGainAmount, now + 0.02);
-
+      }
+      if (this.playerVoice3D.getVolume() !== this.distanceGainAmount) {
         this.playerVoice3D.setVolume(this.distanceGainAmount);
       }
     }
