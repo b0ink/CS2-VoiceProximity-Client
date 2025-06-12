@@ -55,7 +55,7 @@ export function renderFrame(
     if (occlusionUpdateTimes.length > 60) occlusionUpdateTimes.shift(); // keep last 60 samples
 
     const averageFrameTime = frameTime;
-    console.log(averageFrameTime);
+    // console.log(averageFrameTime);
     // const averageFrameTime =
     // occlusionUpdateTimes.reduce((a, b) => a + b, 0) / occlusionUpdateTimes.length;
 
