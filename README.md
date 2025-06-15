@@ -82,7 +82,7 @@ Voice data is relayed through a TURN server by default to protect user IPs. For 
 ---
 
 <p align="center">
-    <sub>Project development started in May, 2025.</sub>
+    <sub>Project development started in April, 2025.</sub>
 	<br>
 	<br>
 	<a href="https://www.paypal.com/donate/?hosted_button_id=ZRBPV5GAXAWWU" 
