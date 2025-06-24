@@ -36,7 +36,6 @@
     window.api.setSettingsValue('socketServer', socketServerInput);
     window.api.setStoreValue('token', null);
     window.api.setStoreValue('steamId', null);
-    // window.api.setStoreValue('turnUsername', null);
     window.api.setStoreValue('iceServers', []);
     window.api.reloadApp();
   };
