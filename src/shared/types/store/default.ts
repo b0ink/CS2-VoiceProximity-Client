@@ -1,11 +1,12 @@
 import { ProgressInfo, UpdateInfo } from 'electron-updater';
 import { DefaultNotificationOptions } from 'svelte-notifications';
+import { IceServer } from '../api';
 
 interface Region {
   name: string;
   url: string;
-  turn: string;
-  stun: string;
+  // turn: string;
+  // stun: string;
   disabled: boolean;
   ping: number;
 }
@@ -20,8 +21,8 @@ interface AutoUpdateState {
 export interface StoreData {
   steamId: string | null;
   token: string | null;
-  turnUsername: string | null;
-  turnPassword: string | null;
+  iceServers: IceServer[];
+  forceRelayOnly: boolean;
   notification: DefaultNotificationOptions | null;
   savedRoomCode: string | null;
   tryReconnectRoom: boolean;
@@ -32,8 +33,8 @@ export interface StoreData {
 export const DEFAULT_STORE: StoreData = {
   steamId: null,
   token: null,
-  turnUsername: null,
-  turnPassword: null,
+  iceServers: [],
+  forceRelayOnly: true,
   notification: null,
   savedRoomCode: null,
   tryReconnectRoom: false,
@@ -41,16 +42,12 @@ export const DEFAULT_STORE: StoreData = {
     {
       name: 'Oceania',
       url: 'https://au.cs2voiceproximity.chat',
-      turn: 'turn:turn.cs2voiceproximity.chat',
-      stun: 'stun:turn.cs2voiceproximity.chat',
       disabled: false,
       ping: 0,
     },
     {
       name: 'Europe',
       url: 'https://eu.cs2voiceproximity.chat',
-      turn: 'turn:eu.turn.cs2voiceproximity.chat',
-      stun: 'stun:eu.turn.cs2voiceproximity.chat',
       disabled: false,
       ping: 0,
     },

@@ -15,7 +15,7 @@ declare global {
     loadMap: (map: string) => Promise<MapData>;
     reloadApp: () => void;
     promptSteamAuthentication: () => void;
-    retrieveTurnCredentials: () => void;
+    retrieveIceServers: () => void;
     clientVersion: () => string;
 
     getSettings: () => Promise<SettingsData>;

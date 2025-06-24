@@ -1,7 +1,7 @@
 import { shell } from 'electron';
 import jwt from 'jsonwebtoken';
 import openid from 'openid';
-import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import { retrieveIceServers } from './retrieveIceServers';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
 
@@ -33,7 +33,7 @@ export class SteamAuth {
           throw new Error('Token is invalid, expired, or missing expiration');
         }
         // Token is valid
-        await retrieveTurnCredentials();
+        await retrieveIceServers();
       } catch (e) {
         console.log(e);
         // Reset token
@@ -61,8 +61,7 @@ export class SteamAuth {
       return console.log('Invalid steamid64');
     }
 
-    defaultStore.set('turnUsername', null);
-    defaultStore.set('turnPassword', null);
+    defaultStore.set('iceServers', null);
     defaultStore.set('token', token);
     defaultStore.set('steamId', steamId64);
     console.log(`Setting token ${token}`);

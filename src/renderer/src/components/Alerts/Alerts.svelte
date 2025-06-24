@@ -8,8 +8,7 @@
 
   $: clientSteamId = $store.steamId;
   $: autoUpdateState = $store.autoUpdateState;
-  $: turnUsername = $store.turnUsername;
-  $: turnPassword = $store.turnPassword;
+  $: iceServers = $store.iceServers;
 
   export let joinRoomCallback: () => void;
 </script>
@@ -53,7 +52,7 @@
   </div>
 {/if}
 
-{#if clientSteamId && (!turnUsername || !turnPassword)}
+{#if clientSteamId && !iceServers.length}
   <Alert color="orange" class="text-center mb-4">
     <span class="font-medium">Failed to fetch TURN credentials.</span>
     <p>Please try logging out and back in, restarting the app, or try again later.</p>

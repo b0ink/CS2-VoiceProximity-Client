@@ -6,6 +6,17 @@ export interface Client {
   isMuted: boolean;
 }
 
+export interface TurnCredential {
+  username: string;
+  password: string;
+}
+
+export interface IceServer {
+  type: 'TURN' | 'STUN';
+  uri: string;
+  turnCredential?: TurnCredential;
+}
+
 export interface ServerToClientEvents {
   'current-map': (mapName: string) => void;
   'server-config': (data: Buffer<ArrayBufferLike>) => void;

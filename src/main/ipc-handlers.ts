@@ -6,11 +6,11 @@ import ping from 'ping';
 import { MapData, MapDoor, ReverbZone } from '@shared/types/maps';
 import { DEFAULT_STORE } from '@shared/types/store/default';
 import { getMainWindow } from './main-window';
-import { retrieveTurnCredentials } from './retrieveTurnCredentials';
+import { retrieveIceServers } from './retrieveIceServers';
 import defaultStore from './store/default';
 
-ipcMain.handle('get-turn-credentials', async () => {
-  return await retrieveTurnCredentials();
+ipcMain.handle('get-ice-servers', async () => {
+  return await retrieveIceServers();
 });
 
 ipcMain.handle('load-map', async (_event, map: string): Promise<MapData> => {

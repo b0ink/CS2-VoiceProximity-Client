@@ -50,3 +50,18 @@ export interface AudioConnectionStuff {
   toggleMute: (muted: boolean) => void;
   toggleDeafen: () => void;
 }
+
+// export interface RTCConfigurationData {
+//   bundlePolicy?: RTCBundlePolicy;
+//   certificates?: RTCCertificate[];
+//   iceCandidatePoolSize?: number;
+//   iceServers?: RTCIceServer[];
+//   iceTransportPolicy?: RTCIceTransportPolicy;
+//   rtcpMuxPolicy?: RTCRtcpMuxPolicy;
+// }
+
+// export interface RTCIceServer {
+//   credential?: string;
+//   urls: string | string[];
+//   username?: string;
+// }

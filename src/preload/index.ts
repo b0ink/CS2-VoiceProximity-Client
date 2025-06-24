@@ -15,7 +15,7 @@ const api = {
   loadMap: (map: string) => ipcRenderer.invoke('load-map', map),
   reloadApp: () => ipcRenderer.invoke('reload-app'),
   promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
-  retrieveTurnCredentials: () => ipcRenderer.invoke('get-turn-credentials'),
+  retrieveIceServers: () => ipcRenderer.invoke('get-ice-servers'),
   clientVersion: () => version,
 
   getSettings: () => ipcRenderer.invoke('settings:get'),

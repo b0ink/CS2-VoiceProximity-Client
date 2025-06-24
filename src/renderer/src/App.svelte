@@ -74,14 +74,14 @@
   // ClientStore
   $: clientSteamId = $store.steamId;
   $: clientToken = $store.token;
-  $: turnUsername = $store.turnUsername;
-  $: turnPassword = $store.turnPassword;
+  $: iceServers = $store.iceServers;
+  $: forceRelayOnly = $store.forceRelayOnly;
   $: savedRoomCode = $store.savedRoomCode;
   $: regions = $store.regions;
   $: tryReconnectRoom = $store.tryReconnectRoom;
 
   $: socketServerLabel = regions.find((r) => r.url === socketUrl)?.name || socketUrl;
-  $: selectedRegion = regions.find((r) => r.url === socketUrl);
+  // $: selectedRegion = regions.find((r) => r.url === socketUrl);
 
   // ServerConfig Store
   $: deadPlayerMuteDelay = $serverConfigStore.deadPlayerMuteDelay;
@@ -159,8 +159,11 @@
 
     initializeRenderer();
 
-    await window.api.retrieveTurnCredentials();
-    console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
+    // credentials are fetched from main process when the app loads and we've verified authentication
+    // await window.api.retrieveIceServers();
+
+    // console.log(`initialise: Received ice servers: ${JSON.stringify(iceServers)}`);
+    // console.log(`initialise: Received turn credentials: ${turnUsername}, ${turnPassword}`);
 
     $socket = io(socketUrl, {
       auth: {
@@ -517,7 +520,7 @@
         );
       }
 
-      if (!turnUsername || !turnPassword) {
+      if (!iceServers.length) {
         window.api.reloadApp();
       }
 
@@ -530,43 +533,27 @@
       // disconnectClient(client); // TODO:
 
       // eslint-disable-next-line no-undef
-      const DEFAULT_ICE_CONFIG: RTCConfiguration = {
-        iceTransportPolicy: 'all',
+      const peerConfig: RTCConfiguration = {
+        iceTransportPolicy: forceRelayOnly || useTurnConfig ? 'relay' : 'all',
         iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' },
-          { urls: 'stun:stun1.l.google.com:19302' },
-          { urls: 'stun:stun2.l.google.com:19302' },
-          {
-            urls: selectedRegion ? selectedRegion.stun : 'stun:turn.cs2voiceproximity.chat',
-          },
-          {
-            urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
-            username: turnUsername!,
-            credential: turnPassword!,
-          },
+          ...iceServers
+            .filter((s) => (!forceRelayOnly && !useTurnConfig) || s.type === 'TURN')
+            .map((s) => ({
+              urls: s.uri,
+              username: s.turnCredential?.username,
+              credential: s.turnCredential?.password,
+            })),
         ],
       };
 
-      // eslint-disable-next-line no-undef
-      const ICE_CONFIG_TURN: RTCConfiguration = {
-        iceTransportPolicy: 'relay', // protect IPs
-        iceServers: [
-          {
-            urls: selectedRegion ? selectedRegion.turn : 'turn:turn.cs2voiceproximity.chat',
-            username: turnUsername!,
-            credential: turnPassword!,
-          },
-        ],
-      };
-
-      console.log(ICE_CONFIG_TURN);
+      console.log(peerConfig);
 
       const connection = new Peer({
         stream,
         initiator,
         // @ts-ignore line
         iceRestartEnabled: true,
-        config: useTurnConfig ? ICE_CONFIG_TURN : DEFAULT_ICE_CONFIG,
+        config: peerConfig,
         trickle: true,
         channelConfig: {
           maxRetransmits: 0,
@@ -688,7 +675,7 @@
             type: 'warning',
           });
           console.error(
-            `$socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${turnUsername} - ${turnPassword}`,
+            `$socket.on('signal') Failed to initiate peer conencton with ${client.steamId}. ${JSON.stringify(iceServers)}`,
           );
         }
       }
@@ -886,8 +873,17 @@
       $currentTime = Date.now() / 1000;
     }, 1000);
 
+    const retrieveIceServersInterval = setInterval(
+      async () => {
+        console.log(`Retrieving ice servers`);
+        await window.api.retrieveIceServers();
+        // console.log(iceServers);
+      },
+      60 * 5 * 1000, // 5 minutes
+    );
     // Cleanup the interval when the component is destroyed
     onDestroy(() => {
+      clearInterval(retrieveIceServersInterval);
       clearInterval(interval);
       clearInterval(timeTrackInterval);
     });

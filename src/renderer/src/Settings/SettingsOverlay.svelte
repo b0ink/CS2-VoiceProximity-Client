@@ -13,6 +13,9 @@
   import TestMicrophone from './TestMicrophone.svelte';
 
   $: clientSteamId = $store.steamId;
+  $: forceRelayOnly = $store.forceRelayOnly;
+  $: iceServers = $store.iceServers;
+
   $: storedDeviceId = $settings.inputDeviceId;
   $: natFixEnabled = $settings.natFixEnabled;
   $: hqVoice = $settings.hqVoice;
@@ -230,9 +233,10 @@
         <Label class="mb-2">Voice preferences:</Label>
         <Toggle
           id="nat-fix"
-          checked={natFixEnabled}
+          checked={(natFixEnabled || forceRelayOnly) && iceServers.some((s) => s.type === 'TURN')}
           class="justify-between mb-2"
           onclick={toggleNatFix}
+          disabled={!iceServers.some((s) => s.type === 'TURN') || forceRelayOnly}
         >
           {#snippet offLabel()}
             Voice Relay Server

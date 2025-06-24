@@ -5,8 +5,7 @@
   import { connectedToRoom, roomCode } from '@store/playerStore';
   import { socketConnected } from '@store/socketStore';
 
-  $: turnUsername = $store.turnUsername;
-  $: turnPassword = $store.turnPassword;
+  $: iceServers = $store.iceServers;
   $: autoUpdateState = $store.autoUpdateState;
 
   export let joinRoomCallback: () => void;
@@ -50,8 +49,7 @@
       onclick={joinRoomCallback}
       disabled={$connectedToRoom ||
         !$socketConnected ||
-        !turnUsername ||
-        !turnPassword ||
+        !iceServers.length ||
         !$roomCode ||
         autoUpdateState?.state === 'downloading'}
     >
