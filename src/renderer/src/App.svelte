@@ -772,16 +772,8 @@
   };
 
   const updateSoundFilters = (): void => {
-    // const map = getMap();
-    // const occlusionMesh = map ? [map, ...getMapDoors()] : [];
-
     for (const soundData of $remotePlayers.values()) {
-      soundData?.updateFilters(
-        // occlusionMesh,
-        occlusionQuality,
-        $serverConfigStore,
-        getReverbZones(),
-      );
+      soundData?.updateFilters(occlusionQuality, $serverConfigStore, getReverbZones());
     }
   };
 
