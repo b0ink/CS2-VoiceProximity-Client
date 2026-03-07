@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OcclusionQuality } from '@shared/types/store/settings';
 import settings from '@store/settings';
-import { getMap } from './maps';
 
 let occlusionAutoQuality: boolean;
 let occlusionQuality: number;
@@ -41,10 +40,10 @@ export function renderFrame(
   shouldUpdateSoundFilters++;
 
   if (
-    getMap() &&
     // update sound filters at a reduced rate when settings is open to avoid laggy UI
     // otherwise update sound filters according to occlusionUpdateRate
-    shouldUpdateSoundFilters % Math.floor(settingsOpen ? 2 : occlusionUpdateRate) === 0
+    shouldUpdateSoundFilters % Math.floor(settingsOpen ? 2 : occlusionUpdateRate) ===
+    0
   ) {
     shouldUpdateSoundFilters = 0;
     updateSoundFilters();

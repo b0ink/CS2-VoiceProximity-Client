@@ -45,7 +45,7 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { flipDoor, getMap, getMapDoors, getReverbZones, initializeMap } from './render/maps';
+  import { getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
   import { decodePlayerData, decodeServerConfig } from './utils/decode';
@@ -329,11 +329,11 @@
       }
     });
 
-    $socket?.on('door-rotation', (data) => {
-      // console.log(`$socket.on('door-rotation'): ${JSON.stringify(data)}`);
-      const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
-      flipDoor(origin, data.rotation);
-    });
+    // $socket?.on('door-rotation', (data) => {
+    //   // console.log(`$socket.on('door-rotation'): ${JSON.stringify(data)}`);
+    //   const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
+    //   flipDoor(origin, data.rotation);
+    // });
 
     // $socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
     $socket?.on('player-positions', (data) => {
@@ -403,6 +403,8 @@
           if (!positionalSound) {
             continue;
           }
+
+          positionalSound.SetServerOcclusion(player.occlusion ?? 0);
 
           positionalSound.playerIsAlive =
             player.isAlive &&
@@ -770,16 +772,16 @@
   };
 
   const updateSoundFilters = (): void => {
-    const map = getMap();
-    if (map) {
-      for (const soundData of $remotePlayers.values()) {
-        soundData?.updateFilters(
-          [map, ...getMapDoors()],
-          occlusionQuality,
-          $serverConfigStore,
-          getReverbZones(),
-        );
-      }
+    // const map = getMap();
+    // const occlusionMesh = map ? [map, ...getMapDoors()] : [];
+
+    for (const soundData of $remotePlayers.values()) {
+      soundData?.updateFilters(
+        // occlusionMesh,
+        occlusionQuality,
+        $serverConfigStore,
+        getReverbZones(),
+      );
     }
   };
 
@@ -812,6 +814,20 @@
       return;
     }
     $threejs.autoClear = true;
+    $threejs.setClearColor(0x101820, 1);
+
+    if (!$scene.getObjectByName('debug-ambient-light')) {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.25);
+      ambientLight.name = 'debug-ambient-light';
+      $scene.add(ambientLight);
+    }
+
+    if (!$scene.getObjectByName('debug-directional-light')) {
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.75);
+      directionalLight.name = 'debug-directional-light';
+      directionalLight.position.set(2000, 2500, 2000);
+      $scene.add(directionalLight);
+    }
 
     const threeJsDom = document.querySelector('#threejs');
     if (!threeJsDom) {

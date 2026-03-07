@@ -5,7 +5,7 @@ import type { RemotePlayer } from '../RemotePlayer';
 const fov = 60;
 const aspect = 1920 / 1080;
 const near = 1.0;
-const far = 650.0;
+const far = 20000.0;
 export const clientCamera = writable<THREE.PerspectiveCamera>(
   new THREE.PerspectiveCamera(fov, aspect, near, far),
 );

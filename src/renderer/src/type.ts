@@ -37,6 +37,7 @@ export interface PlayerPositionApiData {
   team?: CsTeam;
   isAlive?: boolean;
   spectatingC4?: boolean;
+  occlusion?: number;
 }
 
 export interface AudioConnectionStuff {
