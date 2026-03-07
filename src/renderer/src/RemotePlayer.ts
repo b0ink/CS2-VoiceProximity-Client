@@ -425,12 +425,10 @@ export class RemotePlayer {
   }
 
   public updateFilters(
-    // occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
     occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
     reverbZones?: ReverbZone[] | null,
   ): void {
-    // void occlusionMesh;
     void occlusionQuality;
 
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);

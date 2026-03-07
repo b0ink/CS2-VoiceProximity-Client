@@ -329,13 +329,6 @@
       }
     });
 
-    // $socket?.on('door-rotation', (data) => {
-    //   // console.log(`$socket.on('door-rotation'): ${JSON.stringify(data)}`);
-    //   const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
-    //   flipDoor(origin, data.rotation);
-    // });
-
-    // $socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
     $socket?.on('player-positions', (data) => {
       if (!$connectedToRoom) {
         return;
