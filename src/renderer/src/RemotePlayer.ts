@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import type { Client } from '@shared/types/api';
 import type { ImpulseResponseType, ReverbZone } from '@shared/types/maps';
 import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
-import { OcclusionQuality } from '@shared/types/store/settings';
 import { talkingIndicatorStore } from '@store/talking-indicators';
 import { transformVector } from './lib/vector';
 import { CsTeam } from './type';
@@ -425,12 +424,9 @@ export class RemotePlayer {
   }
 
   public updateFilters(
-    occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
     reverbZones?: ReverbZone[] | null,
   ): void {
-    void occlusionQuality;
-
     const distance = calculateDistance(this.clientCamera?.position, this.playerObject?.position);
 
     if (!distance) {

@@ -14,7 +14,7 @@
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
+  import { DEFAULT_PLAYER_VOLUME } from '@shared/types/store/settings';
   import {
     currentTime,
     nextServerRestart,
@@ -65,7 +65,6 @@
   }
   $: useTurnConfig = $settings.natFixEnabled;
   $: microphoneMuted = $settings.micMuted;
-  $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
@@ -294,9 +293,6 @@
 
     $socket?.on('current-map', async (mapName) => {
       console.log(`$socket.on('current-map'): ${mapName}`);
-      if ($settings.occlusionAutoQuality) {
-        window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
-      }
       await initializeMap($scene, mapName);
     });
 
@@ -449,7 +445,7 @@
         }
       }
 
-      renderFrame($threejs, $scene, $clientCamera, $settingsOpen, updateSoundFilters);
+      renderFrame($threejs, $scene, $clientCamera, updateSoundFilters);
     });
   }
 
@@ -721,9 +717,6 @@
         };
         document.querySelector('#threejs')!.innerHTML = '';
         initializeRenderer();
-        if ($settings.occlusionAutoQuality) {
-          window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
-        }
         await initializeMap($scene, response.mapName ?? 'de_dust2');
         if (response.serverConfig) {
           serverConfigStore.set({
@@ -766,7 +759,7 @@
 
   const updateSoundFilters = (): void => {
     for (const soundData of $remotePlayers.values()) {
-      soundData?.updateFilters(occlusionQuality, $serverConfigStore, getReverbZones());
+      soundData?.updateFilters($serverConfigStore, getReverbZones());
     }
   };
 
@@ -1013,12 +1006,6 @@
 
   {#if clientSteamId && socketUrl}
     <div class="m-2 overflow-hidden relative">
-      {#if $roomCode}
-        <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
-          <span>Occlusion Detail:</span>
-          {OcclusionQuality[occlusionQuality]}
-        </div>
-      {/if}
       {#if microphoneMuted}
         <div
           class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs p-1 z-5"

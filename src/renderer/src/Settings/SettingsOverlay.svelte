@@ -1,8 +1,6 @@
 <script lang="ts">
-  import { Button, Heading, Label, Modal, Select, Toggle, cn } from 'flowbite-svelte';
-  import { Tooltip } from 'flowbite-svelte';
+  import { Button, Heading, Label, Modal, Select, Toggle, Tooltip } from 'flowbite-svelte';
   import { onMount } from 'svelte';
-  import { OcclusionQuality } from '@shared/types/store/settings';
   import { serverConfigOverlayOpen, settingsOpen } from '@store/appStore';
   import store from '@store/client';
   import { connectedToRoom } from '@store/playerStore';
@@ -21,10 +19,8 @@
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
   // $: globalGainAmount = $settings.globalGainAmount;
-  $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
-  $: occlusionAutoQuality = $settings.occlusionAutoQuality;
 
   let selectedDeviceId: string | null;
 
@@ -69,15 +65,6 @@
   // $: if (globalGainAmount) {
   //   gainAmountRangeValue = globalGainAmount;
   // }
-
-  let occlusionQualitySelectValue: number;
-  $: if (occlusionQuality !== null) {
-    occlusionQualitySelectValue = occlusionQuality;
-  }
-  const onOcclusionQualityChange = (): void => {
-    console.log(occlusionQualitySelectValue);
-    window.api.setSettingsValue('occlusionQuality', occlusionQualitySelectValue);
-  };
 
   onMount(() => {
     getDevices();
@@ -283,41 +270,6 @@
             Echo Cancellation
           {/snippet}</Toggle
         >
-
-        <Label title="" for="occlusion-quality" class="">Sound Occlusion Detail:</Label>
-        <p class="text-xs text-gray-400 mb-2">
-          Controls how precisely sound is blocked. Higher levels use more raycasts and may reduce
-          performance.
-        </p>
-
-        <Toggle
-          id="echo-cancellation"
-          checked={occlusionAutoQuality}
-          class="justify-between mb-2"
-          onclick={() => {
-            window.api.setSettingsValue('occlusionAutoQuality', !occlusionAutoQuality);
-          }}
-        >
-          {#snippet offLabel()}
-            Auto Performance Adjust
-          {/snippet}</Toggle
-        >
-
-        <Select
-          bind:value={occlusionQualitySelectValue}
-          onchange={onOcclusionQualityChange}
-          id="occlusion-quality"
-          class={cn('mb-4', occlusionAutoQuality && 'cursor-not-allowed dark:text-gray-400')}
-          disabled={occlusionAutoQuality}
-        >
-          <option value={OcclusionQuality.OFF}>No Occlusion</option>
-          <option value={OcclusionQuality.VERYLOW}>Very Low</option>
-          <option value={OcclusionQuality.LOW}>Low</option>
-          <option value={OcclusionQuality.MEDIUM}>Medium</option>
-          <option value={OcclusionQuality.HIGH}>High</option>
-          <option value={OcclusionQuality.VERYHIGH}>Very High</option>
-          <option value={OcclusionQuality.ULTRA}>Ultra</option>
-        </Select>
 
         <MuteShortcut />
 
