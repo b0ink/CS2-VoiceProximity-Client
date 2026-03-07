@@ -6,6 +6,8 @@ import { talkingIndicatorStore } from '@store/talking-indicators';
 import { transformVector } from './lib/vector';
 import { CsTeam } from './type';
 
+const SHOW_REMOTE_PLAYER_MESH = false;
+
 export class RemotePlayer {
   public playerVoice2D: THREE.Audio;
   public playerVoice3D: THREE.PositionalAudio;
@@ -74,6 +76,7 @@ export class RemotePlayer {
       new THREE.BoxGeometry(12, 24, 12),
       new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
     );
+    playerObject.visible = SHOW_REMOTE_PLAYER_MESH;
     scene.add(playerObject);
 
     this.useMonoAudio = false;
