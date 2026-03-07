@@ -1,6 +1,6 @@
 # CS2 Voice Proximity (Client)
 
-Electron-based client for proximity voice chat in Counter-Strike 2, featuring 3D positional audio and sound occlusion using [Three.js](https://threejs.org).
+Electron-based client for proximity voice chat in Counter-Strike 2, featuring 3D positional audio with server-side raycast occlusion using [Three.js](https://threejs.org).
 
 ## Links
 
@@ -57,17 +57,17 @@ npm run dev:multi 2
 
 ## How it works
 
-The [CS2 plugin](https://github.com/b0ink/CS2-VoiceProximity-Plugin) sends player positions to an API, which broadcasts the data to all connected clients in a voice room.
+The [CS2 plugin](https://github.com/b0ink/CS2-VoiceProximity-Plugin) sends player position data and server-computed occlusion data to an API, which broadcasts listener-specific updates to connected clients in a voice room.
 
-Each client loads a simplified 3D model of the CS2 map and uses raycasting to simulate positional audio and occlusion effects.
+The client uses these updates to render positional audio and apply audio filtering in real time.
 
 ### Occlusion
 
-Occlusion is determined by raycasts between you and other players. More raycasts = smoother occlusion transitions, but higher CPU load. For example, half-peeking a wall will result in partially muffled audio.
+Occlusion is calculated on the game server with raycasts between each listener and other players.
 
-A percentage of blocked vs. clear rays determines how much the audio is filtered. The client dynamically reduces raycast count if performance drops.
+A listener-specific blocked-vs-clear ray fraction is sent to each client, which applies the value to low-pass filtering and distance falloff so players behind cover sound muffled.
 
-Diagram of raycast patterns by quality level:
+Diagram of server-side raycast patterns by quality level:
 
 <p align="center">
     <img src="./screenshots/7-occlusion-raycasts.png" />
