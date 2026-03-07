@@ -14,7 +14,7 @@
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
-  import { DEFAULT_PLAYER_VOLUME, OcclusionQuality } from '@shared/types/store/settings';
+  import { DEFAULT_PLAYER_VOLUME } from '@shared/types/store/settings';
   import {
     currentTime,
     nextServerRestart,
@@ -45,7 +45,7 @@
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
-  import { flipDoor, getMap, getMapDoors, getReverbZones, initializeMap } from './render/maps';
+  import { getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
   import { decodePlayerData, decodeServerConfig } from './utils/decode';
@@ -65,7 +65,6 @@
   }
   $: useTurnConfig = $settings.natFixEnabled;
   $: microphoneMuted = $settings.micMuted;
-  $: occlusionQuality = $settings.occlusionQuality;
   $: noiseSuppression = $settings.noiseSuppression;
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
@@ -294,9 +293,6 @@
 
     $socket?.on('current-map', async (mapName) => {
       console.log(`$socket.on('current-map'): ${mapName}`);
-      if ($settings.occlusionAutoQuality) {
-        window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
-      }
       await initializeMap($scene, mapName);
     });
 
@@ -329,13 +325,6 @@
       }
     });
 
-    $socket?.on('door-rotation', (data) => {
-      // console.log(`$socket.on('door-rotation'): ${JSON.stringify(data)}`);
-      const origin = new THREE.Vector3(data.absorigin.x, data.absorigin.y, data.absorigin.z);
-      flipDoor(origin, data.rotation);
-    });
-
-    // $socket?.on('player-positions', (players: PlayerPositionApiData[]) => {
     $socket?.on('player-positions', (data) => {
       if (!$connectedToRoom) {
         return;
@@ -404,6 +393,8 @@
             continue;
           }
 
+          positionalSound.SetServerOcclusion(player.occlusion ?? 0);
+
           positionalSound.playerIsAlive =
             player.isAlive &&
             (player.team === CsTeam.CounterTerrorist || player.team === CsTeam.Terrorist)
@@ -454,7 +445,7 @@
         }
       }
 
-      renderFrame($threejs, $scene, $clientCamera, $settingsOpen, updateSoundFilters);
+      renderFrame($threejs, $scene, $clientCamera, updateSoundFilters);
     });
   }
 
@@ -726,9 +717,6 @@
         };
         document.querySelector('#threejs')!.innerHTML = '';
         initializeRenderer();
-        if ($settings.occlusionAutoQuality) {
-          window.api.setSettingsValue('occlusionQuality', OcclusionQuality.VERYLOW);
-        }
         await initializeMap($scene, response.mapName ?? 'de_dust2');
         if (response.serverConfig) {
           serverConfigStore.set({
@@ -770,16 +758,8 @@
   };
 
   const updateSoundFilters = (): void => {
-    const map = getMap();
-    if (map) {
-      for (const soundData of $remotePlayers.values()) {
-        soundData?.updateFilters(
-          [map, ...getMapDoors()],
-          occlusionQuality,
-          $serverConfigStore,
-          getReverbZones(),
-        );
-      }
+    for (const soundData of $remotePlayers.values()) {
+      soundData?.updateFilters($serverConfigStore, getReverbZones());
     }
   };
 
@@ -812,6 +792,20 @@
       return;
     }
     $threejs.autoClear = true;
+    $threejs.setClearColor(0x101820, 1);
+
+    if (!$scene.getObjectByName('debug-ambient-light')) {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 1.25);
+      ambientLight.name = 'debug-ambient-light';
+      $scene.add(ambientLight);
+    }
+
+    if (!$scene.getObjectByName('debug-directional-light')) {
+      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.75);
+      directionalLight.name = 'debug-directional-light';
+      directionalLight.position.set(2000, 2500, 2000);
+      $scene.add(directionalLight);
+    }
 
     const threeJsDom = document.querySelector('#threejs');
     if (!threeJsDom) {
@@ -1012,12 +1006,6 @@
 
   {#if clientSteamId && socketUrl}
     <div class="m-2 overflow-hidden relative">
-      {#if $roomCode}
-        <div class="absolute left-0 top-0 bg-black text-white text-xs p-1 z-5">
-          <span>Occlusion Detail:</span>
-          {OcclusionQuality[occlusionQuality]}
-        </div>
-      {/if}
       {#if microphoneMuted}
         <div
           class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs p-1 z-5"

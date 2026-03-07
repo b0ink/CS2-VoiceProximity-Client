@@ -3,15 +3,6 @@ import { KeyCodeEvent } from '../keycodes';
 export interface ClientVolumeMap {
   [steamId: string]: number;
 }
-export enum OcclusionQuality {
-  OFF = 0,
-  VERYLOW,
-  LOW,
-  MEDIUM,
-  HIGH,
-  VERYHIGH,
-  ULTRA,
-}
 
 export interface SettingsData {
   alwaysOnTop: boolean;
@@ -21,8 +12,6 @@ export interface SettingsData {
   socketServer: string | null;
   micMuted: boolean;
   globalGainAmount: number;
-  occlusionQuality: OcclusionQuality;
-  occlusionAutoQuality: boolean;
   noiseSuppression: boolean;
   echoCancellation: boolean;
   playerVolumes: ClientVolumeMap;
@@ -40,8 +29,6 @@ export const DEFAULT_SETTINGS: SettingsData = {
   socketServer: null,
   micMuted: false,
   globalGainAmount: 2.5,
-  occlusionQuality: OcclusionQuality.HIGH,
-  occlusionAutoQuality: true,
   noiseSuppression: true,
   echoCancellation: true,
   playerVolumes: {},

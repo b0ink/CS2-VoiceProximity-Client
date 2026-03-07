@@ -1,32 +1,12 @@
 import * as THREE from 'three';
-import {
-  acceleratedRaycast,
-  computeBatchedBoundsTree,
-  computeBoundsTree,
-  disposeBatchedBoundsTree,
-  disposeBoundsTree,
-} from 'three-mesh-bvh';
 import type { Client } from '@shared/types/api';
 import type { ImpulseResponseType, ReverbZone } from '@shared/types/maps';
 import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
-import { OcclusionQuality } from '@shared/types/store/settings';
 import { talkingIndicatorStore } from '@store/talking-indicators';
 import { transformVector } from './lib/vector';
 import { CsTeam } from './type';
 
-// Add the extension functions
-THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
-THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
-THREE.Mesh.prototype.raycast = acceleratedRaycast;
-
-THREE.BatchedMesh.prototype.computeBoundsTree = computeBatchedBoundsTree;
-THREE.BatchedMesh.prototype.disposeBoundsTree = disposeBatchedBoundsTree;
-THREE.BatchedMesh.prototype.raycast = acceleratedRaycast;
-
-interface OcclusionData {
-  occlusion: number; // between 0 - 1.0
-  totalExtraHits: number;
-}
+const SHOW_REMOTE_PLAYER_MESH = false;
 
 export class RemotePlayer {
   public playerVoice2D: THREE.Audio;
@@ -75,6 +55,7 @@ export class RemotePlayer {
   public rms: number = 0;
   private dummyGain?: GainNode;
   private occlusionPct: number = 0;
+  private serverOcclusion?: number;
 
   private remoteStream: MediaStream;
 
@@ -92,9 +73,10 @@ export class RemotePlayer {
     this.playerTeam = CsTeam.None;
 
     const playerObject = new THREE.Mesh(
-      new THREE.BoxGeometry(4, 8, 4),
-      new THREE.MeshStandardMaterial({ color: 0xffffff }),
+      new THREE.BoxGeometry(12, 24, 12),
+      new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
     );
+    playerObject.visible = SHOW_REMOTE_PLAYER_MESH;
     scene.add(playerObject);
 
     this.useMonoAudio = false;
@@ -384,6 +366,16 @@ export class RemotePlayer {
     }
   }
 
+  public SetServerOcclusion(occlusion?: number): void {
+    if (typeof occlusion !== 'number' || Number.isNaN(occlusion)) {
+      // Treat missing/invalid payloads as "not occluded" so downstream math is deterministic.
+      this.serverOcclusion = 0;
+      return;
+    }
+
+    this.serverOcclusion = THREE.MathUtils.clamp(occlusion, 0, 1);
+  }
+
   private setFilterFrequency(filter: BiquadFilterNode | undefined, amount: number): void {
     if (!filter || !Number.isFinite(amount) || !this.listener_) {
       return;
@@ -435,8 +427,6 @@ export class RemotePlayer {
   }
 
   public updateFilters(
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
-    occlusionQuality: OcclusionQuality,
     occlusionConfig?: ServerConfigData,
     reverbZones?: ReverbZone[] | null,
   ): void {
@@ -457,16 +447,9 @@ export class RemotePlayer {
     }
     // TODO: also ignore occlusion on players that have their microphone muted
     let occlusionFinal: number | undefined = undefined;
-    const maxDistance =
-      occlusionConfig?.volumeMaxDistance ?? DEFAULT_SERVER_CONFIG.volumeMaxDistance;
 
     if (this.playerTeam !== CsTeam.None) {
-      const { occlusion } = this.calculateOcclusion(
-        occlusionMesh,
-        this.clientCamera?.position,
-        this.playerObject?.position,
-        distance <= maxDistance ? occlusionQuality : OcclusionQuality.VERYLOW,
-      );
+      const occlusion = this.serverOcclusion ?? 0;
       occlusionFinal = occlusion;
       this.updateOcclusion(distance, occlusion, occlusionConfig);
     }
@@ -639,169 +622,6 @@ export class RemotePlayer {
     const targetHighpass = 100;
     this.setHighPassFilterFrequency(targetHighpass);
   }
-
-  private calculateOcclusion = (
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
-    Listener_?: THREE.Vector3,
-    playerVoice3D?: THREE.Vector3,
-    occlusionQuality: OcclusionQuality = OcclusionQuality.MEDIUM,
-  ): OcclusionData => {
-    if (!Listener_ || !playerVoice3D) {
-      return {
-        occlusion: 0,
-        totalExtraHits: 0,
-      };
-    }
-
-    if (occlusionQuality == OcclusionQuality.OFF) {
-      return {
-        occlusion: 0,
-        totalExtraHits: 0,
-      };
-    }
-
-    // Ensure our widening isnt bigger than our playermodel (64; 32 from middle), otherwise itll pass through walls
-    const SndOcclusonWidening = 31;
-
-    const SoundLeft = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, true);
-    const SoundRight = this.calculatePoint(playerVoice3D, Listener_, SndOcclusonWidening, false);
-
-    const ListenerLeft = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, true);
-    const ListenerRight = this.calculatePoint(Listener_, playerVoice3D, SndOcclusonWidening, false);
-
-    const lines: number[] = [];
-
-    if (occlusionQuality >= OcclusionQuality.VERYLOW) {
-      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, Listener_));
-    }
-
-    if (occlusionQuality >= OcclusionQuality.MEDIUM) {
-      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerLeft));
-      lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerRight));
-    }
-
-    if (occlusionQuality >= OcclusionQuality.HIGH) {
-      lines.push(this.didIntersect(occlusionMesh, SoundLeft, Listener_));
-      lines.push(this.didIntersect(occlusionMesh, SoundRight, Listener_));
-    }
-
-    // Not recommended on maps with high mesh/face count
-    if (occlusionQuality >= OcclusionQuality.VERYHIGH) {
-      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerLeft));
-      lines.push(this.didIntersect(occlusionMesh, playerVoice3D, ListenerRight));
-    }
-
-    if (occlusionQuality >= OcclusionQuality.ULTRA) {
-      lines.push(this.didIntersect(occlusionMesh, SoundLeft, ListenerRight));
-      lines.push(this.didIntersect(occlusionMesh, SoundRight, ListenerLeft));
-    }
-
-    let hits = 0;
-    for (const line of lines) {
-      if (line >= 1) {
-        hits += 1;
-      }
-    }
-    if (hits > 0) {
-      // console.log(`${hits} / 11 got hit. these equals to ${hits / 11}. setting filter to ${11000 - (hits / 11) * 11000}`);
-    }
-
-    let occlusionRatio = hits / lines.length;
-    let totalExtraHits = 0;
-
-    if (occlusionRatio === 1) {
-      // Check how many extra hits occurred (i.e. walls behind walls)
-      for (const line of lines) {
-        if (line > 1) {
-          totalExtraHits += line - 1;
-        }
-      }
-      const extraDampening = THREE.MathUtils.clamp(totalExtraHits / lines.length, 0, 1);
-      // Blend between normal full occlusion and extreme occlusion
-      // 1 => 100% occluded, 2 => extra occluded (more walls)
-      occlusionRatio += extraDampening; // could also weight this if needed
-    }
-
-    return { occlusion: hits / lines.length, totalExtraHits: totalExtraHits };
-
-    // return hits / 11;
-  };
-
-  private raycaster = new THREE.Raycaster();
-  private raycasterHits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
-
-  private didIntersect = (
-    occlusionMesh: THREE.Group<THREE.Object3DEventMap>[],
-    v1: THREE.Vector3,
-    v2: THREE.Vector3,
-  ): number => {
-    if (occlusionMesh == null) {
-      return 0;
-    }
-
-    const dir = v2.clone().sub(v1).normalize();
-    this.raycaster.set(v1, dir);
-    this.raycaster.firstHitOnly = true;
-
-    // const hits: THREE.Intersection<THREE.Object3D<THREE.Object3DEventMap>>[] = [];
-    this.raycasterHits.length = 0;
-    for (const mesh of occlusionMesh) {
-      if (!mesh.visible) {
-        // Skip destroyed doors
-        continue;
-      }
-      // hits = hits +  this.raycaster.intersectObject(mesh, true);
-      this.raycaster.intersectObject(mesh, true, this.raycasterHits);
-      // hits.push(...hit);
-    }
-    // const hits = this.raycaster.intersectObject(occlusionMesh, true);
-    const maxDistance = v1.distanceTo(v2);
-    const filteredHits = this.raycasterHits.filter((hit) => hit.distance <= maxDistance);
-    // return hits.length;
-    // const hits = this.raycaster.intersectObject(occlusionMesh, true);
-
-    // console.log(`Ray hit ${filteredHits.length} objects`);
-
-    // filteredHits.forEach((hit) => {
-    //   // console.log(`Hit ${i}: Distance = ${hit.distance.toFixed(2)}, Object = ${hit.object.name}`);
-
-    //   // Calculate the size of the mesh
-    //   // TODO: we can use this in the future if our walls have thickness, and we can scale our occlusion with the 3d volume of the wall
-    //   if (hit.object instanceof THREE.Mesh) {
-    //     const object = hit.object as THREE.Mesh;
-    //     object.geometry.computeBoundingBox();
-    //     const box = object.geometry.boundingBox;
-    //     const size = new THREE.Vector3();
-    //     if (box) {
-    //       box.getSize(size);
-    //       // console.log("Mesh size:", size);
-    //     }
-    //   }
-    // });
-
-    return filteredHits.length;
-  };
-
-  private calculatePoint = (
-    a: THREE.Vector3,
-    b: THREE.Vector3,
-    m: number,
-    posOrneg: boolean,
-  ): THREE.Vector3 => {
-    const n = new THREE.Vector3(a.x, 0, a.z).distanceTo(new THREE.Vector3(b.x, 0, b.z));
-    const mn = m / n;
-    let x, z;
-
-    if (posOrneg) {
-      x = a.x + mn * (a.z - b.z);
-      z = a.z - mn * (a.x - b.x);
-    } else {
-      x = a.x - mn * (a.z - b.z);
-      z = a.z + mn * (a.x - b.x);
-    }
-
-    return new THREE.Vector3(x, a.y, z);
-  };
 }
 
 const calculateDistance = (a?: THREE.Vector3, b?: THREE.Vector3): number | null => {

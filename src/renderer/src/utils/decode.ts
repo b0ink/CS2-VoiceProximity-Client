@@ -2,29 +2,33 @@ import { decode } from '@msgpack/msgpack';
 import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
 import type { PlayerPositionApiData } from '../type';
 
+type PackedPlayerData = [
+  string, // steamId
+  string, // name
+  boolean, // isAdmin
+  number, // originX
+  number, // originY
+  number, // originZ
+  number, // lookAtX
+  number, // lookAtY
+  number, // lookAtZ
+  number, // team
+  boolean, // isAlive
+  boolean, // spectatingC4
+  number?, // listener-specific occlusion
+];
+
 export function decodePlayerData(data: Buffer<ArrayBufferLike>): PlayerPositionApiData[] {
   const decoded = decode(new Uint8Array(data));
-  const players = decoded as Array<
-    [
-      string, // steamId
-      string, // name
-      boolean, // isAdmin
-      number, // originX
-      number, // originY
-      number, // originZ
-      number, // lookAtX
-      number, // lookAtY
-      number, // lookAtZ
-      number, // team
-      boolean, // isAlive
-      boolean, // spectatingC4
-    ]
-  >;
+  const players = decoded as PackedPlayerData[];
 
   const localPlayerData: PlayerPositionApiData[] = [];
 
   for (const player of players) {
-    const [steamId, name, isAdmin, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4] = player;
+    const [steamId, name, isAdmin, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4, occlusion] =
+      player;
+    const playerOcclusion =
+      typeof occlusion === 'number' && Number.isFinite(occlusion) ? occlusion : 0;
 
     // Cast to PlayerData interface
     const playerData: PlayerPositionApiData = {
@@ -42,6 +46,7 @@ export function decodePlayerData(data: Buffer<ArrayBufferLike>): PlayerPositionA
       team,
       isAlive,
       spectatingC4,
+      occlusion: playerOcclusion,
     };
     localPlayerData.push(playerData);
   }
