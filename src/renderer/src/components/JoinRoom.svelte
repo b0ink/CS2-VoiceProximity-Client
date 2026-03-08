@@ -49,7 +49,7 @@
       onclick={joinRoomCallback}
       disabled={$connectedToRoom ||
         !$socketConnected ||
-        !iceServers.length ||
+        !iceServers?.length ||
         !$roomCode ||
         autoUpdateState?.state === 'downloading'}
     >

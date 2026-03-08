@@ -511,7 +511,7 @@
         );
       }
 
-      if (!iceServers.length) {
+      if (!iceServers?.length) {
         window.api.reloadApp();
       }
 

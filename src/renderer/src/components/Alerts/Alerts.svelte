@@ -52,7 +52,7 @@
   </div>
 {/if}
 
-{#if clientSteamId && !iceServers.length}
+{#if clientSteamId && !iceServers?.length}
   <Alert color="orange" class="text-center mb-4">
     <span class="font-medium">Failed to fetch TURN credentials.</span>
     <p>Please try logging out and back in, restarting the app, or try again later.</p>
