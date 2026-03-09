@@ -51,6 +51,12 @@ export const DEFAULT_STORE: StoreData = {
       disabled: false,
       ping: 0,
     },
+    {
+      name: 'US (Dallas)',
+      url: 'https://us-central.cs2voiceproximity.chat',
+      disabled: false,
+      ping: 0,
+    },
   ],
   autoUpdateState: null,
 };
