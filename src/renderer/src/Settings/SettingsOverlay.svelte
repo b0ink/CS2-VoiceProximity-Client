@@ -18,6 +18,7 @@
   $: natFixEnabled = $settings.natFixEnabled;
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
+  $: showDebugMap = $settings.showDebugMap ?? false;
   // $: globalGainAmount = $settings.globalGainAmount;
   $: noiseSuppression = $settings.noiseSuppression;
   $: echoCancellation = $settings.echoCancellation;
@@ -215,6 +216,19 @@
             Always On Top
           {/snippet}</Toggle
         >
+        <Toggle
+          id="show-debug-map"
+          checked={showDebugMap}
+          class="justify-between mb-2"
+          onclick={() => {
+            window.api.setSettingsValue('showDebugMap', !showDebugMap);
+          }}
+        >
+          {#snippet offLabel()}
+            Show Debug Map
+          {/snippet}</Toggle
+        >
+        <Tooltip>Shows the hidden Three.js viewport for debugging.</Tooltip>
       </div>
       <div>
         <Label class="mb-2">Voice preferences:</Label>

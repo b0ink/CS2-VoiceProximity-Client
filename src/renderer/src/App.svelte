@@ -66,6 +66,7 @@
   $: useTurnConfig = $settings.natFixEnabled;
   $: microphoneMuted = $settings.micMuted;
   $: noiseSuppression = $settings.noiseSuppression;
+  $: showDebugMap = $settings.showDebugMap ?? false;
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
     updateGainFilters();
@@ -945,7 +946,7 @@
 
 <div
   class={cn(
-    'p-5',
+    'p-5 relative',
     (!clientSteamId || !socketUrl) && 'flex flex-col items-center justify-center w-full',
   )}
 >
@@ -1005,15 +1006,12 @@
   {/if}
 
   {#if clientSteamId && socketUrl}
-    <div class="m-2 overflow-hidden relative">
-      {#if microphoneMuted}
-        <div
-          class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-red-500 text-white text-xs p-1 z-5"
-        >
-          <span>You are currently muted</span>
-        </div>
-      {/if}
-      <!-- <div class="absolute right-0 top-0 bg-black text-white text-xs p-1 z-5">
+    {#if microphoneMuted && $connectedToRoom}
+      <div class="m-2 bg-red-500 text-white text-xs p-1 text-center rounded">
+        <span>You are currently muted</span>
+      </div>
+    {/if}
+    <!-- <div class="absolute right-0 top-0 bg-black text-white text-xs p-1 z-5">
         <UserSettingsSolid
           onclick={() => {
             $serverConfigOverlayOpen = !$serverConfigOverlayOpen;
@@ -1026,11 +1024,15 @@
           size="md"
         />
       </div> -->
-      <div
-        class={cn('dark:bg-gray-900 relative', !$connectedToRoom && 'hidden')}
-        id="threejs"
-      ></div>
-    </div>
+    <div
+      class={cn(
+        'dark:bg-gray-900 absolute left-0 top-0 pointer-events-none',
+        !$connectedToRoom && 'hidden',
+        showDebugMap ? 'opacity-100' : 'opacity-0',
+      )}
+      id="threejs"
+      aria-hidden={!showDebugMap}
+    ></div>
 
     {#if $connectedToRoom}
       <PlayerList players={playerPositions}></PlayerList>

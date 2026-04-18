@@ -6,6 +6,7 @@ export interface ClientVolumeMap {
 
 export interface SettingsData {
   alwaysOnTop: boolean;
+  showDebugMap: boolean;
   natFixEnabled: boolean;
   hqVoice: boolean;
   inputDeviceId: string | null;
@@ -23,6 +24,7 @@ export const MAX_PLAYER_VOLUME = 200;
 
 export const DEFAULT_SETTINGS: SettingsData = {
   alwaysOnTop: true,
+  showDebugMap: false,
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
