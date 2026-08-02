@@ -57,9 +57,24 @@ ipcMain.handle('get-region-pings', async () => {
 
   await Promise.all(
     regions.map(async (region) => {
-      const hostname = new URL(region.url).hostname;
-      const res = await ping.promise.probe(hostname);
-      region.ping = res.time !== 'unknown' ? res.time : -1;
+      try {
+        const hostname = new URL(region.url).hostname;
+        const res = await ping.promise.probe(hostname);
+
+        if (res.time === 'unknown') {
+          region.ping = -1;
+          return;
+        }
+
+        const response = await fetch(region.url, {
+          method: 'GET',
+          signal: AbortSignal.timeout(5000),
+        });
+
+        region.ping = response.ok ? Number(res.time) : -1;
+      } catch {
+        region.ping = -1;
+      }
     }),
   );
 
