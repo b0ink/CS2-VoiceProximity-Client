@@ -407,7 +407,7 @@
             !player.isAlive && // player is dead
             (me.isAlive || // mute if im alive (don't want to hear any dead players)
               player.team !== me.team || // or if the player is an enemy
-              allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
+              !allowDeadTeamVoice) && // or if config disallows dead teammates hearing eachother
             (!player.spectatingC4 || !allowSpectatorC4Voice) && // and if they're not spectating the c4, and spectators are allowed to communicate from c4
             !(player.team === CsTeam.Spectator && spectatorsCanTalk) // and if they're a spectator and spectators cant talk
           ) {
