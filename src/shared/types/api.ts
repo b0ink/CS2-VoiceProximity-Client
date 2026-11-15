@@ -1,9 +1,15 @@
 import Peer from 'simple-peer';
-import { ServerConfigData } from './store/server-config';
+import type { ServerConfigData } from './store/server-config';
 
 export interface Client {
   steamId: string;
   isMuted: boolean;
+}
+
+export interface PlayerMetadata {
+  steamId: string;
+  name: string;
+  isAdmin: boolean;
 }
 
 export interface TurnCredential {
@@ -21,6 +27,7 @@ export interface ServerToClientEvents {
   'current-map': (mapName: string) => void;
   'server-config': (data: Buffer<ArrayBufferLike>) => void;
   'player-positions': (data: Buffer<ArrayBufferLike>) => void;
+  'player-metadata': (players: PlayerMetadata[]) => void;
   exception: (string: SocketApiError) => void;
   'player-on-server': (data: { roomCode: string }) => void;
   'user-left': (socketId: string, client: Client) => void;

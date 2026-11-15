@@ -1,6 +1,6 @@
-import { ProgressInfo, UpdateInfo } from 'electron-updater';
-import { DefaultNotificationOptions } from 'svelte-notifications';
-import { IceServer } from '../api';
+import type { ProgressInfo, UpdateInfo } from 'electron-updater';
+import type { DefaultNotificationOptions } from 'svelte-notifications';
+import type { IceServer } from '../api';
 
 interface Region {
   name: string;

@@ -11,6 +11,7 @@
     type Client,
     type JoinRoomData,
     type JoinRoomResponse,
+    type PlayerMetadata,
     type SocketApiError,
     SocketApiErrorType,
   } from '@shared/types/api';
@@ -92,6 +93,7 @@
   // $: volumeMaxDistance = $serverConfigStore.volumeMaxDistance;
 
   let playerPositions: PlayerPositionApiData[] = [];
+  let playerMetadata = new Map<string, PlayerMetadata>();
 
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
@@ -201,6 +203,8 @@
     });
 
     $socket.on('disconnect', async () => {
+      playerMetadata.clear();
+      $clientIsAdmin = false;
       console.log(`$socket.on('disconnect') Lost connection to the socket server`);
 
       const timeSinceLastSocketException: number = Date.now() / 1000 - $lastSocketException;
@@ -325,6 +329,15 @@
       }
     });
 
+    $socket?.on('player-metadata', (players) => {
+      playerMetadata = new Map(players.map((player) => [player.steamId, player]));
+      playerPositions = playerPositions.map((player) => {
+        const metadata = player.steamId ? playerMetadata.get(player.steamId) : undefined;
+        return metadata ? { ...player, name: metadata.name, isAdmin: metadata.isAdmin } : player;
+      });
+      $clientIsAdmin = playerMetadata.get(getSteamId() ?? '')?.isAdmin ?? false;
+    });
+
     $socket?.on('player-positions', (data) => {
       if (!$connectedToRoom) {
         return;
@@ -335,7 +348,7 @@
         return;
       }
 
-      playerPositions = decodePlayerData(data);
+      playerPositions = decodePlayerData(data, playerMetadata);
       // console.log(playerPositions);
 
       const me = playerPositions.find((player) => player.steamId === getSteamId());
@@ -707,6 +720,8 @@
       isMuted: microphoneMuted,
     };
 
+    playerMetadata.clear();
+    $clientIsAdmin = false;
     $socket?.emit('join-room', joinRoomPayload, async (response: JoinRoomResponse) => {
       console.log(`$socket.emit('join-room'): ${JSON.stringify(joinRoomPayload)}`);
       console.log(JSON.stringify(response));

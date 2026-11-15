@@ -1,11 +1,10 @@
 import { decode } from '@msgpack/msgpack';
+import type { PlayerMetadata } from '@shared/types/api';
 import { DEFAULT_SERVER_CONFIG, type ServerConfigData } from '@shared/types/store/server-config';
 import type { PlayerPositionApiData } from '../type';
 
 type PackedPlayerData = [
   string, // steamId
-  string, // name
-  boolean, // isAdmin
   number, // originX
   number, // originY
   number, // originZ
@@ -15,26 +14,29 @@ type PackedPlayerData = [
   number, // team
   boolean, // isAlive
   boolean, // spectatingC4
-  number?, // listener-specific occlusion
+  number, // listener-specific occlusion
 ];
 
-export function decodePlayerData(data: Buffer<ArrayBufferLike>): PlayerPositionApiData[] {
+export function decodePlayerData(
+  data: Buffer<ArrayBufferLike>,
+  playerMetadata: ReadonlyMap<string, PlayerMetadata>,
+): PlayerPositionApiData[] {
   const decoded = decode(new Uint8Array(data));
   const players = decoded as PackedPlayerData[];
 
   const localPlayerData: PlayerPositionApiData[] = [];
 
   for (const player of players) {
-    const [steamId, name, isAdmin, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4, occlusion] =
-      player;
+    const [steamId, ox, oy, oz, lx, ly, lz, team, isAlive, spectatingC4, occlusion] = player;
+    const metadata = playerMetadata.get(steamId);
     const playerOcclusion =
       typeof occlusion === 'number' && Number.isFinite(occlusion) ? occlusion : 0;
 
     // Cast to PlayerData interface
     const playerData: PlayerPositionApiData = {
       steamId,
-      name,
-      isAdmin,
+      name: metadata?.name ?? steamId,
+      isAdmin: metadata?.isAdmin ?? false,
       // The server plugin scales our Origin/LookAt floats to integers so that we're not dealing with decimals
       // Now we need to scale them down
       originX: ox / 10000,

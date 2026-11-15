@@ -1,4 +1,4 @@
-import { KeyCodeEvent } from '../keycodes';
+import type { KeyCodeEvent } from '../keycodes';
 
 export interface ClientVolumeMap {
   [steamId: string]: number;
