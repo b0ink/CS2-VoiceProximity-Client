@@ -26,7 +26,7 @@ export const initMainWindow = (): BrowserWindow => {
     maximizable: false,
     x: mainWindowState.x,
     y: mainWindowState.y,
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
