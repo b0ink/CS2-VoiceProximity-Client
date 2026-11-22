@@ -2,12 +2,10 @@
 
 export const SERVER_URL_HINT = 'Enter an https:// address, e.g. https://voice.example.com';
 
+// Must match the http:// hosts the renderer's Content-Security-Policy allows in connect-src
+// (src/renderer/index.html). CSP can't express IPv6 hosts, so [::1] isn't allowed.
 function isLoopbackHost(hostname: string): boolean {
-  return (
-    hostname === 'localhost' ||
-    hostname === '[::1]' ||
-    /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)
-  );
+  return hostname === 'localhost' || hostname === '127.0.0.1';
 }
 
 /**

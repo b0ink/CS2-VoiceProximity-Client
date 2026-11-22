@@ -2,12 +2,31 @@
 <html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <title>CS2 Proximity Voice Chat</title>
-    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <!-- <meta
+    <!--
+      Content-Security-Policy (https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP):
+      - script-src: only the bundled scripts; 'wasm-unsafe-eval' lets noise suppression compile WebAssembly
+      - worker-src blob: HackTimer runs its timers in a worker created from a blob URL
+      - style-src 'unsafe-inline': Svelte and Flowbite set inline styles
+      - img-src data: the CSS uses data: SVGs (select arrows, checkboxes)
+      - connect-src: the voice server can be any https/wss address, or a local dev server
+        (must match the addresses allowed in src/shared/server-url.ts)
+    -->
+    <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-    /> -->
+      content="
+        default-src 'self';
+        script-src 'self' 'wasm-unsafe-eval';
+        worker-src 'self' blob:;
+        style-src 'self' 'unsafe-inline';
+        img-src 'self' data:;
+        connect-src 'self' https: wss: http://localhost:* ws://localhost:* http://127.0.0.1:* ws://127.0.0.1:*;
+        object-src 'none';
+        frame-src 'none';
+        base-uri 'none';
+        form-action 'none'
+      "
+    />
+    <title>CS2 Proximity Voice Chat</title>
   </head>
 
   <body class="bg-white dark:bg-gray-800">
