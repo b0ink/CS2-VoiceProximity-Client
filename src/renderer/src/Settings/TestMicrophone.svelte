@@ -2,12 +2,14 @@
   import { Button, Progressbar } from 'flowbite-svelte';
   import { onDestroy, onMount } from 'svelte';
   import settings from '@store/settings';
+  import { applyOutputDevice } from '../utils/audioOutput';
   import { getUserAudio } from '../utils/getUserAudio';
 
   let rms: number = 0;
   let playing: boolean = false;
 
   $: microphoneMuted = $settings.micMuted;
+  $: outputDeviceId = $settings.outputDeviceId;
   let originalMuteState: boolean;
 
   onMount(() => {});
@@ -20,6 +22,9 @@
 
   let ctx: AudioContext;
   let stream: MediaStream | null;
+
+  // Hear the test on the chosen output, including if it's changed mid-test.
+  $: if (ctx) applyOutputDevice(ctx, outputDeviceId);
 
   const handleProcess = (event: AudioProcessingEvent): void => {
     // limit update frequency
@@ -53,6 +58,7 @@
     stream = userAudio.stream;
 
     ctx = new AudioContext();
+    await applyOutputDevice(ctx, outputDeviceId);
     processor = ctx.createScriptProcessor(2048, 1, 1);
     processor.connect(ctx.destination);
 

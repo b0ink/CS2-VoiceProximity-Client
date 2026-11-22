@@ -49,6 +49,7 @@
   import { getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
+  import { applyOutputDevice } from './utils/audioOutput';
   import { decodePlayerData, decodeServerConfig } from './utils/decode';
   import { getUserAudio } from './utils/getUserAudio';
 
@@ -67,6 +68,9 @@
   $: useTurnConfig = $settings.natFixEnabled;
   $: microphoneMuted = $settings.micMuted;
   $: noiseSuppression = $settings.noiseSuppression;
+  $: outputDeviceId = $settings.outputDeviceId;
+  // All voices and reverb play through the listener's AudioContext; this follows the setting live.
+  $: applyOutputDevice($clientListener.context, outputDeviceId);
   $: playerVolumes = $settings.playerVolumes;
   $: if (playerVolumes) {
     updateGainFilters();
@@ -119,7 +123,7 @@
   const playSound = (sound: HTMLAudioElement): void => {
     const audio = sound.cloneNode() as HTMLAudioElement;
     audio.volume = 1;
-    audio.play();
+    applyOutputDevice(audio, outputDeviceId).finally(() => audio.play());
   };
 
   const unmuteMicrophone = (): void => {

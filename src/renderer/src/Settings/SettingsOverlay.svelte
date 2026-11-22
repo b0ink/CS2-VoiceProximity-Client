@@ -15,6 +15,7 @@
   $: iceServers = $store.iceServers;
 
   $: storedDeviceId = $settings.inputDeviceId;
+  $: storedOutputDeviceId = $settings.outputDeviceId;
   $: natFixEnabled = $settings.natFixEnabled;
   $: hqVoice = $settings.hqVoice;
   $: alwaysOnTop = $settings.alwaysOnTop;
@@ -23,6 +24,7 @@
   $: echoCancellation = $settings.echoCancellation;
 
   let selectedDeviceId: string | null;
+  let selectedOutputDeviceId: string | null;
 
   interface MediaDevice {
     id: string;
@@ -31,6 +33,7 @@
   }
 
   let inputMediaDevices: MediaDevice[];
+  let outputMediaDevices: MediaDevice[] = [];
 
   const toggleAlwaysOnTop = (): void => {
     window.api.setSettingsValue('alwaysOnTop', !alwaysOnTop);
@@ -70,24 +73,39 @@
     getDevices();
   });
 
+  const toMediaDevice = (d: MediaDeviceInfo): MediaDevice => {
+    let label = d.label;
+    if (d.deviceId === 'default') {
+      // label = 'Default';
+    } else {
+      const match = /.+?\([^(]+\)/.exec(d.label);
+      if (match && match[0]) label = match[0];
+    }
+    return {
+      id: d.deviceId,
+      kind: d.kind,
+      label,
+    };
+  };
+
   async function getDevices(): Promise<void> {
     const allDevices = await navigator.mediaDevices.enumerateDevices();
     inputMediaDevices = allDevices
       .filter((device) => device.kind === 'audioinput')
-      .map((d) => {
-        let label = d.label;
-        if (d.deviceId === 'default') {
-          // label = 'Default';
-        } else {
-          const match = /.+?\([^(]+\)/.exec(d.label);
-          if (match && match[0]) label = match[0];
-        }
-        return {
-          id: d.deviceId,
-          kind: d.kind,
-          label,
-        };
-      });
+      .map(toMediaDevice);
+
+    outputMediaDevices = allDevices
+      .filter((device) => device.kind === 'audiooutput')
+      .map(toMediaDevice);
+    if (!outputMediaDevices.some((device) => device.id === 'default')) {
+      outputMediaDevices.unshift({ id: 'default', kind: 'audiooutput', label: 'System default' });
+    }
+    // Show the saved output, or the default if it isn't connected right now. The saved choice is
+    // kept (not overwritten), so it's used again once that device is back.
+    selectedOutputDeviceId = outputMediaDevices.some((device) => device.id === storedOutputDeviceId)
+      ? storedOutputDeviceId
+      : 'default';
+
     if (inputMediaDevices.length > 0) {
       // Check if saved device id still exists
       console.log(`stored device id: ${storedDeviceId}`);
@@ -186,6 +204,24 @@
           }}
         >
           {#each inputMediaDevices as device (device.id)}
+            <option value={device.id}>{device.label || 'Unnamed Device'}</option>
+          {/each}
+        </Select>
+      </div>
+      <div>
+        <Label for="output" class="mb-2">Output:</Label>
+        <!-- Applies immediately; no restart needed. -->
+        <Select
+          id="output"
+          bind:value={selectedOutputDeviceId}
+          onchange={() => {
+            window.api.setSettingsValue(
+              'outputDeviceId',
+              selectedOutputDeviceId === 'default' ? null : selectedOutputDeviceId,
+            );
+          }}
+        >
+          {#each outputMediaDevices as device (device.id)}
             <option value={device.id}>{device.label || 'Unnamed Device'}</option>
           {/each}
         </Select>

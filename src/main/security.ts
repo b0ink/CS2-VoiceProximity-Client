@@ -68,23 +68,25 @@ export function restrictNavigation(rendererUrl: string): void {
 }
 
 /**
- * Grants the app's own page microphone access and denies every other browser permission
- * (camera, screen capture, location, notifications, USB/HID/serial, ...). Without a handler,
- * Electron grants everything. Must be called after the app is ready.
+ * Grants the app's own page microphone access and audio output selection, and denies every other
+ * browser permission (camera, screen capture, location, notifications, USB/HID/serial, ...).
+ * Without a handler, Electron grants everything. Must be called after the app is ready.
  *
  * @param rendererUrl The URL the app's page is loaded from.
  */
 export function restrictPermissions(rendererUrl: string): void {
   const ownPage = new URL(rendererUrl);
 
-  // Requests, e.g. getUserMedia(). Only audio-only capture is allowed.
+  // Requests, e.g. getUserMedia(). Only audio-only capture and choosing the output device.
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, permission, callback, details) => {
-      const allowed =
+      const isAudioOnlyCapture =
         permission === 'media' &&
         'mediaTypes' in details &&
         !!details.mediaTypes?.length &&
-        details.mediaTypes.every((type) => type === 'audio') &&
+        details.mediaTypes.every((type) => type === 'audio');
+      const allowed =
+        (isAudioOnlyCapture || permission === 'speaker-selection') &&
         isOwnPage(details.requestingUrl, ownPage);
 
       if (!allowed) {
@@ -94,11 +96,12 @@ export function restrictPermissions(rendererUrl: string): void {
     },
   );
 
-  // Checks, e.g. whether enumerateDevices() may show microphone names (the settings device list).
+  // Checks, e.g. whether enumerateDevices() may show device names (the settings device lists), or
+  // whether audio may be sent to a chosen output device.
   session.defaultSession.setPermissionCheckHandler(
     (_webContents, permission, _requestingOrigin, details) =>
-      permission === 'media' &&
-      details.mediaType !== 'video' &&
+      ((permission === 'media' && details.mediaType !== 'video') ||
+        permission === 'speaker-selection') &&
       isOwnPage(details.requestingUrl, ownPage),
   );
 }

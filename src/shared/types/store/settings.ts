@@ -9,6 +9,7 @@ export interface SettingsData {
   natFixEnabled: boolean;
   hqVoice: boolean;
   inputDeviceId: string | null;
+  outputDeviceId: string | null; // null = the system default output
   socketServer: string | null;
   micMuted: boolean;
   globalGainAmount: number;
@@ -26,6 +27,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   natFixEnabled: true,
   hqVoice: false,
   inputDeviceId: null,
+  outputDeviceId: null,
   socketServer: null,
   micMuted: false,
   globalGainAmount: 2.5,
