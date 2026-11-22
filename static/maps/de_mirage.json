@@ -2,10 +2,10 @@
   "reverb": [
     {
       "label": "Palace",
-      "note": "T Side entrance",
+      "note": "T Side entrance stairs",
       "strength": "0.25",
       "type": "StAndrewsChurch",
-      "fadeDistance": "64",
+      "fadeDistance": "8",
       "fadeTime": "0.05",
       "vertices": [
         [890, -1752, 64],
@@ -72,6 +72,24 @@
       ]
     },
     {
+      "label": "Palace",
+      "note": "T Spawn Entrance",
+      "strength": "0.2",
+      "type": "StAndrewsChurch",
+      "fadeDistance": "64",
+      "fadeTime": "0.05",
+      "vertices": [
+        [1025, -1506, -168],
+        [1252, -1506, -168],
+        [1025, -1367, -168],
+        [1252, -1367, -168],
+        [1025, -1506, 41],
+        [1252, -1506, 41],
+        [1025, -1367, 41],
+        [1252, -1367, 41]
+      ]
+    },
+    {
       "label": "Back Apts",
       "note": "T Side Entrance",
       "strength": "0.05",
@@ -107,7 +125,6 @@
         [-120, 742, -136]
       ]
     },
-
     {
       "label": "Underpass",
       "strength": "0.2",
