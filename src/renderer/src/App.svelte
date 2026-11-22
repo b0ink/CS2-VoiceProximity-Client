@@ -43,9 +43,11 @@
   import Alerts from './components/Alerts/Alerts.svelte';
   import JoinRoom from './components/JoinRoom.svelte';
   import PlayerList from './components/PlayerList.svelte';
+  import RecordingIndicator from './components/RecordingIndicator.svelte';
   import SteamLoginButton from './components/SteamLoginButton.svelte';
   import { cn } from './lib/tailwind';
   import { transformVector } from './lib/vector';
+  import { sessionRecorder } from './recording/SessionRecorder';
   import { getReverbZones, initializeMap } from './render/maps';
   import { renderFrame } from './render/renderFrame';
   import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
@@ -94,6 +96,31 @@
 
   let playerPositions: PlayerPositionApiData[] = [];
   let playerMetadata = new Map<string, PlayerMetadata>();
+
+  sessionRecorder.setNameResolver((steamId) => playerMetadata.get(steamId)?.name);
+
+  const stopRecordingAndNotify = async (notify: boolean = true): Promise<void> => {
+    if (!sessionRecorder.isActive) {
+      return;
+    }
+    try {
+      const result = await Promise.race([
+        sessionRecorder.stop(),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+      ]);
+      if (result && notify) {
+        // Queued so it survives the app reload that follows leaving a room.
+        queueNotification({
+          text: `Recording saved: ${result.trackCount} tracks (Videos\\CS2 Proximity Chat)`,
+          position: 'top-center',
+          removeAfter: 5000,
+          type: 'success',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to stop recording', error);
+    }
+  };
 
   let audioConnectionStuff: AudioConnectionStuff = {
     deafened: false,
@@ -227,6 +254,8 @@
 
       $socketConnected = false;
 
+      // Don't overwrite the lost-connection notice; the recording is still saved.
+      await stopRecordingAndNotify(false);
       window.api.reloadApp();
     });
 
@@ -336,6 +365,7 @@
         return metadata ? { ...player, name: metadata.name, isAdmin: metadata.isAdmin } : player;
       });
       $clientIsAdmin = playerMetadata.get(getSteamId() ?? '')?.isAdmin ?? false;
+      sessionRecorder.refreshNames();
     });
 
     $socket?.on('player-positions', (data) => {
@@ -487,6 +517,10 @@
     // TODO: what WILL be the difference between stream & inStream
     audioConnectionStuff.stream = stream;
     audioConnectionStuff.instream = inStream;
+
+    if (clientSteamId) {
+      sessionRecorder.setLocalStream(clientSteamId, stream);
+    }
 
     audioConnectionStuff.toggleMute = (muted: boolean) => {
       audioConnectionStuff.muted = muted;
@@ -691,6 +725,8 @@
     const positionalSound = $remotePlayers.get(client.steamId);
     if (positionalSound) {
       console.log('found sound source removing from $scene');
+      // Recording keeps the track open; the time this player is gone is filled with silence.
+      sessionRecorder.removeRemotePlayer(client.steamId, positionalSound.recordingOutput);
       positionalSound.disconnect();
       $remotePlayers.delete(client.steamId);
     }
@@ -797,6 +833,7 @@
       $clientListener,
     );
     $remotePlayers.set(client.steamId, remotePlayer);
+    sessionRecorder.addRemotePlayer(client.steamId, remotePlayer.recordingOutput);
     updateGainFilters();
     console.log(`Creating remote player: ${client.steamId}`);
   };
@@ -831,8 +868,9 @@
     threeJsDom.appendChild($threejs.domElement);
   };
 
-  const disconnectRoom = (): void => {
+  const disconnectRoom = async (): Promise<void> => {
     playSound(userLeftSound);
+    await stopRecordingAndNotify();
     Object.keys($peerConnections).forEach((k) => {
       cleanupUser(k, $socketClientMap[k]);
     });
@@ -1045,6 +1083,9 @@
         class={cn('dark:bg-gray-900 relative', !$connectedToRoom && 'hidden')}
         id="threejs"
       ></div>
+      {#if $connectedToRoom}
+        <RecordingIndicator />
+      {/if}
     </div>
 
     {#if $connectedToRoom}

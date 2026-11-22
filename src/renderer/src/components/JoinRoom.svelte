@@ -4,6 +4,7 @@
   import store from '@store/client';
   import { connectedToRoom, roomCode } from '@store/playerStore';
   import { socketConnected } from '@store/socketStore';
+  import RecordButton from './RecordButton.svelte';
 
   $: iceServers = $store.iceServers;
   $: autoUpdateState = $store.autoUpdateState;
@@ -28,6 +29,7 @@
     placeholder="Room code"
   />
   {#if $connectedToRoom && $socketConnected}
+    <RecordButton />
     <Button
       color="red"
       class="cursor-pointer"

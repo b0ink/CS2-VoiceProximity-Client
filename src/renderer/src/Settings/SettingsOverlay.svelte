@@ -111,9 +111,8 @@
   </p>
 
   <p class="text-base leading-relaxed text-gray-500 dark:text-gray-400">
-    However, this will <span class="font-bold">expose your IP address</span> to other users who also
-    have the Voice Relay Server disabled. Only disable this if you're on a private server with people
-    you trust.
+    However, this will <span class="font-bold">expose your IP address</span> to other users who also have
+    the Voice Relay Server disabled. Only disable this if you're on a private server with people you trust.
   </p>
 
   {#snippet footer()}

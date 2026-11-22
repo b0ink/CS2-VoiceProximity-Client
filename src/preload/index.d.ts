@@ -1,5 +1,11 @@
 import { ElectronAPI } from '@electron-toolkit/preload';
 import type { MapData } from '@shared/types/maps';
+import type {
+  RecordingStartRequest,
+  RecordingStartResponse,
+  RecordingStopResponse,
+  RecordingTrackRequest,
+} from '@shared/types/recording';
 import { StoreData } from '@shared/types/store/default';
 import { SettingsData } from '@shared/types/store/settings';
 
@@ -34,5 +40,19 @@ declare global {
     downloadUpdate: () => void;
 
     quitApp: () => void;
+
+    recording: {
+      start: (request: RecordingStartRequest) => Promise<RecordingStartResponse>;
+      addTrack: (sessionId: string, track: RecordingTrackRequest) => void;
+      updateTrackName: (sessionId: string, steamId: string, name: string) => void;
+      writeChunk: (
+        sessionId: string,
+        steamId: string,
+        frameOffset: number,
+        pcm: Uint8Array,
+      ) => void;
+      stop: (sessionId: string) => Promise<RecordingStopResponse>;
+      openFolder: (sessionId?: string) => Promise<void>;
+    };
   }
 }
