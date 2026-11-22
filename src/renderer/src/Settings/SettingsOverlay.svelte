@@ -58,9 +58,10 @@
 
   let modalConfirmRestartRequired: boolean = false;
 
+  // Mic, HQ voice, noise suppression and echo cancellation apply live: App.svelte captures the
+  // mic again and swaps the track into the existing connections. Only NAT fix needs a restart.
   const toggleHqVoice = (): void => {
     window.api.setSettingsValue('hqVoice', !hqVoice);
-    modalConfirmRestartRequired = true;
   };
 
   // let gainAmountRangeValue: number;
@@ -198,7 +199,6 @@
           id="mic"
           bind:value={selectedDeviceId}
           onchange={() => {
-            modalConfirmRestartRequired = true;
             console.log(`${selectedDeviceId}`);
             window.api.setSettingsValue('inputDeviceId', selectedDeviceId);
           }}
@@ -285,7 +285,6 @@
           class="justify-between mb-2"
           onclick={() => {
             window.api.setSettingsValue('noiseSuppression', !noiseSuppression);
-            modalConfirmRestartRequired = true;
           }}
         >
           {#snippet offLabel()}
@@ -298,7 +297,6 @@
           class="justify-between mb-2"
           onclick={() => {
             window.api.setSettingsValue('echoCancellation', !echoCancellation);
-            modalConfirmRestartRequired = true;
           }}
         >
           {#snippet offLabel()}

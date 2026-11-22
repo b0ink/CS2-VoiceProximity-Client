@@ -1,11 +1,24 @@
 import { get } from 'svelte/store';
+import type { SettingsData } from '@shared/types/store/settings';
 import { NoiseSuppressionProcessor } from '@shiguredo/noise-suppression';
 import settings from '@store/settings';
 
-interface UserAudio {
+export interface UserAudio {
   stream: MediaStream;
   noiseSupressionEnabled: boolean;
+  /** captureSettingsKey() of the settings this was captured with. */
+  settingsKey: string;
+  /** Releases the microphone and stops noise suppression. */
+  stop: () => void;
 }
+
+/**
+ * The settings that change how the mic is captured. When this changes, the mic needs to be
+ * captured again (see App.svelte's swapMicrophone and the mic test).
+ */
+export const captureSettingsKey = (s: SettingsData): string =>
+  JSON.stringify([s.inputDeviceId, s.hqVoice, s.noiseSuppression, s.echoCancellation]);
+
 export const getUserAudio = async (
   audioOptions?: MediaTrackConstraintSet,
 ): Promise<UserAudio | null> => {
@@ -63,9 +76,21 @@ export const getUserAudio = async (
 
     const stream = processedTrack ? new MediaStream([processedTrack]) : rawStream;
 
+    // The tracks captured here. The caller may swap tracks in and out of `stream` later, so stop()
+    // must only stop these, not whatever `stream` holds at that point.
+    const capturedTracks = [...rawStream.getTracks(), ...(processedTrack ? [processedTrack] : [])];
+    const stop = (): void => {
+      if (processor.isProcessing()) {
+        processor.stopProcessing();
+      }
+      capturedTracks.forEach((track) => track.stop());
+    };
+
     return {
       stream,
       noiseSupressionEnabled,
+      settingsKey: captureSettingsKey(currentSettings),
+      stop,
     };
   } catch (e) {
     console.error(`Failed to get user media: ${e}`);

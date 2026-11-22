@@ -1,9 +1,10 @@
 <script lang="ts">
   import { Button, Progressbar } from 'flowbite-svelte';
   import { onDestroy, onMount } from 'svelte';
+  import { get } from 'svelte/store';
   import settings from '@store/settings';
   import { applyOutputDevice } from '../utils/audioOutput';
-  import { getUserAudio } from '../utils/getUserAudio';
+  import { type UserAudio, captureSettingsKey, getUserAudio } from '../utils/getUserAudio';
 
   let rms: number = 0;
   let playing: boolean = false;
@@ -17,11 +18,11 @@
   const minUpdateRate = 50;
   let lastRefreshTime = 0;
 
-  let processor: ScriptProcessorNode;
-  let src: MediaStreamAudioSourceNode;
+  let processor: ScriptProcessorNode | undefined;
+  let src: MediaStreamAudioSourceNode | undefined;
 
-  let ctx: AudioContext;
-  let stream: MediaStream | null;
+  let ctx: AudioContext | undefined;
+  let testAudio: UserAudio | null = null;
 
   // Hear the test on the chosen output, including if it's changed mid-test.
   $: if (ctx) applyOutputDevice(ctx, outputDeviceId);
@@ -40,12 +41,71 @@
     rms = Math.min(0.5, Math.sqrt(total / input.length));
   };
 
-  const getVoice = async (): Promise<void> => {
+  // Captures the mic and plays it back (without touching the mute state).
+  const startCapture = async (): Promise<boolean> => {
     const userAudio = await getUserAudio({
       echoCancellation: false,
     });
     if (!userAudio) {
       console.error(`Could not init microphone`);
+      return false;
+    }
+    testAudio = userAudio;
+
+    ctx = new AudioContext();
+    await applyOutputDevice(ctx, outputDeviceId);
+    processor = ctx.createScriptProcessor(2048, 1, 1);
+    processor.connect(ctx.destination);
+
+    src = ctx.createMediaStreamSource(userAudio.stream);
+    src.connect(processor);
+    processor.addEventListener('audioprocess', handleProcess);
+
+    src.connect(ctx.destination);
+    return true;
+  };
+
+  // Stops playback and releases the mic (including noise suppression).
+  const stopCapture = (): void => {
+    processor?.removeEventListener('audioprocess', handleProcess);
+    processor?.disconnect();
+    src?.disconnect(); // disconnect input
+    testAudio?.stop(); // stop mic access
+    testAudio = null;
+    ctx?.close(); // close AudioContext
+    ctx = undefined;
+  };
+
+  // Follow mic setting changes (device, HQ voice, noise suppression...) while testing. This is a
+  // store subscription rather than `$:`, since restarting the capture updates testAudio.
+  const captureIsStale = (): boolean =>
+    playing && testAudio !== null && captureSettingsKey(get(settings)) !== testAudio.settingsKey;
+
+  let restarting = false;
+  const restartCapture = async (): Promise<void> => {
+    if (restarting) {
+      return;
+    }
+    restarting = true;
+    try {
+      // Repeats if the settings changed again while the mic was being captured.
+      while (captureIsStale()) {
+        stopCapture();
+        await startCapture();
+        if (!playing) {
+          stopCapture(); // the test was stopped meanwhile: don't leave the mic open
+          break;
+        }
+      }
+    } finally {
+      restarting = false;
+    }
+  };
+
+  onDestroy(settings.subscribe(() => restartCapture()));
+
+  const getVoice = async (): Promise<void> => {
+    if (!(await startCapture())) {
       return;
     }
 
@@ -54,19 +114,6 @@
     if (!microphoneMuted) {
       window.api.toggleMuteMicrophone();
     }
-
-    stream = userAudio.stream;
-
-    ctx = new AudioContext();
-    await applyOutputDevice(ctx, outputDeviceId);
-    processor = ctx.createScriptProcessor(2048, 1, 1);
-    processor.connect(ctx.destination);
-
-    src = ctx.createMediaStreamSource(stream);
-    src.connect(processor);
-    processor.addEventListener('audioprocess', handleProcess);
-
-    src.connect(ctx.destination);
 
     playing = true;
   };
@@ -79,13 +126,7 @@
       console.log('stopping voice');
     }
 
-    processor?.removeEventListener('audioprocess', handleProcess);
-    processor?.disconnect();
-
-    src?.disconnect(); // disconnect input
-
-    stream?.getTracks().forEach((track) => track.stop()); // stop mic access
-    ctx?.close(); // close AudioContext
+    stopCapture();
     playing = false;
   };
 

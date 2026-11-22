@@ -6,6 +6,7 @@
   import { io } from 'socket.io-client';
   import { onDestroy, onMount } from 'svelte';
   import { type DefaultNotificationOptions, getNotificationsContext } from 'svelte-notifications';
+  import { get } from 'svelte/store';
   import * as THREE from 'three';
   import {
     type Client,
@@ -51,7 +52,7 @@
   import { type AudioConnectionStuff, CsTeam, type PlayerPositionApiData } from './type';
   import { applyOutputDevice } from './utils/audioOutput';
   import { decodePlayerData, decodeServerConfig } from './utils/decode';
-  import { getUserAudio } from './utils/getUserAudio';
+  import { type UserAudio, captureSettingsKey, getUserAudio } from './utils/getUserAudio';
 
   const { addNotification, removeNotification } = getNotificationsContext();
 
@@ -470,12 +471,94 @@
     return clientSteamId;
   };
 
+  // The current mic capture. Changing a capture setting (mic, HQ voice, noise suppression, echo
+  // cancellation) captures the mic again and swaps the new track into every live connection, so
+  // it applies straight away without rejoining.
+  let localAudio: UserAudio | null = null;
+
+  const swapMicrophone = async (): Promise<void> => {
+    const localStream = audioConnectionStuff.stream;
+    const current = localAudio;
+    if (!localStream || !current) {
+      return;
+    }
+
+    const next = await getUserAudio();
+    if (!next) {
+      addNotification({
+        text: `Could not switch the microphone.`,
+        position: 'top-center',
+        removeAfter: 5000,
+        type: 'error',
+      });
+      return;
+    }
+    if ($settings.noiseSuppression && !next.noiseSupressionEnabled) {
+      addNotification({
+        text: `Failed to enable noise suppression.`,
+        position: 'top-center',
+        removeAfter: 5000,
+        type: 'warning',
+      });
+    }
+
+    // Everything from here is synchronous, so no peer can be created half-way through the swap.
+    const oldTrack = localStream.getAudioTracks()[0];
+    const newTrack = next.stream.getAudioTracks()[0];
+    newTrack.enabled = oldTrack ? oldTrack.enabled : !microphoneMuted; // keep the mute state
+
+    if (oldTrack) {
+      for (const [socketId, peer] of Object.entries($peerConnections)) {
+        if (!peer || peer.destroyed) {
+          continue;
+        }
+        try {
+          // RTCRtpSender.replaceTrack: no renegotiation, the connection stays up.
+          peer.replaceTrack(oldTrack, newTrack, localStream);
+        } catch (error) {
+          console.warn(`Could not swap the microphone track for ${socketId}`, error);
+        }
+      }
+      localStream.removeTrack(oldTrack);
+    }
+    // Peers that connect later are created with localStream, so they get the new track too.
+    localStream.addTrack(newTrack);
+
+    current.stop();
+    localAudio = next;
+  };
+
+  // Swaps the mic if its capture settings changed, repeating if they change again meanwhile.
+  let micSwap: Promise<void> | null = null;
+  let micSwapQueued = false;
+  const refreshMicrophone = (): void => {
+    if (micSwap) {
+      micSwapQueued = true;
+      return;
+    }
+    micSwap = (async () => {
+      do {
+        micSwapQueued = false;
+        if (localAudio && captureSettingsKey(get(settings)) !== localAudio.settingsKey) {
+          await swapMicrophone();
+        }
+      } while (micSwapQueued);
+    })().finally(() => {
+      micSwap = null;
+    });
+  };
+
+  // A store subscription rather than `$:`, since the swap itself updates localAudio.
+  onDestroy(settings.subscribe(() => refreshMicrophone()));
+
   const initUserMedia = async (): Promise<void> => {
     const userAudio = await getUserAudio();
     if (!userAudio) {
       return;
     }
     const { stream, noiseSupressionEnabled } = userAudio;
+    localAudio = userAudio;
+    refreshMicrophone(); // in case settings changed while the mic was being captured
 
     if (noiseSuppression && !noiseSupressionEnabled) {
       addNotification({
