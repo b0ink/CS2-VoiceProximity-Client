@@ -34,15 +34,13 @@ export const getUserAudio = async (
   const audio: MediaTrackConstraintSet = {
     autoGainControl: false,
     channelCount: 1,
-    echoCancellation: false,
+    echoCancellation: echoCancellation,
     // @ts-ignore - non-standard constraint
     latency: 0,
     noiseSuppression: noiseSuppression,
     // @ts-ignore - non-standard constraint used by chrome
     googNoiseSuppression: noiseSuppression,
     googNoiseSupression: noiseSuppression,
-    // @ts-ignore - non-standard constraint used by chrome
-    googEchoCancellation: echoCancellation,
     // @ts-ignore - non-standard constraint used by chrome
     googTypingNoiseDetection: noiseSuppression,
     // @ts-ignore - non-standard constraint used by chrome
