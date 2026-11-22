@@ -966,6 +966,7 @@
 >
   <div
     class={cn(
+      'w-full',
       !$connectedToRoom && 'min-h-40 flex flex-col justify-center',
       !$connectedToRoom && !clientSteamId && 'min-h-35',
     )}
