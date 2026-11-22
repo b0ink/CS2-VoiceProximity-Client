@@ -61,7 +61,7 @@ ipcMain.handle('get-region-pings', async () => {
         const hostname = new URL(region.url).hostname;
         const res = await ping.promise.probe(hostname);
 
-        if (res.time === 'unknown') {
+        if (!res.alive) {
           region.ping = -1;
           return;
         }
