@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron';
+import { ipcMain } from 'electron';
 import * as fsp from 'fs/promises';
 import path from 'path';
 import ping from 'ping';
@@ -12,27 +12,26 @@ ipcMain.handle('get-ice-servers', async () => {
   return await retrieveIceServers();
 });
 
+// Relative to the bundled main process (out/main): static/maps in the project during development,
+// and inside app.asar when packaged. Electron's fs reads files inside app.asar directly, so the
+// maps don't need to be unpacked.
+const MAPS_DIR = path.join(__dirname, '../../static/maps');
+
 ipcMain.handle('load-map', async (_event, map: unknown): Promise<MapData> => {
-  const isDev = !app.isPackaged;
-
-  const basePath = isDev
-    ? path.resolve(__dirname, '../../static/maps')
-    : path.join(process.resourcesPath, 'app.asar.unpacked', 'static', 'maps'); // Is direct access to app.asar.unpacked really the best way ????
-
   // The map name comes from the server, so it's never used to build a path: only a file that's
   // actually in the maps folder is opened. Unknown maps get no zones, as before.
   if (typeof map !== 'string') {
     return { reverbZones: [] };
   }
   const fileName = `${map}.json`;
-  const mapFiles = await fsp.readdir(basePath).catch((): string[] => []);
+  const mapFiles = await fsp.readdir(MAPS_DIR).catch((): string[] => []);
   if (!mapFiles.includes(fileName)) {
     return { reverbZones: [] };
   }
 
   let reverbZones: ReverbZone[] | null = [];
   try {
-    const raw = await fsp.readFile(path.join(basePath, fileName), 'utf-8');
+    const raw = await fsp.readFile(path.join(MAPS_DIR, fileName), 'utf-8');
     const parsed = JSON.parse(raw);
 
     // Parse reverb zones

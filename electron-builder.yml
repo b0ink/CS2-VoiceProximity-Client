@@ -12,7 +12,6 @@ files:
   - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json}'
 asarUnpack:
   - resources/**
-  - static/**
 win:
   executableName: CS2 Proximity Voice Chat
 nsis:
