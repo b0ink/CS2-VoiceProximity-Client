@@ -5,6 +5,7 @@ import { retrieveIceServers } from './retrieveIceServers';
 import { openExternalSafely } from './security';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
+import { getToken, setToken } from './store/token';
 
 const USE_EXTERNAL_BROWSER = true;
 
@@ -45,10 +46,10 @@ export class SteamAuth {
 
   async validateJwtToken(): Promise<void> {
     const steamId = defaultStore.get('steamId');
-    const token = defaultStore.get('token');
+    const token = getToken();
     if (!token || !steamId || typeof token !== 'string' || typeof steamId !== 'string') {
       defaultStore.set('steamId', null);
-      defaultStore.set('token', null);
+      setToken(null);
     } else {
       try {
         const payload = jwt.decode(token) as JwtAuthPayload | null;
@@ -66,7 +67,7 @@ export class SteamAuth {
         console.log(e);
         // Reset token
         defaultStore.set('steamId', null);
-        defaultStore.set('token', null);
+        setToken(null);
       }
     }
   }
@@ -93,7 +94,7 @@ export class SteamAuth {
     }
 
     defaultStore.set('iceServers', null);
-    defaultStore.set('token', token);
+    setToken(token);
     defaultStore.set('steamId', steamId64);
     console.log(`Setting token ${token}`);
     console.log(`Setting steamid ${steamId64}`);

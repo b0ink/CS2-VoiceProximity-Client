@@ -1,6 +1,7 @@
 import { IceServer } from '@shared/types/api';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
+import { getToken, setToken } from './store/token';
 
 interface IceServerConfig {
   forceRelayOnly: boolean;
@@ -8,7 +9,7 @@ interface IceServerConfig {
 }
 
 export async function retrieveIceServers(): Promise<IceServer[] | null> {
-  const token = defaultStore.get('token');
+  const token = getToken();
   if (!token) {
     return null;
   }
@@ -26,7 +27,7 @@ export async function retrieveIceServers(): Promise<IceServer[] | null> {
     const statusCode = response.status;
     if (statusCode === 401) {
       console.log('Token must be invalid, user must authenticate');
-      defaultStore.set('token', null);
+      setToken(null);
       defaultStore.set('steamId', null);
       return null;
     } else if (statusCode === 200) {

@@ -30,9 +30,12 @@ export interface StoreData {
   autoUpdateState: AutoUpdateState | null;
 }
 
-export const DEFAULT_STORE: StoreData = {
+// What the main process saves in clientStore.json: everything except the login token, which is
+// stored encrypted on its own (see src/main/store/token.ts).
+export type PersistedStoreData = Omit<StoreData, 'token'>;
+
+export const DEFAULT_PERSISTED_STORE: PersistedStoreData = {
   steamId: null,
-  token: null,
   iceServers: [],
   forceRelayOnly: true,
   notification: null,
@@ -59,4 +62,9 @@ export const DEFAULT_STORE: StoreData = {
     },
   ],
   autoUpdateState: null,
+};
+
+export const DEFAULT_STORE: StoreData = {
+  ...DEFAULT_PERSISTED_STORE,
+  token: null,
 };

@@ -12,6 +12,7 @@ import { initMainWindow } from './main-window';
 import { restrictNavigation, restrictPermissions } from './security';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
+import { loadToken } from './store/token';
 
 const appProtocolClient = `cs2-proximity-chat`;
 
@@ -173,7 +174,7 @@ if (!gotTheLock) {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
   // Some APIs can only be used after this event occurs.
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     // Set app user model id for windows
     electronApp.setAppUserModelId('com.boink.cs2.voiceproximity');
 
@@ -189,6 +190,9 @@ if (!gotTheLock) {
 
     // Microphone only; every other browser permission is denied.
     restrictPermissions(rendererUrl);
+
+    // Decrypt the saved login token before anything (the window, IPC) can ask for it.
+    await loadToken();
 
     createWindow();
 
