@@ -217,7 +217,7 @@
 
   {#if players || DEBUG_PLAYER_LIST}
     <div class={cn('text-left justify-between')}>
-      {#each Array.from($joinedPlayers).sort( ([, a], [, b]) => a.name.localeCompare(b.name), ) as [steamId, player] (steamId)}
+      {#each Array.from($joinedPlayers).sort( ([, a], [, b]) => a.name.localeCompare(b.name) ) as [steamId, player] (steamId)}
         <PlayerRow {player} onClick={() => onPlayerNameClick(player)} />
       {/each}
     </div>
