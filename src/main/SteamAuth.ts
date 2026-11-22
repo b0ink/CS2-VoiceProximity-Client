@@ -1,7 +1,7 @@
-import { shell } from 'electron';
 import jwt from 'jsonwebtoken';
 import openid from 'openid';
 import { retrieveIceServers } from './retrieveIceServers';
+import { openExternalSafely } from './security';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
 
@@ -104,10 +104,11 @@ export class SteamAuth {
       rely.authenticate('http://steamcommunity.com/openid', false, (error, providerUrl) => {
         if (error) {
           reject(new Error(error));
+          return;
         }
 
         if (USE_EXTERNAL_BROWSER) {
-          shell.openExternal(providerUrl);
+          openExternalSafely(providerUrl);
           reject('Waiting for browser...');
           return;
         }

@@ -1,17 +1,28 @@
-import { BrowserWindow, app, ipcMain, session, shell } from 'electron';
+import { BrowserWindow, app, ipcMain, session } from 'electron';
 import { ProgressInfo, autoUpdater } from 'electron-updater';
 import windowStateKeeper from 'electron-window-state';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { join } from 'path';
 import { electronApp, is, optimizer } from '@electron-toolkit/utils';
 import { SteamAuth } from './SteamAuth';
 import './ipc-handlers';
 import { setToggleMuteKeybind } from './keybinds';
 import { initMainWindow } from './main-window';
+import { restrictNavigation } from './security';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
 
 const appProtocolClient = `cs2-proximity-chat`;
+
+// The app's page: the electron-vite dev server (for HMR) in development, the bundled file otherwise.
+const rendererUrl =
+  is.dev && process.env['ELECTRON_RENDERER_URL']
+    ? process.env['ELECTRON_RENDERER_URL']
+    : pathToFileURL(join(__dirname, '../renderer/index.html')).href;
+
+// Every window stays on rendererUrl; window.open goes to the user's browser (https only).
+restrictNavigation(rendererUrl);
 
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required');
 app.commandLine.appendSwitch('disable-background-timer-throttling');
@@ -120,18 +131,7 @@ function createWindow(): void {
     mainWindow.show();
   });
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url);
-    return { action: 'deny' };
-  });
-
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL']);
-  } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'));
-  }
+  mainWindow.loadURL(rendererUrl);
 }
 
 if (process.defaultApp) {
