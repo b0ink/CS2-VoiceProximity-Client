@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { randomBytes } from 'node:crypto';
 import openid from 'openid';
 import { retrieveIceServers } from './retrieveIceServers';
 import { openExternalSafely } from './security';
@@ -12,6 +13,9 @@ const USE_EXTERNAL_BROWSER = true;
 const STEAM_OPENID_IDENTIFIER = 'https://steamcommunity.com/openid';
 // The only login page we'll open (what Steam's lookup returns, ignoring the query string).
 const STEAM_OPENID_LOGIN_URL = 'https://steamcommunity.com/openid/login';
+
+// How long a login started from this app stays valid while the user signs in to Steam.
+const LOGIN_TIMEOUT_MS = 10 * 60 * 1000;
 
 function isSteamLoginUrl(url: unknown): boolean {
   if (typeof url !== 'string') {
@@ -33,6 +37,12 @@ interface JwtAuthPayload {
 }
 
 export class SteamAuth {
+  // One-time login codes ("state") for logins started from this app, mapped to when they started.
+  // The code goes to the server inside Steam's signed return_to and comes back in the
+  // cs2-proximity-chat:// link. Links without a matching code are ignored, so a website can't
+  // log the app into someone else's account just by opening a link.
+  private pendingLogins = new Map<string, number>();
+
   async validateJwtToken(): Promise<void> {
     const steamId = defaultStore.get('steamId');
     const token = defaultStore.get('token');
@@ -61,14 +71,17 @@ export class SteamAuth {
     }
   }
 
-  authenticate = (launchUrl): void => {
+  authenticate = (launchUrl: string): void => {
     console.log(`Verifying steam authentication...`);
-    const token = this.parseOpenIdResponse(launchUrl);
-    // console.log(token);
-    if (!token) {
-      return console.log('Invalid or no token returned.');
+    const callback = this.parseLoginCallback(launchUrl);
+    if (!callback) {
+      return console.log('Ignored a login link without a token and login code.');
+    }
+    if (!this.finishLogin(callback.state)) {
+      return console.log('Ignored a login link that this app did not start, or that expired.');
     }
 
+    const { token } = callback;
     const decoded = jwt.decode(token);
     if (!decoded || typeof decoded !== 'object' || 'steamid' in decoded) {
       return console.log('Invalid token');
@@ -89,19 +102,53 @@ export class SteamAuth {
     this.validateJwtToken();
   };
 
-  parseOpenIdResponse(openIdResponse: string): string | undefined {
-    const url = new URL(openIdResponse);
-    const token = url.searchParams.get('token') || undefined;
-    return token;
+  private parseLoginCallback(launchUrl: string): { token: string; state: string } | null {
+    try {
+      const url = new URL(launchUrl);
+      const token = url.searchParams.get('token');
+      const state = url.searchParams.get('state');
+      return token && state ? { token, state } : null;
+    } catch {
+      return null; // malformed link
+    }
+  }
+
+  private startLogin(): string {
+    this.prunePendingLogins();
+    const state = randomBytes(32).toString('base64url');
+    this.pendingLogins.set(state, Date.now());
+    return state;
+  }
+
+  /** Consumes a pending login. Any accepted link ends every pending attempt. */
+  private finishLogin(state: string): boolean {
+    this.prunePendingLogins();
+    if (!this.pendingLogins.has(state)) {
+      return false;
+    }
+    this.pendingLogins.clear();
+    return true;
+  }
+
+  private prunePendingLogins(): void {
+    const cutoff = Date.now() - LOGIN_TIMEOUT_MS;
+    for (const [state, startedAt] of this.pendingLogins) {
+      if (startedAt < cutoff) {
+        this.pendingLogins.delete(state);
+      }
+    }
   }
 
   async openSteamAuthenticationWindow(): Promise<void> {
     const realm = await settingsStore.get('socketServer');
+    if (realm === null) {
+      throw new Error('Region has not been set.');
+    }
 
-    const returnUrl = `${realm}/verify-steam`;
+    // Requires a server that echoes `state` back in the login link (see verify-steam.ts).
+    const returnUrl = `${realm}/verify-steam?state=${this.startLogin()}`;
 
     console.log('realm', realm);
-    console.log('return1', returnUrl);
 
     return new Promise((resolve, reject) => {
       const rely = new openid.RelyingParty(
@@ -115,10 +162,6 @@ export class SteamAuth {
         [], // List of extensions to enable and include
       );
 
-      if (realm === null) {
-        reject(new Error('Region has not been set.'));
-        return;
-      }
       rely.authenticate(STEAM_OPENID_IDENTIFIER, false, (error, providerUrl) => {
         if (error) {
           reject(new Error(error));
