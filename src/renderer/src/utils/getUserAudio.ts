@@ -44,8 +44,8 @@ export const getUserAudio = async (
     audio.deviceId = selectedDeviceId;
   }
 
-  // const assetsPath = 'https://cdn.jsdelivr.net/npm/@shiguredo/noise-suppression@latest/dist';
-  const processor = new NoiseSuppressionProcessor('rnnoise');
+  // RNNoise wasm is embedded in the package since 2025.1.0, so no assets path is needed
+  const processor = new NoiseSuppressionProcessor();
 
   let noiseSupressionEnabled: boolean = false;
   try {
