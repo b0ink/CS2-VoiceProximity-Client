@@ -29,9 +29,11 @@ export const initMainWindow = (): BrowserWindow => {
     icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
-      nodeIntegration: true,
-      contextIsolation: false,
+      // The renderer handles untrusted data (socket server, peers, player names), so it must
+      // never get Node access. Everything it needs goes through the preload's `window.api`.
+      sandbox: true,
+      nodeIntegration: false,
+      contextIsolation: true,
       devTools: true,
       backgroundThrottling: false,
     },

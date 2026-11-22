@@ -8,13 +8,12 @@
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
     /> -->
-    <script>
-      var global = window;
-    </script>
   </head>
 
   <body class="bg-white dark:bg-gray-800">
     <div id="app"></div>
+    <!-- Node-style globals for bundled deps; must load before main.ts (see polyfills.ts) -->
+    <script type="module" src="/src/polyfills.ts"></script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

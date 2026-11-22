@@ -1,5 +1,5 @@
+// This preload runs sandboxed: it can only import 'electron' (plus bundled code), never node_modules.
 import { contextBridge, ipcRenderer } from 'electron';
-import { electronAPI } from '@electron-toolkit/preload';
 import { StoreData } from '@shared/types/store/default';
 import { SettingsData } from '@shared/types/store/settings';
 import { version } from '../../package.json';
@@ -17,6 +17,11 @@ const api = {
   promptSteamAuthentication: () => ipcRenderer.invoke('prompt-steam-authentication'),
   retrieveIceServers: () => ipcRenderer.invoke('get-ice-servers'),
   clientVersion: () => version,
+  versions: {
+    electron: process.versions.electron,
+    chrome: process.versions.chrome,
+    node: process.versions.node,
+  },
 
   getSettings: () => ipcRenderer.invoke('settings:get'),
   onSettingsUpdate: (callback: (data: { key: string; newValue: any }) => void) => {
@@ -40,19 +45,7 @@ const api = {
   quitApp: () => ipcRenderer.invoke('quit-app'),
 };
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI);
-    contextBridge.exposeInMainWorld('api', api);
-  } catch (error) {
-    console.error(error);
-  }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI;
-  // @ts-ignore (define in dts)
-  window.api = api;
-}
+// Only this narrow API is exposed. Don't expose raw `ipcRenderer` or `process` (e.g. via
+// @electron-toolkit/preload's electronAPI): that would let page script reach any IPC channel
+// and read environment variables.
+contextBridge.exposeInMainWorld('api', api);

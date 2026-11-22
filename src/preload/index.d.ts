@@ -1,11 +1,9 @@
-import { ElectronAPI } from '@electron-toolkit/preload';
 import type { MapData } from '@shared/types/maps';
 import { StoreData } from '@shared/types/store/default';
 import { SettingsData } from '@shared/types/store/settings';
 
 declare global {
   interface Window {
-    electron: ElectronAPI;
     api: Api;
   }
   interface Api {
@@ -17,6 +15,7 @@ declare global {
     promptSteamAuthentication: () => void;
     retrieveIceServers: () => void;
     clientVersion: () => string;
+    versions: { electron: string; chrome: string; node: string };
 
     getSettings: () => Promise<SettingsData>;
     onSettingsUpdate: (
