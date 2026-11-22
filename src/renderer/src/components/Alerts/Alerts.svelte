@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Alert, Button } from 'flowbite-svelte';
+  import { onDestroy } from 'svelte';
   import { nextServerRestart, timeUntilRestart } from '@store/appStore';
   import store from '@store/client';
   import { connectedToRoom, detectedRoomCode, roomCode } from '@store/playerStore';
@@ -11,11 +12,37 @@
   $: iceServers = $store.iceServers;
 
   export let joinRoomCallback: () => void;
+
+  // Right after sign-in (or app load) the socket connection and TURN credential fetch usually
+  // finish within a second. Hold back the "connecting" / TURN alerts for a short grace period so
+  // they don't flash on screen, and only show them if the requests are still pending or failed.
+  const SIGN_IN_ALERT_GRACE_MS = 1500;
+  let signInGraceElapsed = false;
+  let signInGraceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function startSignInGrace(steamId: string | null | undefined): void {
+    if (!steamId) {
+      clearTimeout(signInGraceTimer);
+      signInGraceTimer = undefined;
+      signInGraceElapsed = false;
+      return;
+    }
+    if (signInGraceTimer) {
+      return;
+    }
+    signInGraceTimer = setTimeout(() => {
+      signInGraceElapsed = true;
+    }, SIGN_IN_ALERT_GRACE_MS);
+  }
+
+  $: startSignInGrace(clientSteamId);
+
+  onDestroy(() => clearTimeout(signInGraceTimer));
 </script>
 
 <UpdateAvailable />
 
-{#if clientSteamId && !$socketConnected}
+{#if clientSteamId && signInGraceElapsed && !$socketConnected}
   <Alert color="yellow" class="text-center mb-4">
     <span class="font-medium">Connecting to the backend service...</span>
   </Alert>
@@ -52,7 +79,7 @@
   </div>
 {/if}
 
-{#if clientSteamId && !iceServers?.length}
+{#if clientSteamId && signInGraceElapsed && !iceServers?.length}
   <Alert color="orange" class="text-center mb-4">
     <span class="font-medium">Failed to fetch TURN credentials.</span>
     <p>Please try logging out and back in, restarting the app, or try again later.</p>
