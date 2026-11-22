@@ -17,10 +17,15 @@ jobs:
     permissions:
       contents: write
 
+    # Actions are pinned to commit SHAs (tags can be moved); the comment is the version.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # Don't leave the token in .git/config, where dependency install scripts could read it.
+          # The release step below gets its own token.
+          persist-credentials: false
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
 
@@ -31,7 +36,7 @@ jobs:
       - run: npm run build:win
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2.2.2
+        uses: softprops/action-gh-release@da05d552573ad5aba039eaac05058a918a7bf631 # v2.2.2
         with:
           tag_name: ${{ github.event.inputs.version }}
           files: |
