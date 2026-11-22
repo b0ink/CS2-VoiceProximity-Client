@@ -7,6 +7,24 @@ import settingsStore from './store/settings';
 
 const USE_EXTERNAL_BROWSER = true;
 
+// Steam's OpenID identifier. This lookup decides which page we open in the user's browser, so it
+// must be https: over plain http, anyone on the network could swap in their own page.
+const STEAM_OPENID_IDENTIFIER = 'https://steamcommunity.com/openid';
+// The only login page we'll open (what Steam's lookup returns, ignoring the query string).
+const STEAM_OPENID_LOGIN_URL = 'https://steamcommunity.com/openid/login';
+
+function isSteamLoginUrl(url: unknown): boolean {
+  if (typeof url !== 'string') {
+    return false;
+  }
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}` === STEAM_OPENID_LOGIN_URL;
+  } catch {
+    return false;
+  }
+}
+
 interface JwtAuthPayload {
   steamId?: string;
   exp?: number;
@@ -101,9 +119,14 @@ export class SteamAuth {
         reject(new Error('Region has not been set.'));
         return;
       }
-      rely.authenticate('http://steamcommunity.com/openid', false, (error, providerUrl) => {
+      rely.authenticate(STEAM_OPENID_IDENTIFIER, false, (error, providerUrl) => {
         if (error) {
           reject(new Error(error));
+          return;
+        }
+
+        if (!isSteamLoginUrl(providerUrl)) {
+          reject(new Error('Steam returned an unexpected login URL'));
           return;
         }
 
