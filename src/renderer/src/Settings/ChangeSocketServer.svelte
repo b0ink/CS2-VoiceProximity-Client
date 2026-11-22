@@ -1,6 +1,7 @@
 <script lang="ts">
   import { Button, ButtonGroup, Input, Label, Modal, Select } from 'flowbite-svelte';
   import { onMount } from 'svelte';
+  import { SERVER_URL_HINT, normalizeServerUrl } from '@shared/server-url';
   import store from '@store/client';
   import settings from '@store/settings';
   import { cn } from '../lib/tailwind';
@@ -8,6 +9,10 @@
   $: storedSocketServer = $settings.socketServer;
   let socketServerInput: string;
   let confirmModalOpen = false;
+  let serverUrlError = '';
+
+  // Clear the error as soon as the address is edited.
+  $: if (socketServerInput !== undefined) serverUrlError = '';
 
   $: regions = $store.regions;
   let serverRegion: string | null;
@@ -29,11 +34,17 @@
     }
   };
 
-  const saveSocketServer = (): void => {
+  const saveSocketServer = async (): Promise<void> => {
     if (socketServerInput === storedSocketServer) {
       return;
     }
-    window.api.setSettingsValue('socketServer', socketServerInput);
+    try {
+      await window.api.setSettingsValue('socketServer', socketServerInput);
+    } catch {
+      // Rejected by the main process; keep the current login and don't reload.
+      serverUrlError = SERVER_URL_HINT;
+      return;
+    }
     window.api.setStoreValue('token', null);
     window.api.setStoreValue('steamId', null);
     window.api.setStoreValue('iceServers', []);
@@ -41,6 +52,15 @@
   };
 
   const promptConfirmation = (): void => {
+    const serverUrl = normalizeServerUrl(socketServerInput);
+    if (!serverUrl) {
+      serverUrlError = SERVER_URL_HINT;
+      return;
+    }
+    socketServerInput = serverUrl;
+    if (serverUrl === storedSocketServer) {
+      return; // e.g. only a trailing slash was different
+    }
     confirmModalOpen = true;
   };
 
@@ -104,8 +124,12 @@
         id="socket-server"
         name="socket-server"
         bind:value={socketServerInput}
-        placeholder="Socket Server"
-        color={socketServerInput !== storedSocketServer ? 'amber' : 'default'}
+        placeholder="https://voice.example.com"
+        color={serverUrlError
+          ? 'red'
+          : socketServerInput !== storedSocketServer
+            ? 'amber'
+            : 'default'}
         required
       />
 
@@ -117,5 +141,8 @@
         onclick={promptConfirmation}>Save</Button
       >
     </ButtonGroup>
+    {#if serverUrlError}
+      <p class="text-xs text-red-500 mb-2" id="server-url-error">{serverUrlError}</p>
+    {/if}
   {/if}
 </div>

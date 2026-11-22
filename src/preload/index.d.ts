@@ -8,7 +8,10 @@ declare global {
   }
   interface Api {
     setStoreValue: <K extends keyof StoreData>(key: K, value: StoreData[K]) => void;
-    setSettingsValue: <K extends keyof SettingsData>(key: K, value: SettingsData[K]) => void;
+    setSettingsValue: <K extends keyof SettingsData>(
+      key: K,
+      value: SettingsData[K],
+    ) => Promise<void>;
 
     loadMap: (map: string) => Promise<MapData>;
     reloadApp: () => void;

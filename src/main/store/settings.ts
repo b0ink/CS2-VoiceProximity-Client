@@ -1,5 +1,6 @@
 import { ipcMain } from 'electron';
 import Store from 'electron-store';
+import { SERVER_URL_HINT, normalizeServerUrl } from '@shared/server-url';
 import { KeyCodeEvent } from '@shared/types/keycodes';
 import {
   ClientVolumeMap,
@@ -16,6 +17,14 @@ const settingsStore = new Store<SettingsData>({
     ...DEFAULT_SETTINGS,
   },
 });
+
+// A server saved by an older version may be plain http or have a path. Re-check it so the token is
+// never sent to an address that's no longer allowed; invalid ones are cleared, which sends the
+// user back to region selection.
+const savedServer = settingsStore.get('socketServer');
+if (savedServer !== null && normalizeServerUrl(savedServer) !== savedServer) {
+  settingsStore.set('socketServer', normalizeServerUrl(savedServer));
+}
 
 // Settings store
 settingsStore.events.setMaxListeners(
@@ -59,6 +68,16 @@ ipcMain.handle('settings:get', () => {
 });
 
 ipcMain.handle('set-settings-value', async (_event, key: string, value: any) => {
+  if (key === 'socketServer' && value !== null && value !== '') {
+    const serverUrl = normalizeServerUrl(value);
+    if (!serverUrl) {
+      throw new Error(SERVER_URL_HINT);
+    }
+    value = serverUrl;
+  } else if (key === 'socketServer') {
+    value = null;
+  }
+
   settingsStore.set(key, value);
   const mainWindow = getMainWindow();
   if (key === 'alwaysOnTop' && mainWindow) {
