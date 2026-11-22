@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron';
 import { electronAPI } from '@electron-toolkit/preload';
+import type { RecordingStartRequest, RecordingTrackRequest } from '@shared/types/recording';
 import { StoreData } from '@shared/types/store/default';
 import { SettingsData } from '@shared/types/store/settings';
 import { version } from '../../package.json';
@@ -38,6 +39,19 @@ const api = {
   downloadUpdate: () => ipcRenderer.invoke('update-app'),
 
   quitApp: () => ipcRenderer.invoke('quit-app'),
+
+  // Track registration, name updates and chunks use send() so they stay in order on one IPC pipe.
+  recording: {
+    start: (request: RecordingStartRequest) => ipcRenderer.invoke('recording:start', request),
+    addTrack: (sessionId: string, track: RecordingTrackRequest) =>
+      ipcRenderer.send('recording:add-track', sessionId, track),
+    updateTrackName: (sessionId: string, steamId: string, name: string) =>
+      ipcRenderer.send('recording:update-track-name', sessionId, steamId, name),
+    writeChunk: (sessionId: string, steamId: string, frameOffset: number, pcm: Uint8Array) =>
+      ipcRenderer.send('recording:chunk', sessionId, steamId, frameOffset, pcm),
+    stop: (sessionId: string) => ipcRenderer.invoke('recording:stop', sessionId),
+    openFolder: (sessionId?: string) => ipcRenderer.invoke('recording:open-folder', sessionId),
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to

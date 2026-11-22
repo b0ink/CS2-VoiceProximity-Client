@@ -8,6 +8,7 @@ import { SteamAuth } from './SteamAuth';
 import './ipc-handlers';
 import { setToggleMuteKeybind } from './keybinds';
 import { initMainWindow } from './main-window';
+import './recording';
 import defaultStore from './store/default';
 import settingsStore from './store/settings';
 

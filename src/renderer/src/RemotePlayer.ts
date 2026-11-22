@@ -59,6 +59,13 @@ export class RemotePlayer {
 
   private remoteStream: MediaStream;
 
+  /**
+   * Sum of everything this player contributes to what we hear: the 3D voice (occlusion, distance,
+   * panning, volume), the 2D voice (spectating / dead teammates) and the reverb send. Only pulled
+   * by the audio graph while a recording is tapping it.
+   */
+  public readonly recordingOutput: GainNode;
+
   public playerIsAlive: boolean;
   public playerTeam: CsTeam;
 
@@ -117,6 +124,11 @@ export class RemotePlayer {
     scene.add(playerVoice2D);
     playerObject.add(playerVoice2D);
     this.playerVoice2D = playerVoice2D;
+
+    // Tap the final per-player output (post panner + volume). The reverb send joins in initStereoFilters().
+    this.recordingOutput = listener.context.createGain();
+    playerVoice3D.gain.connect(this.recordingOutput);
+    playerVoice2D.gain.connect(this.recordingOutput);
 
     this.steamId = client.steamId;
     this.Mute(0);
@@ -178,6 +190,7 @@ export class RemotePlayer {
   public disconnect(): void {
     this.playerVoice3D.disconnect();
     this.playerVoice2D.disconnect();
+    this.recordingOutput.disconnect();
     this.playerObject?.parent?.remove(this.playerObject);
 
     // Disconnect volume tracking
@@ -277,6 +290,7 @@ export class RemotePlayer {
     this.reverbFilter.connect(this.reverbGainFilter);
     this.reverbGainFilter.connect(wetGainFilter);
     wetGainFilter.connect(context.destination);
+    wetGainFilter.connect(this.recordingOutput);
 
     this.playerVoice3D.setFilters([highpass, lowpassFilter, gain, distanceGain]);
   }
